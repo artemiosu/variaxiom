@@ -94,6 +94,10 @@ Run all repository checks:
 bash scripts/verify.sh
 ```
 
+For a development checkout, `bash scripts/bootstrap.sh` creates the Python environment, runs
+the demo and tests, and activates the repository-owned pre-commit hook. The reference code uses
+only the Python standard library at runtime; Python 3.13 or 3.14 is supported.
+
 ## Architecture at a glance
 
 ```text

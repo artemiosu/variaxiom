@@ -3,6 +3,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+git config core.hooksPath .githooks
+
 if command -v uv >/dev/null 2>&1; then
   uv sync
   uv run variaxiom demo --reset

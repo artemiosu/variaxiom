@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+import tomllib
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -32,6 +33,11 @@ REQUIRED_FILES = (
     "docs/launch/launch-strategy.ru.md",
     "assets/social-preview.png",
     ".github/workflows/ci.yml",
+    ".github/workflows/codeql.yml",
+    ".github/copilot-instructions.md",
+    ".githooks/pre-commit",
+    "AGENTS.md",
+    "CLAUDE.md",
 )
 
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
@@ -82,6 +88,22 @@ def main() -> int:
         if value.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
             errors.append(f"unexpected schema draft in {schema.relative_to(root)}")
 
+    for toml_file in sorted(root.rglob("*.toml")):
+        if ".git" in toml_file.parts or ".variaxiom" in toml_file.parts:
+            continue
+        try:
+            tomllib.loads(toml_file.read_text("utf-8"))
+        except (tomllib.TOMLDecodeError, UnicodeDecodeError) as error:
+            errors.append(f"invalid TOML in {toml_file.relative_to(root)}: {error}")
+
+    # GitHub workflows and templates are YAML. A complete YAML parser is intentionally not a
+    # runtime dependency, so perform portable structural checks locally; CI linters may add a
+    # full parse without changing the reference implementation's zero-dependency promise.
+    for yaml_file in sorted((root / ".github").rglob("*.yml")):
+        text = yaml_file.read_text("utf-8")
+        if not text.strip() or "\t" in text:
+            errors.append(f"invalid portable YAML structure in {yaml_file.relative_to(root)}")
+
     for markdown in root.rglob("*.md"):
         if ".git" in markdown.parts or ".variaxiom" in markdown.parts:
             continue
@@ -90,7 +112,13 @@ def main() -> int:
             errors.append(f"unresolved launch blocker in {markdown.relative_to(root)}")
         errors.extend(_verify_links(root, markdown))
 
-    for relative in ("scripts/bootstrap.sh", "scripts/demo.sh", "scripts/verify.sh"):
+    for relative in (
+        ".githooks/pre-commit",
+        "scripts/bootstrap.sh",
+        "scripts/demo.sh",
+        "scripts/setup-github.sh",
+        "scripts/verify.sh",
+    ):
         script = root / relative
         if script.is_file() and not os.access(script, os.X_OK):
             errors.append(f"script is not executable: {relative}")

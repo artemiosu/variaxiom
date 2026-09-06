@@ -4,7 +4,7 @@
 
 | Layer | Choice | Why |
 |---|---|---|
-| Trusted kernel | Rust 2024, stable toolchain | Memory safety, explicit types, small static binaries, strong library ecosystem |
+| Trusted kernel | Rust 2024, toolchain pinned to 1.98.1 | Memory safety, explicit types, reproducible builds, strong library ecosystem |
 | Research/evolution plane | Python 3.13 and 3.14 | Best AI/evaluation ecosystem and rapid experimentation; 3.14 is current stable family in Sep 2026 |
 | Python project manager | `uv` | Fast reproducible environments, cross-platform lockfile, workspace support |
 | Generated component ABI | WIT + WebAssembly Component Model | Typed language-neutral contracts and deny-by-default host imports |
@@ -18,6 +18,7 @@
 | Schemas | JSON Schema 2020-12 now; Protobuf only for hot/internal RPC if needed | Human-readable contracts and language independence |
 | Policy | Small deterministic policy core; evaluate Cedar for policy authoring later | Avoid embedding a large policy engine before requirements stabilize |
 | Supply chain | SBOM, Sigstore/SLSA/in-toto roadmap | Provenance and signed promotion packages |
+| CI action runtime | Node 24 generation (Checkout v7, CodeQL v4) | Avoid the retired Node 20 Actions runtime |
 | CLI | Rust target; Python bootstrap | Fast iteration now, trusted operator surface later |
 | UI | Static lineage/evidence reports first; web UI later | A visible proof artifact matters before a dashboard framework |
 

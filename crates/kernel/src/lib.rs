@@ -6,33 +6,11 @@
 
 use std::collections::BTreeSet;
 
+pub use variaxiom_protocol::Constitution;
 use variaxiom_protocol::{
-    Candidate, Evidence, EvidenceStatus, PromotionContext, PromotionDecision,
+    Candidate, CanonicalError, DecisionStatus, Evidence, EvidenceStatus, GATE_VERSION,
+    PromotionContext, PromotionDecision, PromotionInput, canonical_digest,
 };
-
-/// Machine-enforced promotion policy.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Constitution {
-    /// Checks every inheritable candidate must pass.
-    pub mandatory_checks: BTreeSet<String>,
-    /// Minimum number of independent verifier identities.
-    pub minimum_independent_verifiers: usize,
-    /// Candidate budget ceiling in integer micro-dollars.
-    pub max_candidate_cost_micro_usd: u64,
-}
-
-impl Default for Constitution {
-    fn default() -> Self {
-        Self {
-            mandatory_checks: ["unit", "regression", "security", "budget"]
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            minimum_independent_verifiers: 2,
-            max_candidate_cost_micro_usd: 5_000_000,
-        }
-    }
-}
 
 /// Pure deterministic gate. It has no ambient network, filesystem, or model access.
 #[derive(Clone, Debug, Default)]
@@ -48,65 +26,98 @@ impl PromotionGate {
     }
 
     /// Decide whether a candidate may enter the inheritable lineage.
-    #[must_use]
     pub fn decide(
         &self,
         candidate: &Candidate,
         evidence: &[Evidence],
         context: &PromotionContext,
         authority_grant_id: Option<&str>,
-    ) -> PromotionDecision {
-        let mut reasons = Vec::new();
+    ) -> Result<PromotionDecision, CanonicalError> {
+        let input = PromotionInput::new(
+            candidate.clone(),
+            evidence.to_vec(),
+            context.clone(),
+            authority_grant_id.map(String::from),
+            self.constitution.clone(),
+        );
+        input.validate()?;
+        let input_digest = canonical_digest(&input.envelope())?;
+        let mut reasons = BTreeSet::new();
 
         if !context
             .known_artifact_hashes
             .contains(&candidate.artifact_hash)
         {
-            reasons.push("candidate artifact is absent or not integrity-verified".into());
+            reasons.insert("artifact.not_verified".into());
         }
-        if !context.known_lineage_ids.contains(&candidate.parent_id) {
-            reasons.push("candidate parent is not present in the trusted lineage".into());
-        }
-        if !context
-            .known_lineage_ids
-            .contains(&candidate.rollback_target)
+        if self.constitution.require_known_parent
+            && !context.known_lineage_ids.contains(&candidate.parent_id)
         {
-            reasons.push("rollback target is not present in the trusted lineage".into());
+            reasons.insert("lineage.parent_unknown".into());
+        }
+        if self.constitution.require_rollback_target
+            && !context
+                .known_lineage_ids
+                .contains(&candidate.rollback_target)
+        {
+            reasons.insert("rollback.target_unknown".into());
         }
         if candidate.estimated_cost_micro_usd > self.constitution.max_candidate_cost_micro_usd {
-            reasons.push("candidate exceeds the constitutional cost ceiling".into());
+            reasons.insert("candidate.cost_limit_exceeded".into());
         }
 
-        let delta = candidate.authority_delta();
-        if !delta.is_empty() {
-            let granted = authority_grant_id
-                .and_then(|id| context.authority_grants.get(id))
+        if self.constitution.forbid_implicit_authority_escalation {
+            let trusted_baseline = context.lineage_capabilities.get(&candidate.parent_id);
+            let empty_baseline = BTreeSet::new();
+            let trusted_baseline = match trusted_baseline {
+                Some(capabilities) => {
+                    if capabilities != &candidate.baseline_capabilities {
+                        reasons.insert("authority.baseline_mismatch".into());
+                    }
+                    capabilities
+                }
+                None => {
+                    reasons.insert("authority.baseline_unknown".into());
+                    &empty_baseline
+                }
+            };
+            let delta = candidate
+                .requested_capabilities
+                .difference(trusted_baseline)
                 .cloned()
-                .unwrap_or_default();
-            let missing: Vec<_> = delta.difference(&granted).cloned().collect();
-            if !missing.is_empty() {
-                reasons.push(format!(
-                    "candidate requests authority without an external grant: {}",
-                    missing.join(", ")
-                ));
+                .collect::<BTreeSet<_>>();
+            if !delta.is_empty() {
+                let granted = authority_grant_id
+                    .and_then(|id| context.authority_grants.get(id))
+                    .cloned()
+                    .unwrap_or_default();
+                let missing: Vec<_> = delta.difference(&granted).cloned().collect();
+                if !missing.is_empty() {
+                    reasons.insert(format!("authority.not_granted:{}", missing.join(",")));
+                }
             }
         }
 
         let relevant: Vec<_> = evidence
             .iter()
-            .filter(|item| item.subject_id == candidate.id)
+            .filter(|item| item.subject_id == candidate.candidate_id)
             .collect();
         let mut verifier_ids = BTreeSet::new();
 
         for item in &relevant {
             if item.artifact_hash != candidate.artifact_hash {
-                reasons.push(format!("evidence {} addresses another artifact", item.id));
+                reasons.insert(format!("evidence.artifact_mismatch:{}", item.evidence_id));
             }
-            if item.verifier == candidate.proposer {
-                reasons.push(format!("evidence {} is self-verification", item.id));
+            if self.constitution.forbid_self_verification && item.verifier == candidate.proposer {
+                reasons.insert(format!("evidence.self_verification:{}", item.evidence_id));
             }
-            if item.status != EvidenceStatus::Pass {
-                reasons.push(format!("evidence {} did not pass", item.id));
+            if self.constitution.reject_any_failed_evidence && item.status != EvidenceStatus::Pass {
+                let status = match item.status {
+                    EvidenceStatus::Pass => "pass",
+                    EvidenceStatus::Fail => "fail",
+                    EvidenceStatus::Error => "error",
+                };
+                reasons.insert(format!("evidence.failed:{}:{status}", item.evidence_id));
             }
             if item.independent
                 && item.status == EvidenceStatus::Pass
@@ -126,28 +137,41 @@ impl PromotionGate {
                     && item.artifact_hash == candidate.artifact_hash
             });
             if !passed {
-                reasons.push(format!(
-                    "missing independent passing evidence for mandatory check: {check}"
-                ));
+                reasons.insert(format!("evidence.missing_check:{check}"));
             }
         }
 
-        if verifier_ids.len() < self.constitution.minimum_independent_verifiers {
-            reasons.push("insufficient independent verifier diversity".into());
+        let verifier_count = i64::try_from(verifier_ids.len()).unwrap_or(i64::MAX);
+        if verifier_count < self.constitution.minimum_independent_verifiers {
+            reasons.insert("evidence.verifier_diversity".into());
         }
 
-        reasons.sort();
-        reasons.dedup();
         let accepted = reasons.is_empty();
         if accepted {
-            reasons.push("all constitutional promotion gates passed".into());
+            reasons.insert("promotion.accepted".into());
         }
+        let evidence_ids = relevant
+            .iter()
+            .map(|item| item.evidence_id.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
 
-        PromotionDecision {
-            candidate_id: candidate.id.clone(),
-            accepted,
-            reasons,
-        }
+        let decision = PromotionDecision {
+            candidate_id: candidate.candidate_id.clone(),
+            status: if accepted {
+                DecisionStatus::Accepted
+            } else {
+                DecisionStatus::Rejected
+            },
+            reasons: reasons.into_iter().collect(),
+            evidence_ids,
+            input_digest,
+            constitution_version: self.constitution.version.clone(),
+            gate_version: GATE_VERSION.into(),
+        };
+        decision.validate()?;
+        Ok(decision)
     }
 }
 
@@ -160,7 +184,7 @@ mod tests {
 
     fn candidate() -> Candidate {
         Candidate {
-            id: "candidate:1".into(),
+            candidate_id: "candidate:1".into(),
             parent_id: "genome:0".into(),
             artifact_hash: "a".repeat(64),
             proposer: "agent:builder".into(),
@@ -168,6 +192,7 @@ mod tests {
             baseline_capabilities: ["artifact.read"].into_iter().map(String::from).collect(),
             requested_capabilities: ["artifact.read"].into_iter().map(String::from).collect(),
             estimated_cost_micro_usd: 100_000,
+            metadata: BTreeMap::new(),
         }
     }
 
@@ -176,8 +201,8 @@ mod tests {
             .into_iter()
             .enumerate()
             .map(|(index, check)| Evidence {
-                id: format!("e:{check}"),
-                subject_id: candidate.id.clone(),
+                evidence_id: format!("e:{check}"),
+                subject_id: candidate.candidate_id.clone(),
                 artifact_hash: candidate.artifact_hash.clone(),
                 check: check.into(),
                 status: EvidenceStatus::Pass,
@@ -187,6 +212,7 @@ mod tests {
                     "verifier:b".into()
                 },
                 independent: true,
+                details: BTreeMap::new(),
             })
             .collect()
     }
@@ -196,19 +222,24 @@ mod tests {
             known_lineage_ids: ["genome:0"].into_iter().map(String::from).collect(),
             known_artifact_hashes: [candidate.artifact_hash.clone()].into_iter().collect(),
             authority_grants: BTreeMap::new(),
+            lineage_capabilities: [("genome:0".into(), candidate.baseline_capabilities.clone())]
+                .into_iter()
+                .collect(),
         }
     }
 
     #[test]
     fn accepts_bounded_candidate() {
         let candidate = candidate();
-        let decision = PromotionGate::new(Constitution::default()).decide(
-            &candidate,
-            &evidence(&candidate),
-            &context(&candidate),
-            None,
-        );
-        assert!(decision.accepted, "{:?}", decision.reasons);
+        let decision = PromotionGate::new(Constitution::default())
+            .decide(
+                &candidate,
+                &evidence(&candidate),
+                &context(&candidate),
+                None,
+            )
+            .expect("typed values are canonical");
+        assert!(decision.accepted(), "{:?}", decision.reasons);
     }
 
     #[test]
@@ -217,18 +248,50 @@ mod tests {
         candidate
             .requested_capabilities
             .insert("network.unrestricted".into());
-        let decision = PromotionGate::new(Constitution::default()).decide(
-            &candidate,
-            &evidence(&candidate),
-            &context(&candidate),
-            None,
-        );
-        assert!(!decision.accepted);
+        let decision = PromotionGate::new(Constitution::default())
+            .decide(
+                &candidate,
+                &evidence(&candidate),
+                &context(&candidate),
+                None,
+            )
+            .expect("typed values are canonical");
+        assert!(!decision.accepted());
         assert!(
             decision
                 .reasons
                 .iter()
                 .any(|reason| reason.contains("authority"))
+        );
+    }
+
+    #[test]
+    fn rejects_candidate_that_spoofs_its_authority_baseline() {
+        let mut candidate = candidate();
+        candidate
+            .baseline_capabilities
+            .insert("network.unrestricted".into());
+        candidate
+            .requested_capabilities
+            .insert("network.unrestricted".into());
+        let mut context = context(&candidate);
+        context.lineage_capabilities.insert(
+            "genome:0".into(),
+            ["artifact.read"].into_iter().map(String::from).collect(),
+        );
+        let decision = PromotionGate::new(Constitution::default())
+            .decide(&candidate, &evidence(&candidate), &context, None)
+            .expect("typed values are canonical");
+        assert!(!decision.accepted());
+        assert!(
+            decision
+                .reasons
+                .contains(&"authority.baseline_mismatch".into())
+        );
+        assert!(
+            decision
+                .reasons
+                .contains(&"authority.not_granted:network.unrestricted".into())
         );
     }
 
@@ -248,12 +311,70 @@ mod tests {
         )]
         .into_iter()
         .collect();
-        let decision = PromotionGate::new(Constitution::default()).decide(
+        let decision = PromotionGate::new(Constitution::default())
+            .decide(
+                &candidate,
+                &evidence(&candidate),
+                &context,
+                Some("grant:owner"),
+            )
+            .expect("typed values are canonical");
+        assert!(decision.accepted(), "{:?}", decision.reasons);
+    }
+
+    #[test]
+    fn duplicate_evidence_identifiers_fail_before_policy() {
+        let candidate = candidate();
+        let mut evidence = evidence(&candidate);
+        evidence[1].evidence_id = evidence[0].evidence_id.clone();
+        let result = PromotionGate::new(Constitution::default()).decide(
+            &candidate,
+            &evidence,
+            &context(&candidate),
+            None,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn invalid_constitution_fails_before_policy() {
+        let candidate = candidate();
+        let constitution = Constitution {
+            minimum_independent_verifiers: 0,
+            ..Constitution::default()
+        };
+        let result = PromotionGate::new(constitution).decide(
             &candidate,
             &evidence(&candidate),
-            &context,
-            Some("grant:owner"),
+            &context(&candidate),
+            None,
         );
-        assert!(decision.accepted, "{:?}", decision.reasons);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn negative_cost_and_disabled_invariant_fail_before_policy() {
+        let mut negative_candidate = candidate();
+        negative_candidate.estimated_cost_micro_usd = -1;
+        let result = PromotionGate::new(Constitution::default()).decide(
+            &negative_candidate,
+            &evidence(&negative_candidate),
+            &context(&negative_candidate),
+            None,
+        );
+        assert!(result.is_err());
+
+        let candidate = candidate();
+        let constitution = Constitution {
+            forbid_self_verification: false,
+            ..Constitution::default()
+        };
+        let result = PromotionGate::new(constitution).decide(
+            &candidate,
+            &evidence(&candidate),
+            &context(&candidate),
+            None,
+        );
+        assert!(result.is_err());
     }
 }

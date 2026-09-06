@@ -1,9 +1,19 @@
 # Project status
 
-**Version:** 0.1.0-alpha seed
+**Version:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 **Maturity:** pre-alpha research implementation
 **Primary public proof:** The Authority Test
 **Last status review:** 2026-09-06
+
+The concise source of truth for active development is
+[`docs/project/current.md`](docs/project/current.md); machine-readable status is in
+[`project.yaml`](project.yaml). This file records release-level capability only.
+
+The Python spelling `0.1.0a0` and Rust spelling `0.1.0-alpha.0` are ecosystem-specific forms of
+the same pre-release intent; they do not indicate separately published releases.
+
+M1.1 is implemented locally. It is not yet verified until the required remote operating-system
+matrix, clean-clone reproduction, and review evidence are recorded.
 
 ## Implemented
 
@@ -20,6 +30,8 @@
 - JSON schemas for public protocol objects;
 - architecture, research, governance, launch, and security documentation;
 - pinned GitHub Actions CI, dependency review, and OpenSSF Scorecard workflows.
+- cross-language canonical promotion envelopes and shared Python/Rust fixtures;
+- CodeQL, project context routing, requirement traceability, and spec-driven increment gates.
 
 ## Not implemented yet
 

@@ -30,7 +30,7 @@ Highlight:
 
 ```text
 candidate:slug-tool-unbounded → REJECTED
-reason: requests authority not covered by an explicit external grant
+reason: authority.not_granted:network.unrestricted
 ```
 
 Narration:
@@ -43,7 +43,7 @@ Highlight:
 
 ```text
 candidate:slug-tool-bounded → ACCEPTED
-all constitutional promotion gates passed
+promotion.accepted
 ```
 
 ## Scene 5 — lineage

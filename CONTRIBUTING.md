@@ -4,7 +4,7 @@ Thank you for helping build a system where agent improvement is a claim that mus
 
 ## Before opening code
 
-1. Read the [project charter](docs/project/project-charter.md), [architecture](docs/architecture/overview.md), and [constitution](constitution/constitution.toml).
+1. Read the [current context](docs/project/current.md) and follow the task-specific pack in the [context index](docs/context/index.md).
 2. For behavior, protocol, or trust-boundary changes, open an RFC issue before a large pull request.
 3. Keep the trusted kernel small. Features belong outside the kernel unless they enforce an invariant that cannot be delegated safely.
 4. Never solve a failed check by weakening the check without an explicit evaluator-change RFC.
@@ -63,7 +63,7 @@ A new skill or tool package should additionally include a manifest, provenance, 
 
 - Use focused commits and clear conventional-style subjects where practical.
 - Sign off commits under the [Developer Certificate of Origin](DCO.md): `git commit -s`.
-- Two independent reviews are required for changes to `constitution/`, `crates/kernel/`, schemas, promotion logic, security policy, or evaluator acceptance criteria.
+- Two independent reviews are the target for changes to `constitution/`, `crates/kernel/`, schemas, promotion logic, security policy, or evaluator acceptance criteria. During bootstrap, while only one maintainer exists, the founder may merge after all required evidence passes, but must record the exception in the PR. This exception ends when a second trusted maintainer is appointed.
 - The proposer must not be the only reviewer of a promotion-rule change.
 - Generated code must be identified and reviewed to the same standard as human-written code.
 

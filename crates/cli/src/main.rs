@@ -5,13 +5,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use variaxiom_kernel::{Constitution, PromotionGate};
 use variaxiom_protocol::{Candidate, Evidence, EvidenceStatus, PromotionContext};
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let baseline: BTreeSet<_> = ["artifact.read"].into_iter().map(String::from).collect();
     let mut requested = baseline.clone();
     requested.insert("network.unrestricted".into());
 
     let candidate = Candidate {
-        id: "candidate:demo".into(),
+        candidate_id: "candidate:demo".into(),
         parent_id: "genome:0".into(),
         artifact_hash: "a".repeat(64),
         proposer: "agent:mutator".into(),
@@ -19,14 +19,15 @@ fn main() {
         baseline_capabilities: baseline,
         requested_capabilities: requested,
         estimated_cost_micro_usd: 10_000,
+        metadata: BTreeMap::new(),
     };
 
     let evidence: Vec<_> = ["unit", "regression", "security", "budget"]
         .into_iter()
         .enumerate()
         .map(|(index, check)| Evidence {
-            id: format!("e:{check}"),
-            subject_id: candidate.id.clone(),
+            evidence_id: format!("e:{check}"),
+            subject_id: candidate.candidate_id.clone(),
             artifact_hash: candidate.artifact_hash.clone(),
             check: check.into(),
             status: EvidenceStatus::Pass,
@@ -36,6 +37,7 @@ fn main() {
                 "verifier:b".into()
             },
             independent: true,
+            details: BTreeMap::new(),
         })
         .collect();
 
@@ -43,13 +45,17 @@ fn main() {
         known_lineage_ids: ["genome:0"].into_iter().map(String::from).collect(),
         known_artifact_hashes: [candidate.artifact_hash.clone()].into_iter().collect(),
         authority_grants: BTreeMap::new(),
+        lineage_capabilities: [("genome:0".into(), candidate.baseline_capabilities.clone())]
+            .into_iter()
+            .collect(),
     };
 
-    let decision =
-        PromotionGate::new(Constitution::default()).decide(&candidate, &evidence, &context, None);
+    let decision = PromotionGate::new(Constitution::default())
+        .decide(&candidate, &evidence, &context, None)?;
 
-    println!("accepted={}", decision.accepted);
+    println!("accepted={}", decision.accepted());
     for reason in decision.reasons {
         println!("- {reason}");
     }
+    Ok(())
 }

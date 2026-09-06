@@ -7,7 +7,8 @@ Variaxiom treats reproducibility as a product feature, not an appendix.
 - Python 3.13 or 3.14;
 - no third-party Python runtime dependencies for the current demo;
 - Linux, macOS, or another environment with POSIX-compatible shell scripts;
-- Rust stable compatible with `rust-toolchain.toml` for the kernel scaffold.
+- Rust 1.98.1 as pinned by `rust-toolchain.toml` for the kernel.
+- development-only Python validation dependencies installed by `scripts/bootstrap.sh`.
 
 ## Reproduce the Authority Test
 
@@ -24,7 +25,7 @@ PYTHONPATH=src python3 -m variaxiom --home .variaxiom verify
 The deterministic fixture uses fixed timestamps and canonical JSON. Clean runs should produce this lineage head:
 
 ```text
-ba30063e36b5f184af58273c08f886635053e3e15b427e7354defdfdc2e64fdc
+9cbe298edea1d7b03cf3bc175dd8a2ec525ec545e9be4625d5a6d565238e3a13
 ```
 
 ## Run the complete local verification
@@ -36,10 +37,19 @@ bash scripts/verify.sh
 This performs:
 
 1. repository structure and local-link checks;
-2. JSON Schema syntax checks;
-3. Python unit tests;
-4. a clean demo run;
-5. hash-chain verification.
+2. Draft 2020-12 metaschema and instance validation plus YAML/TOML parsing;
+3. frozen shared Python/Rust canonical-envelope fixtures;
+4. Python unit and conformance tests;
+5. regeneration-drift detection for checked-in demo artifacts;
+6. a clean demo run and hash-chain verification.
+
+Run the Rust side of the same vectors with:
+
+```bash
+cargo fmt --all -- --check
+cargo test --workspace --all-targets --locked
+cargo clippy --workspace --all-targets --locked -- -D warnings
+```
 
 ## Inspect the evidence
 

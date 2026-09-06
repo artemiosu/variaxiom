@@ -2,17 +2,19 @@
 
 ## M0 — Public seed
 
-- [ ] Create public GitHub repository and push seed commit.
-- [ ] Enable Discussions, private vulnerability reporting, branch protection, and required reviews.
-- [ ] Add repository description, topics, social preview, and website placeholder.
+- [x] Create public GitHub repository and push seed commit.
+- [x] Enable Discussions and founder-compatible branch protection.
+- [ ] Confirm private vulnerability reporting after GitHub authentication is restored.
+- [ ] Upload the checked-in social preview through GitHub repository settings.
+- [x] Add repository description, topics, and Pages website.
 - [ ] Record a two-minute demo GIF/video.
 - [ ] Open five curated `good first issue` tasks.
 
 ## M1 — Cross-language conformance
 
-- [ ] Compile Rust workspace on Linux/macOS/Windows.
-- [ ] Add shared JSON fixtures for Python/Rust decisions.
-- [ ] Specify canonical JSON and signature envelope.
+- [ ] Compile and test the Rust workspace on Linux/macOS/Windows CI.
+- [x] Add shared JSON fixtures for Python/Rust decisions.
+- [x] Specify canonical JSON and a signature-ready decision envelope.
 - [ ] Add property tests for capability deltas and event chaining.
 
 ## M2 — Signed lineage

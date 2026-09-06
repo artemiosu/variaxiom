@@ -19,7 +19,7 @@ class Workspace:
     ledger: HashChainLedger
 
     @classmethod
-    def open(cls, root: Path, *, create: bool = True) -> "Workspace":
+    def open(cls, root: Path, *, create: bool = True) -> Workspace:
         if create:
             root.mkdir(parents=True, exist_ok=True)
             for name in ("artifacts", "evidence", "promotions", "reports"):
@@ -31,7 +31,7 @@ class Workspace:
         )
 
     @classmethod
-    def reset(cls, root: Path) -> "Workspace":
+    def reset(cls, root: Path) -> Workspace:
         if root.exists():
             shutil.rmtree(root)
         return cls.open(root)

@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import json
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, cast
 
-from .canonical import JSONValue, canonical_json, content_hash, to_json_value
+from .canonical import JSONValue, canonical_json, content_hash, strict_json_loads, to_json_value
 
 GENESIS_HASH = "0" * 64
 
@@ -29,7 +29,7 @@ class LedgerVerification:
 
 
 @contextmanager
-def _exclusive_lock(handle: Any) -> Iterator[None]:
+def _exclusive_lock(handle: Any) -> Generator[None]:
     if fcntl is not None:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
     try:
@@ -65,13 +65,14 @@ class HashChainLedger:
         self.path.touch(exist_ok=True)
         with self.path.open("a+b") as handle, _exclusive_lock(handle):
             handle.seek(0)
-            raw_lines = [line for line in handle.read().splitlines() if line.strip()]
-            previous_hash = GENESIS_HASH
-            sequence = 0
-            if raw_lines:
-                last = json.loads(raw_lines[-1])
-                previous_hash = str(last["hash"])
-                sequence = int(last["sequence"]) + 1
+            existing = self._parse_events(handle.read())
+            verification = self._verify_events(existing)
+            if not verification.valid:
+                raise RuntimeError(
+                    "Refusing to append to an invalid ledger: " + "; ".join(verification.errors)
+                )
+            previous_hash = verification.head_hash
+            sequence = verification.event_count
 
             body: dict[str, JSONValue] = {
                 "sequence": sequence,
@@ -91,31 +92,37 @@ class HashChainLedger:
     def events(self) -> list[dict[str, JSONValue]]:
         if not self.path.exists():
             return []
+        return self._parse_events(self.path.read_bytes())
+
+    @staticmethod
+    def _parse_events(data: bytes) -> list[dict[str, JSONValue]]:
+        if not data:
+            return []
+        if not data.endswith(b"\n"):
+            raise ValueError("Ledger is missing its final LF record separator")
+        records = data.split(b"\n")[:-1]
         events: list[dict[str, JSONValue]] = []
-        for line_number, line in enumerate(self.path.read_text("utf-8").splitlines(), 1):
-            if not line.strip():
-                continue
+        for line_number, line in enumerate(records, 1):
+            if not line:
+                raise ValueError(f"Empty ledger record at line {line_number}")
             try:
-                value = json.loads(line)
-            except json.JSONDecodeError as error:
+                value = strict_json_loads(line)
+            except (TypeError, ValueError) as error:
                 raise ValueError(f"Invalid ledger JSON at line {line_number}: {error}") from error
             if not isinstance(value, dict):
                 raise ValueError(f"Ledger event at line {line_number} is not an object")
-            events.append(value)
+            if canonical_json(value) != line:
+                raise ValueError(f"Ledger event at line {line_number} is not canonical JSON")
+            events.append(cast(dict[str, JSONValue], value))
         return events
 
-    def verify(self) -> LedgerVerification:
+    @staticmethod
+    def _verify_events(events: list[dict[str, JSONValue]]) -> LedgerVerification:
         errors: list[str] = []
         previous_hash = GENESIS_HASH
-        expected_sequence = 0
         head = GENESIS_HASH
-
-        try:
-            events = self.events()
-        except ValueError as error:
-            return LedgerVerification(False, 0, head, (str(error),))
-
-        for index, event in enumerate(events, 1):
+        for expected_sequence, event in enumerate(events):
+            index = expected_sequence + 1
             actual_sequence = event.get("sequence")
             if actual_sequence != expected_sequence:
                 errors.append(
@@ -133,6 +140,11 @@ class HashChainLedger:
             if isinstance(supplied_hash, str):
                 previous_hash = supplied_hash
                 head = supplied_hash
-            expected_sequence += 1
-
         return LedgerVerification(not errors, len(events), head, tuple(errors))
+
+    def verify(self) -> LedgerVerification:
+        try:
+            events = self.events()
+        except (TypeError, ValueError) as error:
+            return LedgerVerification(False, 0, GENESIS_HASH, (str(error),))
+        return self._verify_events(events)

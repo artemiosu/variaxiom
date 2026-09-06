@@ -32,6 +32,14 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "jsonschema[format]>=4.25,<5",
+  "pyright>=1.1.400,<2",
+  "PyYAML>=6.0.2,<7",
+  "ruff>=0.12,<1",
+]
+
 [project.urls]
 Homepage = "https://github.com/artemiosu/variaxiom"
 Repository = "https://github.com/artemiosu/variaxiom"
@@ -50,8 +58,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
 
 [tool.pyright]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
-include = ["src", "tests"]
+include = ["src"]

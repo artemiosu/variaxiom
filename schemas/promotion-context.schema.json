@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/promotion-context.schema.json",
+  "title": "Variaxiom trusted promotion context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "known_lineage_ids",
+    "known_artifact_hashes",
+    "authority_grants",
+    "lineage_capabilities"
+  ],
+  "properties": {
+    "known_lineage_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/token" }
+    },
+    "known_artifact_hashes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/sha256" }
+    },
+    "authority_grants": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/token" },
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": { "$ref": "#/$defs/capability" }
+      }
+    },
+    "lineage_capabilities": {
+      "description": "Trusted authority recorded for each lineage node; candidate claims are checked against this map.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/token" },
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": { "$ref": "#/$defs/capability" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "[\\u0000-\\u001f\\u007f]" }
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "[,\\u0000-\\u001f\\u007f]" }
+    }
+  }
+}

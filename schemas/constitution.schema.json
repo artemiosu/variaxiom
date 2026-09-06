@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/constitution.schema.json",
+  "title": "Variaxiom promotion constitution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "mandatory_checks",
+    "minimum_independent_verifiers",
+    "max_candidate_cost_micro_usd",
+    "require_known_parent",
+    "require_rollback_target",
+    "forbid_self_verification",
+    "forbid_implicit_authority_escalation",
+    "reject_any_failed_evidence"
+  ],
+  "properties": {
+    "version": { "const": "constitution/v1" },
+    "mandatory_checks": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/token" }
+    },
+    "minimum_independent_verifiers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "max_candidate_cost_micro_usd": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "require_known_parent": { "const": true },
+    "require_rollback_target": { "const": true },
+    "forbid_self_verification": { "const": true },
+    "forbid_implicit_authority_escalation": { "const": true },
+    "reject_any_failed_evidence": { "const": true }
+  },
+  "$defs": {
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "[\\u0000-\\u001f\\u007f]" }
+    }
+  }
+}

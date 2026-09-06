@@ -2,6 +2,10 @@
 # contributor base grows.
 * @artemiosu
 /constitution/ @artemiosu
+/schemas/ @artemiosu
+/fixtures/conformance/ @artemiosu
+/crates/kernel/ @artemiosu
+/crates/protocol/ @artemiosu
 /docs/architecture/ @artemiosu
 /src/variaxiom/promotion.py @artemiosu
 /src/variaxiom/ledger.py @artemiosu

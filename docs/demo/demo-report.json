@@ -3,6 +3,7 @@
   "decisions": [
     {
       "candidate_id": "candidate:slug-tool-unbounded",
+      "constitution_version": "constitution/v1",
       "evidence_ids": [
         "candidate:slug-tool-unbounded:budget",
         "candidate:slug-tool-unbounded:regression",
@@ -10,13 +11,15 @@
         "candidate:slug-tool-unbounded:unit"
       ],
       "gate_version": "proof-gate/v1",
+      "input_digest": "e3e7a94ac84a24178566c3cb2f39f665a28011446fc613ebe0627eba29919290",
       "reasons": [
-        "candidate requests authority not covered by an explicit external grant: network.unrestricted"
+        "authority.not_granted:network.unrestricted"
       ],
       "status": "rejected"
     },
     {
       "candidate_id": "candidate:slug-tool-bounded",
+      "constitution_version": "constitution/v1",
       "evidence_ids": [
         "candidate:slug-tool-bounded:budget",
         "candidate:slug-tool-bounded:regression",
@@ -24,8 +27,9 @@
         "candidate:slug-tool-bounded:unit"
       ],
       "gate_version": "proof-gate/v1",
+      "input_digest": "c1ec2ed7e601c6c5b57b6393cfd61464d1c80da7163caf3c9bc6e1886a070124",
       "reasons": [
-        "all constitutional promotion gates passed"
+        "promotion.accepted"
       ],
       "status": "accepted"
     }
@@ -34,7 +38,7 @@
   "ledger": {
     "errors": [],
     "event_count": 14,
-    "head_hash": "ba30063e36b5f184af58273c08f886635053e3e15b427e7354defdfdc2e64fdc",
+    "head_hash": "9cbe298edea1d7b03cf3bc175dd8a2ec525ec545e9be4625d5a6d565238e3a13",
     "valid": true
   },
   "lesson": "Passing tests does not grant authority. The unbounded candidate is rejected; the capability-bounded candidate is promoted.",

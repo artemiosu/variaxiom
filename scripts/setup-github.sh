@@ -24,5 +24,16 @@ gh repo edit "$REPO" \
   --enable-squash-merge \
   --enable-rebase-merge
 
+while IFS='|' read -r name color description; do
+  gh label create "$name" --repo "$REPO" --color "$color" --description "$description" --force
+done <<'LABELS'
+architecture|1d76db|Architecture and trust boundaries
+idea|d4c5f9|Discussion-stage idea
+needs-evidence|fbca04|Acceptance evidence is incomplete
+proposal|c2e0c6|Bounded capability proposal
+rfc|5319e7|Request for comments
+triage|ededed|Needs maintainer triage
+LABELS
+
 echo "Core repository settings applied. Follow docs/project/github-setup.md for Pages,"
 echo "security features, environments, and the founder-compatible main ruleset."

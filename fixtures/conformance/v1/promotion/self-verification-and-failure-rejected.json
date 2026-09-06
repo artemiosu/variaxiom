@@ -1,0 +1,127 @@
+{
+  "authority_grant_id": null,
+  "candidate": {
+    "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "baseline_capabilities": [
+      "artifact.read"
+    ],
+    "candidate_id": "candidate:fixture",
+    "estimated_cost_micro_usd": 100000,
+    "metadata": {
+      "label": "ограниченный вариант",
+      "reproducible": true
+    },
+    "parent_id": "genome:0",
+    "proposer": "agent:builder",
+    "requested_capabilities": [
+      "artifact.read"
+    ],
+    "rollback_target": "genome:0"
+  },
+  "case_id": "self-verification-and-failure-rejected",
+  "constitution": {
+    "forbid_implicit_authority_escalation": true,
+    "forbid_self_verification": true,
+    "mandatory_checks": [
+      "budget",
+      "regression",
+      "security",
+      "unit"
+    ],
+    "max_candidate_cost_micro_usd": 5000000,
+    "minimum_independent_verifiers": 2,
+    "reject_any_failed_evidence": true,
+    "require_known_parent": true,
+    "require_rollback_target": true,
+    "version": "constitution/v1"
+  },
+  "context": {
+    "authority_grants": {},
+    "known_artifact_hashes": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "known_lineage_ids": [
+      "genome:0"
+    ],
+    "lineage_capabilities": {
+      "genome:0": [
+        "artifact.read"
+      ]
+    }
+  },
+  "evidence": [
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "budget",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:budget",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:a"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "regression",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:regression",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:b"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "security",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:security",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:a"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "unit",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:unit",
+      "independent": true,
+      "status": "fail",
+      "subject_id": "candidate:fixture",
+      "verifier": "agent:builder"
+    }
+  ],
+  "expected": {
+    "decision": {
+      "candidate_id": "candidate:fixture",
+      "constitution_version": "constitution/v1",
+      "evidence_ids": [
+        "e:budget",
+        "e:regression",
+        "e:security",
+        "e:unit"
+      ],
+      "gate_version": "proof-gate/v1",
+      "input_digest": "38a2a0838bae12776d8166672fab24252afd79a7367350ee3b28f85e17faa8fb",
+      "reasons": [
+        "evidence.failed:e:unit:fail",
+        "evidence.missing_check:unit",
+        "evidence.self_verification:e:unit"
+      ],
+      "status": "rejected"
+    },
+    "decision_digest": "4ebb303564c8f814c892e98e105765628257dac0a8a0e555635a176232c42b3f",
+    "decision_envelope_json": "{\"envelope_version\":\"variaxiom-envelope/v1\",\"kind\":\"promotion-decision\",\"payload\":{\"candidate_id\":\"candidate:fixture\",\"constitution_version\":\"constitution/v1\",\"evidence_ids\":[\"e:budget\",\"e:regression\",\"e:security\",\"e:unit\"],\"gate_version\":\"proof-gate/v1\",\"input_digest\":\"38a2a0838bae12776d8166672fab24252afd79a7367350ee3b28f85e17faa8fb\",\"reasons\":[\"evidence.failed:e:unit:fail\",\"evidence.missing_check:unit\",\"evidence.self_verification:e:unit\"],\"status\":\"rejected\"}}",
+    "input_digest": "38a2a0838bae12776d8166672fab24252afd79a7367350ee3b28f85e17faa8fb",
+    "input_envelope_json": "{\"envelope_version\":\"variaxiom-envelope/v1\",\"kind\":\"promotion-input\",\"payload\":{\"authority_grant_id\":null,\"candidate\":{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"baseline_capabilities\":[\"artifact.read\"],\"candidate_id\":\"candidate:fixture\",\"estimated_cost_micro_usd\":100000,\"metadata\":{\"label\":\"ограниченный вариант\",\"reproducible\":true},\"parent_id\":\"genome:0\",\"proposer\":\"agent:builder\",\"requested_capabilities\":[\"artifact.read\"],\"rollback_target\":\"genome:0\"},\"constitution\":{\"forbid_implicit_authority_escalation\":true,\"forbid_self_verification\":true,\"mandatory_checks\":[\"budget\",\"regression\",\"security\",\"unit\"],\"max_candidate_cost_micro_usd\":5000000,\"minimum_independent_verifiers\":2,\"reject_any_failed_evidence\":true,\"require_known_parent\":true,\"require_rollback_target\":true,\"version\":\"constitution/v1\"},\"context\":{\"authority_grants\":{},\"known_artifact_hashes\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"known_lineage_ids\":[\"genome:0\"],\"lineage_capabilities\":{\"genome:0\":[\"artifact.read\"]}},\"evidence\":[{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"budget\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:budget\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:a\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"regression\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:regression\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:b\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"security\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:security\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:a\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"unit\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:unit\",\"independent\":true,\"status\":\"fail\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"agent:builder\"}],\"protocol_version\":\"promotion-input/v1\"}}"
+  },
+  "protocol_version": "promotion-input/v1"
+}

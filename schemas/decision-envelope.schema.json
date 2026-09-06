@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/decision-envelope.schema.json",
+  "title": "Variaxiom promotion decision envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envelope_version", "kind", "payload"],
+  "properties": {
+    "envelope_version": { "const": "variaxiom-envelope/v1" },
+    "kind": { "const": "promotion-decision" },
+    "payload": { "$ref": "promotion.schema.json" }
+  }
+}

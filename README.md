@@ -14,6 +14,10 @@ Variaxiom makes that decision explicit, reproducible, and auditable.
 
 [Русская версия](README.ru.md) · [Architecture](docs/architecture/overview.md) · [Roadmap](docs/project/roadmap.md) · [Launch strategy](docs/launch/launch-strategy.ru.md)
 
+Contributors and coding agents should begin with the
+[current development context](docs/project/current.md) and
+[context index](docs/context/index.md).
+
 > **Status:** pre-alpha research seed. The repository contains a runnable reference slice, schemas, a Rust kernel scaffold, and the project design. It is not a production autonomy platform.
 
 ## The one-minute idea
@@ -177,7 +181,11 @@ examples/           Minimal demonstrations
 docs/architecture/ Architecture, security, memory, evolution, and ADRs
 docs/research/     Prior-art analysis and research agenda
 docs/project/      Charter, roadmap, metrics, risks, and expert council
+docs/product/      Stable requirements and explicit MVP scope
+docs/specs/        Acceptance-driven specifications for active increments
+docs/context/      Minimal task-specific context routing
 docs/launch/       Positioning, community, founder, sponsor, and launch plans
+fixtures/          Shared cross-language protocol conformance vectors
 ```
 
 ## Contributing

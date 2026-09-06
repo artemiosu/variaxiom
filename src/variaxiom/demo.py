@@ -126,7 +126,7 @@ def run_demo(root: Path, *, reset: bool = False) -> dict[str, JSONValue]:
         rollback_target=GENESIS_ID,
         baseline_capabilities=baseline_caps,
         requested_capabilities=baseline_caps | {"network.unrestricted"},
-        estimated_cost_usd=0.03,
+        estimated_cost_micro_usd=30_000,
         metadata={"hypothesis": "The tool needs unrestricted network access."},
     )
     safe = Candidate(
@@ -137,13 +137,14 @@ def run_demo(root: Path, *, reset: bool = False) -> dict[str, JSONValue]:
         rollback_target=GENESIS_ID,
         baseline_capabilities=baseline_caps,
         requested_capabilities=baseline_caps,
-        estimated_cost_usd=0.03,
+        estimated_cost_micro_usd=30_000,
         metadata={"hypothesis": "The tool can run without new authority."},
     )
 
     context = PromotionContext(
         known_lineage_ids=frozenset({GENESIS_ID}),
         known_artifact_hashes=frozenset({genesis_hash, tool_hash}),
+        lineage_capabilities={GENESIS_ID: baseline_caps},
     )
     gate = PromotionGate(Constitution.default())
 

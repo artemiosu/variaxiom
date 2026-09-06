@@ -18,7 +18,11 @@ Evidence references the candidate and artifact hash, evaluator identity/version,
 
 ### Promotion decision
 
-A decision records constitution version, exact evidence set, capability grant, accepted/rejected status, reasons, selector identity, timestamp, and decision hash.
+A decision records constitution and gate versions, the relevant evidence IDs, accepted/rejected
+status, stable reasons, and the digest of the complete promotion input. That input digest commits
+to the selected capability grant, candidate, full evidence, trusted context, and exact policy.
+The canonical decision-envelope digest is its identity. Selector identity, time, and signatures
+belong to the later signed lineage event rather than the deterministic gate result.
 
 ### Event
 
@@ -30,7 +34,16 @@ A lease records subject, operation/resource constraints, budgets, expiry, parent
 
 ## Canonicalization
 
-The bootstrap uses deterministic JSON serialization and SHA-256. Production design must define Unicode normalization, number representation, schema versioning, large binary handling, and signature envelopes explicitly.
+The v1 protocol profile is defined normatively in the active
+[cross-language conformance specification](../specs/m1.1-cross-language-conformance.md). It uses
+UTF-8 deterministic JSON, sorted object keys and set-like arrays, integers restricted to the
+interoperable safe range, explicit envelope versions, and SHA-256. Floats are excluded from the
+signed surface. Unicode is preserved without normalization, so distinct code-point sequences
+remain distinct inputs.
+
+Artifact hashes cover exact artifact bytes. Protocol digests cover canonical JSON without a
+trailing newline. Event hashes cover the canonical event body without its `hash` field; JSONL
+record separators are not part of event identity.
 
 ## Event sourcing boundary
 

@@ -1,10 +1,13 @@
 # GitHub publication and repository settings
 
-This checklist converts the local seed into the public repository `artemiosu/variaxiom`.
+This checklist records and maintains the public repository `artemiosu/variaxiom`. The initial
+repository, `main` push, Discussions, Pages, security automation, topics, and founder-compatible
+branch protection were applied on 2026-09-06. Treat GitHub settings as external state and verify
+them again before claiming they remain enabled.
 
-## 1. Create and push
+## 1. Create and push (completed)
 
-The local repository is prepared with `main` as the default branch and the intended remote URL. After GitHub access is connected:
+The local repository tracks the HTTPS remote because SSH key authentication was unavailable:
 
 ```bash
 git push -u origin main
@@ -39,8 +42,9 @@ open-source
 
 - upload `assets/social-preview.png` as the social preview;
 - keep the wordmark in the README;
-- enable Releases and Discussions;
-- link the future Pages site from the repository website field.
+- keep Discussions enabled and maintain its initial categories;
+- keep the live Pages site linked from the repository website field;
+- enable Releases when the first tagged release is ready.
 
 ## 5. General settings
 
@@ -79,9 +83,7 @@ Create a branch ruleset with:
 - require signed commits when operationally feasible;
 - block force pushes and deletion;
 - require status checks:
-  - Python 3.13 reference plane;
-  - Python 3.14 reference plane;
-  - Rust trusted-kernel scaffold;
+  - Required checks;
   - Dependency review;
 - require linear history;
 - do not allow administrator bypass for security-critical changes except a documented break-glass path.
@@ -100,7 +102,8 @@ Use trusted publishing/OIDC rather than long-lived publication tokens.
 
 ## 8. GitHub Pages
 
-The static site lives in `docs/` and requires no build system.
+The static site was observed live on 2026-09-06. It lives in `docs/` and requires no build
+system. Treat these settings as external state and recheck them after repository-rule changes.
 
 - Pages source: deploy from branch;
 - branch: `main`;

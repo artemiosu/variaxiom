@@ -1,6 +1,7 @@
 # GitHub Copilot instructions
 
 Follow `AGENTS.md` and the constitutional invariants in `constitution/`.
+Start from `docs/project/current.md` and the task routing in `docs/context/index.md`.
 
 - Preserve proposer/verifier/selector/deployer separation.
 - Never turn increased capability into implicit authority.

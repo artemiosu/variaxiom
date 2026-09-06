@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/promotion-input.schema.json",
+  "title": "Variaxiom promotion input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "candidate",
+    "evidence",
+    "context",
+    "authority_grant_id",
+    "constitution"
+  ],
+  "properties": {
+    "protocol_version": { "const": "promotion-input/v1" },
+    "candidate": { "$ref": "candidate.schema.json" },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "evidence.schema.json" }
+    },
+    "context": { "$ref": "promotion-context.schema.json" },
+    "authority_grant_id": {
+      "oneOf": [
+        { "$ref": "#/$defs/token" },
+        { "type": "null" }
+      ]
+    },
+    "constitution": { "$ref": "constitution.schema.json" }
+  },
+  "$defs": {
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "[\\u0000-\\u001f\\u007f]" }
+    }
+  }
+}

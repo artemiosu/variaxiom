@@ -1,0 +1,125 @@
+{
+  "authority_grant_id": null,
+  "candidate": {
+    "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "baseline_capabilities": [
+      "artifact.read"
+    ],
+    "candidate_id": "candidate:fixture",
+    "estimated_cost_micro_usd": 5000001,
+    "metadata": {
+      "label": "ограниченный вариант",
+      "reproducible": true
+    },
+    "parent_id": "genome:0",
+    "proposer": "agent:builder",
+    "requested_capabilities": [
+      "artifact.read"
+    ],
+    "rollback_target": "genome:0"
+  },
+  "case_id": "cost-limit-rejected",
+  "constitution": {
+    "forbid_implicit_authority_escalation": true,
+    "forbid_self_verification": true,
+    "mandatory_checks": [
+      "budget",
+      "regression",
+      "security",
+      "unit"
+    ],
+    "max_candidate_cost_micro_usd": 5000000,
+    "minimum_independent_verifiers": 2,
+    "reject_any_failed_evidence": true,
+    "require_known_parent": true,
+    "require_rollback_target": true,
+    "version": "constitution/v1"
+  },
+  "context": {
+    "authority_grants": {},
+    "known_artifact_hashes": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "known_lineage_ids": [
+      "genome:0"
+    ],
+    "lineage_capabilities": {
+      "genome:0": [
+        "artifact.read"
+      ]
+    }
+  },
+  "evidence": [
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "budget",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:budget",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:a"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "regression",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:regression",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:b"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "security",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:security",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:a"
+    },
+    {
+      "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": "unit",
+      "details": {
+        "attempts": 1
+      },
+      "evidence_id": "e:unit",
+      "independent": true,
+      "status": "pass",
+      "subject_id": "candidate:fixture",
+      "verifier": "verifier:b"
+    }
+  ],
+  "expected": {
+    "decision": {
+      "candidate_id": "candidate:fixture",
+      "constitution_version": "constitution/v1",
+      "evidence_ids": [
+        "e:budget",
+        "e:regression",
+        "e:security",
+        "e:unit"
+      ],
+      "gate_version": "proof-gate/v1",
+      "input_digest": "a0bad34a117c101e1712e97f1d87cf87f826a462b2b30d796049d95e5459e71c",
+      "reasons": [
+        "candidate.cost_limit_exceeded"
+      ],
+      "status": "rejected"
+    },
+    "decision_digest": "791f20bd5d372597a5bcdafe7b4f8f05d47fc00d30c234163cd03628143eb94d",
+    "decision_envelope_json": "{\"envelope_version\":\"variaxiom-envelope/v1\",\"kind\":\"promotion-decision\",\"payload\":{\"candidate_id\":\"candidate:fixture\",\"constitution_version\":\"constitution/v1\",\"evidence_ids\":[\"e:budget\",\"e:regression\",\"e:security\",\"e:unit\"],\"gate_version\":\"proof-gate/v1\",\"input_digest\":\"a0bad34a117c101e1712e97f1d87cf87f826a462b2b30d796049d95e5459e71c\",\"reasons\":[\"candidate.cost_limit_exceeded\"],\"status\":\"rejected\"}}",
+    "input_digest": "a0bad34a117c101e1712e97f1d87cf87f826a462b2b30d796049d95e5459e71c",
+    "input_envelope_json": "{\"envelope_version\":\"variaxiom-envelope/v1\",\"kind\":\"promotion-input\",\"payload\":{\"authority_grant_id\":null,\"candidate\":{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"baseline_capabilities\":[\"artifact.read\"],\"candidate_id\":\"candidate:fixture\",\"estimated_cost_micro_usd\":5000001,\"metadata\":{\"label\":\"ограниченный вариант\",\"reproducible\":true},\"parent_id\":\"genome:0\",\"proposer\":\"agent:builder\",\"requested_capabilities\":[\"artifact.read\"],\"rollback_target\":\"genome:0\"},\"constitution\":{\"forbid_implicit_authority_escalation\":true,\"forbid_self_verification\":true,\"mandatory_checks\":[\"budget\",\"regression\",\"security\",\"unit\"],\"max_candidate_cost_micro_usd\":5000000,\"minimum_independent_verifiers\":2,\"reject_any_failed_evidence\":true,\"require_known_parent\":true,\"require_rollback_target\":true,\"version\":\"constitution/v1\"},\"context\":{\"authority_grants\":{},\"known_artifact_hashes\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"known_lineage_ids\":[\"genome:0\"],\"lineage_capabilities\":{\"genome:0\":[\"artifact.read\"]}},\"evidence\":[{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"budget\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:budget\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:a\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"regression\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:regression\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:b\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"security\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:security\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:a\"},{\"artifact_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"check\":\"unit\",\"details\":{\"attempts\":1},\"evidence_id\":\"e:unit\",\"independent\":true,\"status\":\"pass\",\"subject_id\":\"candidate:fixture\",\"verifier\":\"verifier:b\"}],\"protocol_version\":\"promotion-input/v1\"}}"
+  },
+  "protocol_version": "promotion-input/v1"
+}

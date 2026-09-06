@@ -12,6 +12,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
+from .canonical import JSONValue
 from .domain import Candidate, Evidence
 
 
@@ -19,7 +20,7 @@ from .domain import Candidate, Evidence
 class CheckResult:
     check: str
     passed: bool
-    details: dict[str, str | int | float | bool]
+    details: dict[str, JSONValue]
 
 
 def normalize_slug(value: str) -> str:
@@ -57,8 +58,7 @@ def evaluate_slug_tool(candidate: Candidate) -> list[Evidence]:
         CheckResult("unit", not mismatches, {"cases": len(cases), "mismatches": len(mismatches)}),
         CheckResult(
             "regression",
-            normalize_slug("Agents Mutate Evidence Decides")
-            == "agents-mutate-evidence-decides",
+            normalize_slug("Agents Mutate Evidence Decides") == "agents-mutate-evidence-decides",
             {"fixture": "tagline"},
         ),
         CheckResult(
@@ -68,8 +68,8 @@ def evaluate_slug_tool(candidate: Candidate) -> list[Evidence]:
         ),
         CheckResult(
             "budget",
-            candidate.estimated_cost_usd <= 5.0,
-            {"estimated_cost_usd": candidate.estimated_cost_usd},
+            candidate.estimated_cost_micro_usd <= 5_000_000,
+            {"estimated_cost_micro_usd": candidate.estimated_cost_micro_usd},
         ),
     ]
 

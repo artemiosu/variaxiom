@@ -3,6 +3,10 @@
 This repository studies proof-gated evolution. Automated contributors must preserve the
 boundary between proposing a change and authorizing it.
 
+Before changing code, read `docs/project/current.md`, then use `docs/context/index.md` to load
+the smallest relevant context pack. The active specification and `docs/product/requirements.md`
+are normative; update `docs/project/traceability.md` with implementation evidence.
+
 ## Non-negotiable invariants
 
 - Treat working agents as **soma**: they may propose candidates, never write directly to the

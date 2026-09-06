@@ -26,7 +26,7 @@ no_autonomous_financial_authority = true
 [promotion]
 mandatory_checks = ["unit", "regression", "security", "budget"]
 minimum_independent_verifiers = 2
-max_candidate_cost_usd = 5.0
+max_candidate_cost_micro_usd = 5000000
 require_content_addressed_artifact = true
 require_lineage_record = true
 require_reproducible_evaluation = true

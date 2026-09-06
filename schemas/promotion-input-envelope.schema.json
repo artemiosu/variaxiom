@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/promotion-input-envelope.schema.json",
+  "title": "Variaxiom promotion input envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envelope_version", "kind", "payload"],
+  "properties": {
+    "envelope_version": { "const": "variaxiom-envelope/v1" },
+    "kind": { "const": "promotion-input" },
+    "payload": { "$ref": "promotion-input.schema.json" }
+  }
+}

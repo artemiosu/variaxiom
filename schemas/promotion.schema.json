@@ -4,20 +4,57 @@
   "title": "Variaxiom promotion decision",
   "type": "object",
   "additionalProperties": false,
-  "required": ["candidate_id", "status", "reasons", "evidence_ids", "gate_version"],
+  "required": [
+    "candidate_id",
+    "status",
+    "reasons",
+    "evidence_ids",
+    "input_digest",
+    "constitution_version",
+    "gate_version"
+  ],
   "properties": {
-    "candidate_id": { "type": "string", "minLength": 1 },
+    "candidate_id": { "$ref": "#/$defs/token" },
     "status": { "enum": ["accepted", "rejected"] },
     "reasons": {
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string", "minLength": 1 }
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "not": { "pattern": "[\\u0000-\\u001f\\u007f]" },
+        "pattern": "^(artifact\\.not_verified|authority\\.baseline_(mismatch|unknown)|candidate\\.cost_limit_exceeded|evidence\\.verifier_diversity|lineage\\.parent_unknown|promotion\\.accepted|rollback\\.target_unknown|authority\\.not_granted:[^,\\u0000-\\u001f\\u007f]+(,[^,\\u0000-\\u001f\\u007f]+)*|evidence\\.(artifact_mismatch|self_verification):[^\\u0000-\\u001f\\u007f]+|evidence\\.failed:[^\\u0000-\\u001f\\u007f]+:(fail|error)|evidence\\.missing_check:[^\\u0000-\\u001f\\u007f]+)$"
+      }
     },
     "evidence_ids": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "$ref": "#/$defs/token" }
     },
-    "gate_version": { "type": "string", "minLength": 1 }
+    "input_digest": { "$ref": "#/$defs/sha256" },
+    "constitution_version": { "const": "constitution/v1" },
+    "gate_version": { "const": "proof-gate/v1" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "accepted" } } },
+      "then": { "properties": { "reasons": { "const": ["promotion.accepted"] } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "rejected" } } },
+      "then": {
+        "properties": {
+          "reasons": { "not": { "contains": { "const": "promotion.accepted" } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "[\\u0000-\\u001f\\u007f]" }
+    }
   }
 }

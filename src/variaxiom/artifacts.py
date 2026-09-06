@@ -37,9 +37,7 @@ class ArtifactStore:
                 raise RuntimeError(f"Digest collision or artifact corruption: {digest}")
             return digest
 
-        descriptor, temporary_name = tempfile.mkstemp(
-            prefix=f".{digest}.", dir=destination.parent
-        )
+        descriptor, temporary_name = tempfile.mkstemp(prefix=f".{digest}.", dir=destination.parent)
         temporary = Path(temporary_name)
         try:
             with os.fdopen(descriptor, "wb") as handle:
@@ -48,9 +46,11 @@ class ArtifactStore:
                 os.fsync(handle.fileno())
             try:
                 os.link(temporary, destination)
-            except FileExistsError:
+            except FileExistsError as error:
                 if destination.read_bytes() != data:
-                    raise RuntimeError(f"Artifact changed during concurrent write: {digest}")
+                    raise RuntimeError(
+                        f"Artifact changed during concurrent write: {digest}"
+                    ) from error
             finally:
                 temporary.unlink(missing_ok=True)
         except Exception:

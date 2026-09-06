@@ -41,7 +41,7 @@ def render_demo_report(report: dict[str, JSONValue], destination: Path) -> Path:
                   <div class="decision-head">
                     <div>
                       <p class="eyebrow">candidate</p>
-                      <h2>{_text(raw.get('candidate_id', 'unknown'))}</h2>
+                      <h2>{_text(raw.get("candidate_id", "unknown"))}</h2>
                     </div>
                     <span class="badge {badge_class}">{badge_label}</span>
                   </div>
@@ -116,11 +116,11 @@ def render_demo_report(report: dict[str, JSONValue], destination: Path) -> Path:
   <h1>Agents mutate.<br>Evidence decides.</h1>
   <p class="lead">The Authority Test proves a simple boundary: functional success does not silently expand an agent's permission to act.</p>
   <div class="principle"><strong>Same implementation. Same passing tests.</strong> Different authority request — different constitutional outcome.</div>
-  <section class="grid">{''.join(cards)}</section>
+  <section class="grid">{"".join(cards)}</section>
   <section class="ledger" aria-label="Lineage ledger status">
     <div class="metric"><span class="eyebrow">ledger</span><b class="{ledger_class}">{ledger_label}</b></div>
-    <div class="metric"><span class="eyebrow">events</span><b>{_text(ledger.get('event_count', 0))}</b></div>
-    <div class="metric"><span class="eyebrow">head hash</span><b><code>{_text(str(ledger.get('head_hash', ''))[:16])}…</code></b></div>
+    <div class="metric"><span class="eyebrow">events</span><b>{_text(ledger.get("event_count", 0))}</b></div>
+    <div class="metric"><span class="eyebrow">head hash</span><b><code>{_text(str(ledger.get("head_hash", ""))[:16])}…</code></b></div>
   </section>
   <p class="footer">Generated from the hash-chained Variaxiom demo report. Dynamic values are escaped; no candidate-provided executable content is rendered.</p>
 </main>
@@ -129,6 +129,6 @@ def render_demo_report(report: dict[str, JSONValue], destination: Path) -> Path:
 """
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(document, encoding="utf-8")
+    temporary.write_bytes(document.encode("utf-8"))
     temporary.replace(destination)
     return destination

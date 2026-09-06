@@ -14,6 +14,7 @@ class PromotionGateTests(unittest.TestCase):
         self.context = PromotionContext(
             known_lineage_ids=frozenset({self.parent}),
             known_artifact_hashes=frozenset({self.artifact}),
+            lineage_capabilities={self.parent: frozenset({"artifact.read"})},
         )
         self.gate = PromotionGate(Constitution.default())
 
@@ -26,7 +27,7 @@ class PromotionGateTests(unittest.TestCase):
             "rollback_target": self.parent,
             "baseline_capabilities": frozenset({"artifact.read"}),
             "requested_capabilities": frozenset({"artifact.read"}),
-            "estimated_cost_usd": 0.10,
+            "estimated_cost_micro_usd": 100_000,
         }
         values.update(overrides)
         return Candidate(**values)  # type: ignore[arg-type]
@@ -68,6 +69,7 @@ class PromotionGateTests(unittest.TestCase):
             known_lineage_ids=self.context.known_lineage_ids,
             known_artifact_hashes=self.context.known_artifact_hashes,
             authority_grants={"grant:owner-1": frozenset({"network.example.com"})},
+            lineage_capabilities=self.context.lineage_capabilities,
         )
         decision = self.gate.decide(
             candidate,
@@ -76,6 +78,16 @@ class PromotionGateTests(unittest.TestCase):
             authority_grant_id="grant:owner-1",
         )
         self.assertTrue(decision.accepted)
+
+    def test_rejects_spoofed_candidate_authority_baseline(self) -> None:
+        candidate = self.candidate(
+            baseline_capabilities=frozenset({"artifact.read", "network.unrestricted"}),
+            requested_capabilities=frozenset({"artifact.read", "network.unrestricted"}),
+        )
+        decision = self.gate.decide(candidate, self.evidence(candidate), self.context)
+        self.assertFalse(decision.accepted)
+        self.assertIn("authority.baseline_mismatch", decision.reasons)
+        self.assertIn("authority.not_granted:network.unrestricted", decision.reasons)
 
     def test_rejects_self_verification(self) -> None:
         candidate = self.candidate()
@@ -91,7 +103,7 @@ class PromotionGateTests(unittest.TestCase):
         )
         decision = self.gate.decide(candidate, evidence, self.context)
         self.assertFalse(decision.accepted)
-        self.assertIn("self-verification", " ".join(decision.reasons))
+        self.assertIn("self_verification", " ".join(decision.reasons))
 
     def test_rejects_missing_rollback_target(self) -> None:
         candidate = self.candidate(rollback_target="missing")

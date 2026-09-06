@@ -45,12 +45,8 @@ fn main() {
         authority_grants: BTreeMap::new(),
     };
 
-    let decision = PromotionGate::new(Constitution::default()).decide(
-        &candidate,
-        &evidence,
-        &context,
-        None,
-    );
+    let decision =
+        PromotionGate::new(Constitution::default()).decide(&candidate, &evidence, &context, None);
 
     println!("accepted={}", decision.accepted);
     for reason in decision.reasons {

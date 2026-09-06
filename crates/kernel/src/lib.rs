@@ -58,7 +58,10 @@ impl PromotionGate {
     ) -> PromotionDecision {
         let mut reasons = Vec::new();
 
-        if !context.known_artifact_hashes.contains(&candidate.artifact_hash) {
+        if !context
+            .known_artifact_hashes
+            .contains(&candidate.artifact_hash)
+        {
             reasons.push("candidate artifact is absent or not integrity-verified".into());
         }
         if !context.known_lineage_ids.contains(&candidate.parent_id) {
@@ -221,7 +224,12 @@ mod tests {
             None,
         );
         assert!(!decision.accepted);
-        assert!(decision.reasons.iter().any(|reason| reason.contains("authority")));
+        assert!(
+            decision
+                .reasons
+                .iter()
+                .any(|reason| reason.contains("authority"))
+        );
     }
 
     #[test]

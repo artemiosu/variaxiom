@@ -1,8 +1,8 @@
 # Project status
 
-**Version:** 0.1.0-alpha seed  
-**Maturity:** pre-alpha research implementation  
-**Primary public proof:** The Authority Test  
+**Version:** 0.1.0-alpha seed
+**Maturity:** pre-alpha research implementation
+**Primary public proof:** The Authority Test
 **Last status review:** 2026-09-06
 
 ## Implemented

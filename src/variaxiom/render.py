@@ -49,7 +49,7 @@ def render_demo_report(report: dict[str, JSONValue], destination: Path) -> Path:
                   <ul>{reason_items}</ul>
                   <p class="evidence-count">{len(evidence)} evidence records bound to this candidate</p>
                 </article>
-                """
+                """.strip()
             )
 
     ledger_raw = report.get("ledger", {})

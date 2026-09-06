@@ -66,8 +66,8 @@ mutation → evidence → protected gate → lineage
 
 ## 70–75 секунд — бренд
 
-> **Variaxiom**  
-> **Agents mutate. Evidence decides.**  
+> **Variaxiom**
+> **Agents mutate. Evidence decides.**
 > `github.com/artemiosu/variaxiom`
 
 ## Производственные правила

@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "variaxiom-lab"
+version = "0.1.0a0"
+description = "A proof-gated evolutionary substrate for AI agents."
+readme = "README.md"
+requires-python = ">=3.13,<3.16"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Artem / artemiosu" }
+]
+keywords = [
+  "ai-agents",
+  "agent-harness",
+  "self-improving-agents",
+  "agent-evaluation",
+  "capability-security",
+  "evolutionary-computation",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Testing",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/artemiosu/variaxiom"
+Repository = "https://github.com/artemiosu/variaxiom"
+Issues = "https://github.com/artemiosu/variaxiom/issues"
+Documentation = "https://github.com/artemiosu/variaxiom/tree/main/docs"
+
+[project.scripts]
+variaxiom = "variaxiom.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/variaxiom"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+include = ["src", "tests"]

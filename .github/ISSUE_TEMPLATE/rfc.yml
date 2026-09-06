@@ -1,0 +1,38 @@
+name: Architecture RFC
+description: Propose a change to architecture, invariants, or governance
+title: "rfc: "
+labels: ["rfc", "architecture"]
+body:
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision to make
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and constraints
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evaluation and rollback plan
+    validations:
+      required: true
+  - type: checkboxes
+    id: sensitive
+    attributes:
+      label: Sensitive areas
+      options:
+        - label: Changes constitutional invariants
+        - label: Changes evaluator independence
+        - label: Changes capability authority
+        - label: Changes lineage or audit guarantees

@@ -1,0 +1,7 @@
+# Initial stewardship. Replace broad ownership with domain teams as the
+# contributor base grows.
+* @artemiosu
+/constitution/ @artemiosu
+/docs/architecture/ @artemiosu
+/src/variaxiom/promotion.py @artemiosu
+/src/variaxiom/ledger.py @artemiosu

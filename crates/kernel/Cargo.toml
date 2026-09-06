@@ -1,0 +1,15 @@
+[package]
+name = "variaxiom-kernel"
+description = "Minimal trusted promotion gate for proof-gated agent evolution."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+variaxiom-protocol = { path = "../protocol" }
+
+[lints]
+workspace = true

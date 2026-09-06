@@ -1,0 +1,58 @@
+package variaxiom:tool@0.1.0;
+
+interface host-log {
+  enum level {
+    debug,
+    info,
+    warning,
+    error,
+  }
+
+  write: func(level: level, message: string);
+}
+
+interface capability {
+  record request {
+    name: string,
+    resource: string,
+    operation: string,
+    max-uses: u32,
+  }
+
+  record lease {
+    id: string,
+    expires-at-unix-ms: u64,
+    remaining-uses: u32,
+  }
+
+  request-lease: func(request: request) -> result<lease, string>;
+}
+
+interface tool {
+  record invocation {
+    invocation-id: string,
+    input-json: list<u8>,
+    budget-ms: u64,
+    output-limit-bytes: u64,
+  }
+
+  record outcome {
+    output-json: list<u8>,
+    evidence-json: list<u8>,
+  }
+
+  variant tool-error {
+    invalid-input(string),
+    denied(string),
+    resource-exhausted(string),
+    internal(string),
+  }
+
+  run: func(invocation: invocation) -> result<outcome, tool-error>;
+}
+
+world generated-tool {
+  import host-log;
+  import capability;
+  export tool;
+}

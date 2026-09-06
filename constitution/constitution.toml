@@ -1,0 +1,46 @@
+[constitution]
+name = "Variaxiom Constitution"
+version = "constitution/v1"
+status = "bootstrap"
+owner = "human-governed project"
+
+[identity]
+purpose = "Accumulate externally verified agent capabilities without allowing capability growth to silently expand authority."
+public_tagline = "Agents mutate. Evidence decides."
+
+[invariants]
+require_known_parent = true
+require_rollback_target = true
+forbid_self_verification = true
+forbid_implicit_authority_escalation = true
+reject_any_failed_evidence = true
+human_can_pause = true
+human_can_revoke_authority = true
+working_agents_cannot_modify_constitution = true
+working_agents_cannot_read_hidden_evaluators = true
+working_agents_cannot_promote_themselves = true
+no_unbounded_replication = true
+no_terminal_self_preservation_objective = true
+no_autonomous_financial_authority = true
+
+[promotion]
+mandatory_checks = ["unit", "regression", "security", "budget"]
+minimum_independent_verifiers = 2
+max_candidate_cost_usd = 5.0
+require_content_addressed_artifact = true
+require_lineage_record = true
+require_reproducible_evaluation = true
+require_explicit_authority_grant = true
+
+[resource_limits]
+default_spawn_budget = 0
+default_network_access = "none"
+default_secret_access = "none"
+default_external_write_access = "none"
+
+[amendment]
+proposal_requires_rfc = true
+independent_reviewers = 2
+human_steward_approval = true
+rollback_plan_required = true
+migration_dry_run_required = true

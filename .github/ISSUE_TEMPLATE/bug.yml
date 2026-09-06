@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible defect
+title: "bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you. Evidence beats confidence: please include a minimal reproduction."
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Commands, inputs, and the smallest relevant trace.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: authority
+    attributes:
+      label: Security or authority impact
+      description: Note any unexpected file, network, secret, process, or permission access.

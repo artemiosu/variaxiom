@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Variaxiom in research, please cite this software."
+title: "Variaxiom: a proof-gated evolutionary substrate for AI agents"
+type: software
+authors:
+  - family-names: "artemiosu"
+    given-names: "Artem"
+repository-code: "https://github.com/artemiosu/variaxiom"
+url: "https://github.com/artemiosu/variaxiom"
+license: Apache-2.0
+version: 0.1.0-alpha
+release-date: 2026-09-06
+keywords:
+  - AI agents
+  - agent harness
+  - recursive self-improvement
+  - evaluation
+  - capability security

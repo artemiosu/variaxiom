@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/protocol",
+  "crates/kernel",
+  "crates/cli",
+]
+
+[workspace.package]
+version = "0.1.0-alpha.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.85"
+authors = ["Artem / artemiosu and Variaxiom contributors"]
+repository = "https://github.com/artemiosu/variaxiom"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = "warn"

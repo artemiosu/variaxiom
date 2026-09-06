@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/event.schema.json",
+  "title": "Variaxiom lineage event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sequence",
+    "timestamp",
+    "kind",
+    "actor",
+    "payload",
+    "previous_hash",
+    "hash"
+  ],
+  "properties": {
+    "sequence": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "kind": { "type": "string", "minLength": 1 },
+    "actor": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" },
+    "previous_hash": { "$ref": "#/$defs/sha256" },
+    "hash": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

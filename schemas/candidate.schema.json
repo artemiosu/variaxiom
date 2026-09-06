@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/candidate.schema.json",
+  "title": "Variaxiom inheritable-change candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "parent_id",
+    "artifact_hash",
+    "proposer",
+    "rollback_target",
+    "baseline_capabilities",
+    "requested_capabilities",
+    "estimated_cost_usd"
+  ],
+  "properties": {
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "parent_id": { "type": "string", "minLength": 1 },
+    "artifact_hash": { "$ref": "#/$defs/sha256" },
+    "proposer": { "type": "string", "minLength": 1 },
+    "rollback_target": { "type": "string", "minLength": 1 },
+    "baseline_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "requested_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "estimated_cost_usd": { "type": "number", "minimum": 0 },
+    "metadata": { "type": "object" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

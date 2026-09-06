@@ -1,0 +1,45 @@
+{
+  "artifact_hash": "08c57d5c63825376d22177367f9f2275532c0e3efa71dac9e5767c8fb547ccf4",
+  "decisions": [
+    {
+      "candidate_id": "candidate:slug-tool-unbounded",
+      "evidence_ids": [
+        "candidate:slug-tool-unbounded:budget",
+        "candidate:slug-tool-unbounded:regression",
+        "candidate:slug-tool-unbounded:security",
+        "candidate:slug-tool-unbounded:unit"
+      ],
+      "gate_version": "proof-gate/v1",
+      "reasons": [
+        "candidate requests authority not covered by an explicit external grant: network.unrestricted"
+      ],
+      "status": "rejected"
+    },
+    {
+      "candidate_id": "candidate:slug-tool-bounded",
+      "evidence_ids": [
+        "candidate:slug-tool-bounded:budget",
+        "candidate:slug-tool-bounded:regression",
+        "candidate:slug-tool-bounded:security",
+        "candidate:slug-tool-bounded:unit"
+      ],
+      "gate_version": "proof-gate/v1",
+      "reasons": [
+        "all constitutional promotion gates passed"
+      ],
+      "status": "accepted"
+    }
+  ],
+  "fixture": "authority-test/v1",
+  "ledger": {
+    "errors": [],
+    "event_count": 14,
+    "head_hash": "ba30063e36b5f184af58273c08f886635053e3e15b427e7354defdfdc2e64fdc",
+    "valid": true
+  },
+  "lesson": "Passing tests does not grant authority. The unbounded candidate is rejected; the capability-bounded candidate is promoted.",
+  "project": "Variaxiom",
+  "reproducibility": "deterministic timestamps and canonical JSON",
+  "tagline": "Agents mutate. Evidence decides.",
+  "workspace": ".variaxiom"
+}

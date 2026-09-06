@@ -1,0 +1,30 @@
+name: Capability proposal
+description: Propose a user-facing capability or developer improvement
+title: "capability: "
+labels: ["proposal", "needs-evidence"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and affected user
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Verifiable outcome
+      description: How will we know this works outside a demo?
+    validations:
+      required: true
+  - type: textarea
+    id: minimal
+    attributes:
+      label: Smallest experiment
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Failure modes and authority impact
+    validations:
+      required: true

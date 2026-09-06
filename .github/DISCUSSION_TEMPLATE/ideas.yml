@@ -1,0 +1,15 @@
+title: "Idea: "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+      description: What do you believe, and what observation could falsify it?
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: Small experiment
+      description: Describe a bounded, reversible way to test the idea.

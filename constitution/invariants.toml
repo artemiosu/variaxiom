@@ -1,0 +1,61 @@
+# Human-readable registry of machine-enforced invariant identifiers.
+
+[[invariant]]
+id = "VX-INV-001"
+name = "Capability is not authority"
+statement = "Improved reasoning or task performance never grants additional external permissions."
+owner = "constitutional-kernel"
+
+[[invariant]]
+id = "VX-INV-002"
+name = "No direct soma-to-germline write"
+statement = "A working agent may propose a change but cannot make it inheritable."
+owner = "promotion-gate"
+
+[[invariant]]
+id = "VX-INV-003"
+name = "Independent evidence"
+statement = "The proposer cannot be the sole verifier, evaluator, selector, and deployer."
+owner = "evaluation-plane"
+
+[[invariant]]
+id = "VX-INV-004"
+name = "Rollback survives promotion"
+statement = "The last known viable lineage remains addressable after every promotion."
+owner = "lineage-ledger"
+
+[[invariant]]
+id = "VX-INV-005"
+name = "Authority is leased"
+statement = "External capabilities are scoped, time-bounded, budgeted, auditable, and revocable."
+owner = "capability-broker"
+
+[[invariant]]
+id = "VX-INV-006"
+name = "No autonomous terminal survival drive"
+statement = "The system may maintain service continuity under policy, but self-preservation is not a terminal objective."
+owner = "constitution"
+
+[[invariant]]
+id = "VX-INV-007"
+name = "No unbounded reproduction"
+statement = "Every spawned agent has a parent, mission, budget, expiry, permissions, and termination condition."
+owner = "population-controller"
+
+[[invariant]]
+id = "VX-INV-008"
+name = "Evaluators are protected"
+statement = "Candidates cannot read hidden tests or modify the evaluator that decides their promotion."
+owner = "evaluation-plane"
+
+[[invariant]]
+id = "VX-INV-009"
+name = "Knowledge has provenance"
+statement = "Persistent claims record source, scope, confidence, time, and invalidation conditions."
+owner = "memory-system"
+
+[[invariant]]
+id = "VX-INV-010"
+name = "Reality outranks self-report"
+statement = "Claims of improvement require reproducible external outcomes, not model confidence."
+owner = "promotion-gate"

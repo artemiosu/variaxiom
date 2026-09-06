@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/promotion.schema.json",
+  "title": "Variaxiom promotion decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidate_id", "status", "reasons", "evidence_ids", "gate_version"],
+  "properties": {
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["accepted", "rejected"] },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "evidence_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "gate_version": { "type": "string", "minLength": 1 }
+  }
+}

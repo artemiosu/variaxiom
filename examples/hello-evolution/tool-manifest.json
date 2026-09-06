@@ -1,0 +1,33 @@
+{
+  "name": "slug-normalizer",
+  "version": "1.0.0-candidate",
+  "artifact_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "interface": {
+    "wit_world": "variaxiom:tool/generated-tool@0.1.0",
+    "input_schema": "schemas/input.schema.json",
+    "output_schema": "schemas/output.schema.json"
+  },
+  "effects": {
+    "filesystem": [],
+    "network": [],
+    "processes": [],
+    "secrets": []
+  },
+  "limits": {
+    "cpu_ms": 100,
+    "memory_mb": 32,
+    "wall_ms": 500,
+    "output_bytes": 4096
+  },
+  "build": {
+    "source_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "builder": "bootstrap-demo",
+    "reproducible": true,
+    "provenance": null
+  },
+  "tests": ["unit", "regression", "security", "budget"],
+  "rollback": {
+    "previous_version": null,
+    "reversible": true
+  }
+}

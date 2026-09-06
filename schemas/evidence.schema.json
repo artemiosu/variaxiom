@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/evidence.schema.json",
+  "title": "Variaxiom evaluation evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_id",
+    "subject_id",
+    "artifact_hash",
+    "check",
+    "status",
+    "verifier",
+    "independent"
+  ],
+  "properties": {
+    "evidence_id": { "type": "string", "minLength": 1 },
+    "subject_id": { "type": "string", "minLength": 1 },
+    "artifact_hash": { "$ref": "#/$defs/sha256" },
+    "check": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["pass", "fail", "error"] },
+    "verifier": { "type": "string", "minLength": 1 },
+    "independent": { "type": "boolean" },
+    "details": { "type": "object" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 220" role="img" aria-labelledby="title desc">
+  <title id="title">Variaxiom</title>
+  <desc id="desc">Variaxiom wordmark with a protected axiom and variation paths.</desc>
+  <rect width="1024" height="220" rx="28" fill="#070a12"/>
+  <g transform="translate(35 20) scale(.7)">
+    <path d="M42 50 104 112M214 50l-62 62M42 206l62-62M214 206l-62-62" fill="none" stroke="#9f8cff" stroke-width="18" stroke-linecap="round"/>
+    <rect x="88" y="88" width="80" height="80" rx="20" transform="rotate(45 128 128)" fill="#101625" stroke="#62d9a7" stroke-width="12"/>
+    <circle cx="128" cy="128" r="13" fill="#f7f9ff"/>
+  </g>
+  <text x="245" y="112" fill="#f7f9ff" font-family="Inter, system-ui, sans-serif" font-size="76" font-weight="750" letter-spacing="-3">Variaxiom</text>
+  <text x="249" y="158" fill="#aeb8cc" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="500" letter-spacing=".8">AGENTS MUTATE. EVIDENCE DECIDES.</text>
+</svg>

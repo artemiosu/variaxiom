@@ -130,7 +130,7 @@
   },
   "required_checks": {
     "local": ["repository", "conformance-fixtures", "generated-demo", "ruff", "pyright", "python-tests", "ledger", "rust-fmt", "rust-test", "rust-clippy"],
-    "github": ["Required checks", "Dependency review"]
+    "github": ["Required checks", "dependency-review"]
   },
   "external_state": {
     "observed_on": "2026-09-06",

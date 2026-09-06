@@ -84,7 +84,7 @@ Create a branch ruleset with:
 - block force pushes and deletion;
 - require status checks:
   - Required checks;
-  - Dependency review;
+  - dependency-review;
 - require linear history;
 - do not allow administrator bypass for security-critical changes except a documented break-glass path.
 

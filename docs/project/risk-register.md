@@ -20,3 +20,5 @@
 | R16 | Governance capture or reviewer collusion | Low/Medium | Critical | same people control proposal/eval/promotion | role separation, public RFCs, reviewer diversity, signed decisions |
 | R17 | Funding pushes premature commercialization | Medium | High | roadmap shifts to demos without evaluation rigor | chartered non-negotiables, milestone-based sponsorship, transparent conflicts |
 | R18 | “Open source” leaks dangerous operational defaults | Medium | High | users enable broad host execution | bounded reference components, responsible scope, dangerous features excluded |
+| R19 | Signing keys are mistaken for principals or authority | Medium | Critical | self-generated or aliased keys pass role/independence checks | trusted principal/key/role snapshots, self-certifying key IDs, alias tests, no authority from signatures alone |
+| R20 | Valid signatures are replayed after expiry, revocation, or against adjacent objects | Medium | Critical | old grants authorize new candidates or mutable trust lookups change replay | exact subject/audience/digest binding, explicit evaluation time, committed revocation snapshot, replay tests |

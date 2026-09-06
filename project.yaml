@@ -24,23 +24,24 @@
     "risks": "docs/project/risk-register.md"
   },
   "active_increment": {
-    "id": "M1.1",
-    "title": "Cross-language canonical decision envelope",
-    "status": "implemented",
-    "verification": "independent_public_reproduction_passed_external_human_security_review_pending",
-    "specification": "docs/specs/m1.1-cross-language-conformance.md",
+    "id": "M2.1",
+    "title": "Identity, authority grants, and detached signatures",
+    "status": "in_progress",
+    "verification": "specification_proposed_security_review_and_implementation_pending",
+    "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",
-      "REQ-AUTH-001",
-      "REQ-EVID-001",
-      "REQ-PROM-001",
-      "REQ-LINE-001",
-      "REQ-REP-001"
+      "REQ-AUTH-002",
+      "REQ-TRUST-001",
+      "REQ-EVID-002",
+      "REQ-LINE-002",
+      "REQ-ID-001",
+      "REQ-SIG-001"
     ]
   },
   "next_increment": {
-    "id": "M2.1",
-    "title": "Identity, authority grants, and signature envelopes",
+    "id": "M2.2",
+    "title": "Transactional SQLite lineage and projections",
     "status": "planned",
     "specification": null
   },
@@ -53,6 +54,8 @@
     {"id": "REQ-AUTH-003", "status": "planned", "evidence": []},
     {"id": "REQ-TRUST-001", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/self-verification-and-failure-rejected.json"]},
     {"id": "REQ-TRUST-002", "status": "planned", "evidence": []},
+    {"id": "REQ-ID-001", "status": "planned", "evidence": ["docs/specs/m2.1-identity-grants-signatures.md"]},
+    {"id": "REQ-SIG-001", "status": "planned", "evidence": ["docs/specs/m2.1-identity-grants-signatures.md"]},
     {"id": "REQ-EVID-001", "status": "implemented", "evidence": ["fixtures/conformance/v1/promotion/foreign-artifact-evidence-rejected.json"]},
     {"id": "REQ-EVID-002", "status": "partial", "evidence": ["schemas/evidence.schema.json"]},
     {"id": "REQ-EVID-003", "status": "planned", "evidence": []},
@@ -103,12 +106,12 @@
       "observed_on": "2026-09-06",
       "check": "independent public clone, bootstrap, repository verification, Python and Rust conformance, deterministic Authority Test, ledger verification, clean worktree",
       "result": "passed",
-      "artifact": "REPRODUCIBILITY.md",
+      "artifact": "docs/reports/m1.1-independent-reproduction-2026-09-06.md",
       "url": "https://github.com/artemiosu/variaxiom/issues/3#issuecomment-5572672996"
     }
   ],
   "open_decisions": [
-    {"id": "DEC-001", "status": "planned", "target": "M2.1", "question": "Ed25519 library and public-key representation"},
+    {"id": "DEC-001", "status": "in_progress", "target": "M2.1", "question": "Review proposed Ed25519 libraries, detached signature domain, and raw public-key representation in ADR 0010"},
     {"id": "DEC-002", "status": "deferred", "target": "future-envelope", "question": "Adopt full RFC 8785/JCS in a new envelope version"},
     {"id": "DEC-003", "status": "planned", "target": "governance", "question": "Appoint a second trusted maintainer"},
     {"id": "DEC-004", "status": "deferred", "target": "M4", "question": "Select the first external harness adapter"}
@@ -116,10 +119,13 @@
   "risks": [
     {"id": "R4", "status": "active", "document": "docs/project/risk-register.md"},
     {"id": "R8", "status": "mitigating", "document": "docs/project/risk-register.md"},
-    {"id": "R10", "status": "active", "document": "docs/project/risk-register.md"}
+    {"id": "R10", "status": "active", "document": "docs/project/risk-register.md"},
+    {"id": "R19", "status": "active", "document": "docs/project/risk-register.md"},
+    {"id": "R20", "status": "active", "document": "docs/project/risk-register.md"}
   ],
   "blockers": [
     {"id": "independent-security-reviewer", "status": "open", "scope": "human review tracked by GitHub issue 5 for promotion-sensitive M1.1 and proposed M2.1 contract"},
+    {"id": "reproduction-report-publication", "status": "resolved", "scope": "published M1.1 evidence in closed issue 3"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
     {"id": "social-preview-upload", "status": "resolved", "scope": "GitHub repository social preview"}
   ],
@@ -133,8 +139,9 @@
   ],
   "context_packs": {
     "core": ["AGENTS.md", "docs/project/current.md", "docs/product/requirements.md", "docs/project/traceability.md"],
-    "protocol": ["docs/specs/m1.1-cross-language-conformance.md", "docs/architecture/data-model.md", "schemas", "fixtures/conformance"],
+    "protocol": ["docs/specs/m1.1-cross-language-conformance.md", "docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/data-model.md", "schemas", "fixtures/conformance"],
     "kernel": ["docs/architecture/overview.md", "docs/architecture/threat-model.md", "constitution/constitution.toml", "crates/kernel", "crates/protocol"],
+    "identity_signatures": ["docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/adr/0010-ed25519-detached-signatures.md", "docs/architecture/capability-security.md", "docs/project/risk-register.md"],
     "operations": ["REPRODUCIBILITY.md", "SECURITY.md", "docs/project/github-setup.md", ".github/workflows"]
   },
   "required_checks": {

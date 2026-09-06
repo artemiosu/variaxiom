@@ -21,6 +21,8 @@ behaviour that must remain true. Requirement identifiers are permanent and are n
 | REQ-AUTH-003 | Authority is non-transitive across spawned workers. | A child receives only the capabilities named in its own lease. |
 | REQ-TRUST-001 | A proposer cannot be its sole verifier. | Self-verification and same-principal aliases fail the applicable gate. |
 | REQ-TRUST-002 | Candidate code cannot read or change hidden evaluators, the constitution, grants, or trusted history. | Isolation and adversarial tests deny each protected surface. |
+| REQ-ID-001 | Cryptographic keys acquire principal identity and roles only through an explicit trusted binding; key possession alone grants no authority. | Wrong-principal, unbound-key, revoked-key, wrong-role, and same-principal-alias fixtures fail in Python and Rust. |
+| REQ-SIG-001 | Authenticated protocol objects use domain-separated signatures bound to their exact canonical envelope digest and signed kind. | Mutation, wrong-domain, wrong-kind, wrong-key, malformed-signature, and cross-language fixtures fail closed. |
 
 ## Evidence and promotion
 

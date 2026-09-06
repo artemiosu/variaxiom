@@ -19,7 +19,8 @@
 
 ## M2 — Signed lineage
 
-- [ ] Define identity/grant schema.
+- [ ] Review and accept the proposed M2.1 identity/grant/signature specification.
+- [ ] Define identity/grant schemas and shared adversarial fixtures.
 - [ ] Implement signing and verification.
 - [ ] Add transactional SQLite store.
 - [ ] Create static lineage report.

@@ -44,6 +44,6 @@ versions remain locked and reviewed by dependency automation.
 
 ## Follow-up
 
-M1.2 must define signature domain separation, key identities, grant expiry/revocation, and exact
+M2.1 must define signature domain separation, key identities, grant expiry/revocation, and exact
 constitution artifact binding. A future RFC may adopt full RFC 8785, but it must use a new
 envelope version rather than reinterpreting v1.

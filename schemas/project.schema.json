@@ -97,7 +97,8 @@
           "observed_on": { "type": "string", "format": "date" },
           "check": { "type": "string", "minLength": 1 },
           "result": { "enum": ["passed", "failed"] },
-          "artifact": { "$ref": "#/$defs/path" }
+          "artifact": { "$ref": "#/$defs/path" },
+          "url": { "type": "string", "format": "uri" }
         }
       }
     },

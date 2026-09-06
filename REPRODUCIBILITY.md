@@ -72,6 +72,15 @@ sha256sum /tmp/vx-a/lineage.ledger.jsonl /tmp/vx-b/lineage.ledger.jsonl
 
 The two hashes should match.
 
+## Recorded clean-clone evidence
+
+Revision `b0624843a0c21566395828ac50ca9e7382473807` was cloned from GitHub into an empty
+temporary directory on 2026-09-06. Bootstrap, repository validation, 23 Python tests, the
+14-event ledger check, 17 Rust tests, Rust formatting, and Clippy all passed. The same revision's
+[Linux/macOS/Windows CI matrix](https://github.com/artemiosu/variaxiom/actions/runs/34060093302)
+also passed. This records automated reproducibility; an external human reproduction remains a
+separate release gate.
+
 ## Reproducibility boundaries
 
 The current proof is deterministic because it uses a fixed evaluator fixture. Future model-backed experiments will not be assumed deterministic. They must record at least:

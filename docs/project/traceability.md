@@ -28,7 +28,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-OPS-002 | threat model | not implemented | future pause/revoke recovery tests | planned |
 | REQ-OPS-003 | security/non-goals | deny-by-default design | future sandbox and operator tests | partial |
 | REQ-OBS-001 | observatory architecture | not implemented | future OpenTelemetry contract tests | planned |
-| REQ-REP-001 | reproducibility guide | bootstrap/verify scripts | clean-clone CI and manual reproduction | partial |
+| REQ-REP-001 | reproducibility guide | bootstrap/verify scripts | clean GitHub clone at `b062484`, CI run `34060093302` | verified |
 | REQ-REP-002 | architecture principles | deterministic demo inputs | demo reproducibility tests | partial |
 | REQ-CTX-001 | context index | repository context pack | repository verifier link checks | implemented |
 | REQ-CTX-002 | specification workflow | this table and specs | repository verification plus review | implemented |

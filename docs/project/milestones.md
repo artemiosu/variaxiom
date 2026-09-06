@@ -4,7 +4,7 @@
 
 - [x] Create public GitHub repository and push seed commit.
 - [x] Enable Discussions and founder-compatible branch protection.
-- [ ] Confirm private vulnerability reporting after GitHub authentication is restored.
+- [x] Confirm private vulnerability reporting after authenticated GitHub access.
 - [ ] Upload the checked-in social preview through GitHub repository settings.
 - [x] Add repository description, topics, and Pages website.
 - [ ] Record a two-minute demo GIF/video.
@@ -12,7 +12,7 @@
 
 ## M1 — Cross-language conformance
 
-- [ ] Compile and test the Rust workspace on Linux/macOS/Windows CI.
+- [x] Compile and test the Rust workspace on Linux/macOS/Windows CI.
 - [x] Add shared JSON fixtures for Python/Rust decisions.
 - [x] Specify canonical JSON and a signature-ready decision envelope.
 - [ ] Add property tests for capability deltas and event chaining.

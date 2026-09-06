@@ -12,8 +12,9 @@ The concise source of truth for active development is
 The Python spelling `0.1.0a0` and Rust spelling `0.1.0-alpha.0` are ecosystem-specific forms of
 the same pre-release intent; they do not indicate separately published releases.
 
-M1.1 is implemented locally. It is not yet verified until the required remote operating-system
-matrix, clean-clone reproduction, and review evidence are recorded.
+M1.1 is published; the required remote operating-system matrix, clean-clone reproduction, and
+independent automated audit pass. External human review is still required before the increment is
+treated as release-approved.
 
 ## Implemented
 

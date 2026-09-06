@@ -7,11 +7,11 @@
 
 ## Current verified baseline
 
-- baseline revision: `1f4eb7968d6c24425b58f0cebe6c4b7e6571bbba`;
-- the public repository, Discussions, and Pages were observed live on 2026-09-06, but authenticated
-  settings still require a fresh external-state check;
+- baseline revision: `b0624843a0c21566395828ac50ca9e7382473807`;
+- the public repository, Discussions, Pages, branch protection, security settings, and private
+  vulnerability reporting were authenticated and checked on 2026-09-06;
 - Python Authority Test is deterministic and its 14-event ledger verifies;
-- Python unit suite and Rust kernel tests pass;
+- Python unit suite and Rust kernel tests pass locally and in the Linux/macOS/Windows matrix;
 - CI, CodeQL, dependency review, Dependabot, and OpenSSF workflows are configured;
 - Rust 1.98.1 and Python 3.13/3.14 are the supported development baseline;
 - the trusted implementation remains a local modular monolith.
@@ -22,10 +22,11 @@ not claim that a release tag exists; `project.yaml` records the authoritative re
 
 ## Now
 
-M1.1 is implemented in the working tree: Python and Rust share a versioned decision envelope,
-canonical bytes, digest rules, reason codes, and conformance fixtures. Its status remains pending
-remote Linux/macOS/Windows matrix verification and an independent review. Do not begin signatures
-or persistence until that evidence is recorded.
+M1.1 is published and its automated evidence passes: Python and Rust share a versioned decision
+envelope, canonical bytes, digest rules, reason codes, and conformance fixtures; the required
+GitHub matrix is green and a fresh clone reproduced the complete bootstrap and verification at
+`b062484`. An independent automated conformance audit found no remaining P0/P1 blocker. External
+human review remains open, so do not begin signatures or persistence until that review is recorded.
 
 ## Next
 
@@ -50,10 +51,9 @@ or persistence until that evidence is recorded.
 
 ## External blockers
 
-- recheck GitHub authentication, repository rules, and security settings from an authenticated
-  session before treating them as current;
-- recheck `ssh -T git@github.com`; the recorded baseline used HTTPS because SSH authentication
-  was unavailable;
+- SSH authentication is unavailable (`Permission denied (publickey)`); HTTPS is the verified Git
+  transport and should remain configured unless an operator installs and tests an SSH key;
+- obtain an external human review of the promotion-sensitive M1.1 contract;
 - upload the checked-in social preview through the GitHub repository UI.
 
 ## Context rule

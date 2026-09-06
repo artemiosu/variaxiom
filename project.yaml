@@ -27,7 +27,7 @@
     "id": "M1.1",
     "title": "Cross-language canonical decision envelope",
     "status": "implemented",
-    "verification": "pending_remote_matrix",
+    "verification": "ci_clean_clone_and_agent_audit_passed_external_review_pending",
     "specification": "docs/specs/m1.1-cross-language-conformance.md",
     "requirements": [
       "REQ-CORE-003",
@@ -66,7 +66,7 @@
     {"id": "REQ-OPS-002", "status": "planned", "evidence": []},
     {"id": "REQ-OPS-003", "status": "partial", "evidence": ["AGENTS.md", "docs/architecture/threat-model.md"]},
     {"id": "REQ-OBS-001", "status": "planned", "evidence": []},
-    {"id": "REQ-REP-001", "status": "partial", "evidence": ["scripts/bootstrap.sh", "scripts/verify.sh"]},
+    {"id": "REQ-REP-001", "status": "verified", "evidence": ["scripts/bootstrap.sh", "scripts/verify.sh", "REPRODUCIBILITY.md"]},
     {"id": "REQ-REP-002", "status": "partial", "evidence": ["tests/test_demo.py"]},
     {"id": "REQ-CTX-001", "status": "implemented", "evidence": ["docs/context/index.md", "project.yaml"]},
     {"id": "REQ-CTX-002", "status": "implemented", "evidence": ["docs/specs/README.md", "docs/project/traceability.md"]},
@@ -87,6 +87,15 @@
       "check": "bootstrap, repository verification, Python tests, Authority Test, ledger verification, Rust fmt/test/clippy",
       "result": "passed",
       "artifact": "REPRODUCIBILITY.md"
+    },
+    {
+      "id": "m1.1-ci-clean-clone",
+      "revision": "b0624843a0c21566395828ac50ca9e7382473807",
+      "observed_on": "2026-09-06",
+      "check": "GitHub Linux/macOS/Windows matrix plus fresh GitHub clone bootstrap, repository verification, Python tests, ledger verification, Rust fmt/test/clippy",
+      "result": "passed",
+      "artifact": "REPRODUCIBILITY.md",
+      "url": "https://github.com/artemiosu/variaxiom/actions/runs/34060093302"
     }
   ],
   "open_decisions": [
@@ -102,7 +111,6 @@
   ],
   "blockers": [
     {"id": "independent-reviewer", "status": "open", "scope": "promotion-sensitive release approval"},
-    {"id": "github-private-settings-recheck", "status": "open", "scope": "authenticated external-state audit"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
     {"id": "social-preview-upload", "status": "manual", "scope": "GitHub repository social preview"}
   ],
@@ -129,6 +137,6 @@
     "repository": "confirmed",
     "pages": "confirmed",
     "discussions": "confirmed",
-    "authenticated_settings": "recheck_required"
+    "authenticated_settings": "confirmed"
   }
 }

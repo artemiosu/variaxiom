@@ -14,7 +14,8 @@ Variaxiom делает это решение явным, проверяемым 
 
 [English](README.md) · [Архитектура](docs/architecture/overview.md) · [Дорожная карта](docs/project/roadmap.md) · [Стратегия запуска](docs/launch/launch-strategy.ru.md)
 
-> **Статус:** pre-alpha research seed. В репозитории уже есть исполняемый вертикальный срез, схемы контрактов, каркас доверенного Rust-ядра и полный проектный пакет. Это пока не production-платформа автономии.
+> **Статус:** pre-alpha research implementation. M1.1 независимо воспроизведён; контракт M2.1 для
+> identity и signatures находится на review. Это не production-платформа автономии.
 
 ## Идея за одну минуту
 
@@ -94,7 +95,7 @@ cat .variaxiom/lineage.ledger.jsonl
 bash scripts/verify.sh
 ```
 
-## Архитектура
+## Целевая архитектура
 
 ```text
  Человек / внешний governance
@@ -187,7 +188,8 @@ docs/launch/       Positioning, community, founder и sponsor strategy
 - эксперимент, обнаруживающий пропущенную регрессию;
 - benchmark эволюционной продуктивности, а не только one-shot score.
 
-Начните с [`CONTRIBUTING.md`](CONTRIBUTING.md), [roadmap](docs/project/roadmap.md) и issues с метками `good first issue`, `invariant`, `evaluator`, `research replication`.
+Начните с [`CONTRIBUTING.md`](CONTRIBUTING.md), [roadmap](docs/project/roadmap.md) и issues с метками
+`good first issue`, `invariant`, `evaluator`, `research` или `replication`.
 
 ## Ответственные границы
 

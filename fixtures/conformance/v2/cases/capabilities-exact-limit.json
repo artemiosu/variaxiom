@@ -13,6 +13,7 @@
   "notes": "Frozen shared conformance vector.",
   "signature_vectors": [
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
@@ -20,6 +21,7 @@
       "principal_id": "principal:builder",
       "public_key_base64url": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
       "signature_base64url": "45VdMdPtFgUnGWDrBQngIXqimnLF5siU5ggge3ukoJ8iS9PzJ833CP9rKbVE2O0MDxGrgnLuuv4GCk2ZN9M0Ag",
+      "signed_digest": "ec5d0fb1f64daf2edd8c00490d377733002b52d99c560db6ac88720727c440b0",
       "signed_kind": "candidate",
       "target_digest": "ec5d0fb1f64daf2edd8c00490d377733002b52d99c560db6ac88720727c440b0",
       "target_envelope": {
@@ -172,6 +174,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
@@ -179,6 +182,7 @@
       "principal_id": "principal:verifier",
       "public_key_base64url": "J4EX_BRMcjQPZ9DyMW6Dhs7_vyskKMnFH-98WX8dQm4",
       "signature_base64url": "w9VXBaSRRZsYPiCXKgizDCkz_ALGEIFP4RUWzpCMm5vhbQfvLjZj-W9ltcQMs94s1uemXaRS73nBLr3OWp4NCg",
+      "signed_digest": "bac117621a2ecea907b590a31d776a11983ea5bba5dd6cbe21430b4e0ea2fd69",
       "signed_kind": "evidence",
       "target_digest": "bac117621a2ecea907b590a31d776a11983ea5bba5dd6cbe21430b4e0ea2fd69",
       "target_envelope": {
@@ -201,6 +205,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
@@ -208,6 +213,7 @@
       "principal_id": "principal:issuer",
       "public_key_base64url": "PUAXw-hDiVqStwqnTRt-vJyYLM8uxJaMwM1V8Sr0Zgw",
       "signature_base64url": "TvYyfcAu2eoIoWXuJ-LxEHtOTWT3-Xu-b7b64ejRTXGDy4fPHHxf0_q-u70JsPKKRtCOvCRY7G-OwGlvJyINBA",
+      "signed_digest": "e69960f78242c181c85dc24c7c1a8d43ba656e618ea4e1ed295976952e6a0887",
       "signed_kind": "authority-grant",
       "target_digest": "e69960f78242c181c85dc24c7c1a8d43ba656e618ea4e1ed295976952e6a0887",
       "target_envelope": {
@@ -362,6 +368,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
@@ -369,6 +376,7 @@
       "principal_id": "principal:selector",
       "public_key_base64url": "_FHNjmIYoaONpH7QAjDwWAgW7RO6MwOsXeuRFUiQgCU",
       "signature_base64url": "-y_whNtHWyBp8wejIdHnn56MCRKwUCsyXMLluefrZ0_uaGKn1CQ1VnyaCf2lg5hyysKNKc9RySyxFTNPz2c6BQ",
+      "signed_digest": "425d868d94a8db5ff611cef02feb6a7a1550669dacdfec7276f6f55a707cb59d",
       "signed_kind": "promotion-decision",
       "target_digest": "425d868d94a8db5ff611cef02feb6a7a1550669dacdfec7276f6f55a707cb59d",
       "target_envelope": {

@@ -406,14 +406,14 @@ def vector(
     expected = "verified"
     code: str | None = None
     encoded_public = find_public_key(attested, sig["key_id"])
-    if sig["algorithm"] != "Ed25519":
-        expected, code = "rejected", "signature.algorithm_unsupported"
-    elif sig["signed_digest"] != actual_digest:
+    if sig["signed_digest"] != actual_digest:
         expected, code = "rejected", "signature.digest_mismatch"
     elif key_id_from_public(encoded_public) != sig["key_id"]:
         expected, code = "rejected", "signature.key_id_mismatch"
     elif sig["signed_kind"] != target["kind"]:
         expected, code = "rejected", "signature.kind_mismatch"
+    elif sig["algorithm"] != "Ed25519":
+        expected, code = "rejected", "signature.algorithm_unsupported"
     else:
         try:
             public = decode_base64url(encoded_public)
@@ -425,25 +425,35 @@ def vector(
                 or len(raw_signature) != 64
                 or canonical_public != encoded_public
                 or canonical_signature != sig["signature_base64url"]
-                or not bindings.crypto_core_ed25519_is_valid_point(public)
-                or not bindings.crypto_core_ed25519_is_valid_point(raw_signature[:32])
-                or int.from_bytes(raw_signature[32:], "little") >= L
+                or (
+                    len(public) == 32
+                    and len(raw_signature) == 64
+                    and (
+                        not bindings.crypto_core_ed25519_is_valid_point(public)
+                        or not bindings.crypto_core_ed25519_is_valid_point(raw_signature[:32])
+                        or int.from_bytes(raw_signature[32:], "little") >= L
+                    )
+                )
             ):
                 expected, code = "rejected", "signature.encoding_invalid"
             else:
                 VerifyKey(public).verify(signing_message(sig), raw_signature)
-        except (BadSignatureError, ValueError):
+        except BadSignatureError:
             expected, code = "rejected", "signature.invalid"
+        except ValueError:
+            expected, code = "rejected", "signature.encoding_invalid"
     result = {
         "vector_version": "m2.1-signature-vector/v1",
         "vector_id": vector_id,
         "target_envelope": target,
         "target_digest": actual_digest,
+        "algorithm": sig["algorithm"],
         "trust_domain_id": sig["trust_domain_id"],
         "principal_id": sig["principal_id"],
         "key_id": sig["key_id"],
         "public_key_base64url": encoded_public,
         "signed_kind": sig["signed_kind"],
+        "signed_digest": sig["signed_digest"],
         "message_hex": signing_message(sig).hex(),
         "signature_base64url": sig["signature_base64url"],
         "expected": expected,
@@ -598,11 +608,43 @@ def history_case(
             "status": "verified" if code is None else "rejected",
             "code": code,
             "decision_status": "not-reached",
-            "authorizing": code is None,
+            "authorizing": False,
         },
         "signature_vectors": vectors(probe) if probe is not None else [],
         "anchor_history": history,
         "notes": "Self-contained ordered anchor transition history.",
+    }
+
+
+def initialization_case(
+    case_id: str,
+    identity: dict[str, Any],
+    authorization: dict[str, Any],
+    trusted_now_unix_s: int,
+    code: str | None,
+    stage: int,
+) -> dict[str, Any]:
+    value = {
+        "initial_identity_context": identity,
+        "initial_authorization_context": authorization,
+        "trusted_now_unix_s": trusted_now_unix_s,
+    }
+    wire = canonical_bytes(value)
+    return {
+        "case_version": "m2.1-conformance-case/v1",
+        "case_id": case_id,
+        "entrypoint": "initialize-anchor",
+        "stage": stage,
+        "input_base64url": raw_base64url(wire),
+        "input_sha256": hashlib.sha256(wire).hexdigest(),
+        "expected": {
+            "status": "verified" if code is None else "rejected",
+            "code": code,
+            "decision_status": "not-reached",
+            "authorizing": False,
+        },
+        "signature_vectors": [],
+        "notes": "Self-contained trusted-anchor genesis input.",
     }
 
 
@@ -643,6 +685,9 @@ def proposal_case(
 
 
 def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[str, Any]]:
+    base_body = promotion(base)
+    identity0 = base_body["identity_context"]
+    authorization0 = base_body["authorization_context"]
     cases: list[dict[str, Any]] = [
         make_case(
             "bounded-signed-proposal",
@@ -683,7 +728,52 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         make_case(
             "wire-size-plus-one-rejected", 1, b" " * 1_048_577, base_anchor, "input.limit_exceeded"
         ),
+        initialization_case(
+            "initialize-anchor-genesis",
+            identity0,
+            authorization0,
+            EVALUATION_TIME,
+            None,
+            5,
+        ),
     ]
+
+    nonzero_identity = copy.deepcopy(identity0)
+    nonzero_identity["payload"]["snapshot_sequence"] = 1
+    cases.append(
+        initialization_case(
+            "initialize-anchor-nonzero-sequence",
+            nonzero_identity,
+            authorization0,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    previous_identity = copy.deepcopy(identity0)
+    previous_identity["payload"]["previous_snapshot_digest"] = "a" * 64
+    cases.append(
+        initialization_case(
+            "initialize-anchor-previous-snapshot",
+            previous_identity,
+            authorization0,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    wrong_domain_authorization = copy.deepcopy(authorization0)
+    wrong_domain_authorization["payload"]["trust_domain_id"] = "trust-domain:other"
+    cases.append(
+        initialization_case(
+            "initialize-anchor-domain-mismatch",
+            identity0,
+            wrong_domain_authorization,
+            EVALUATION_TIME,
+            "identity.context_untrusted",
+            3,
+        )
+    )
 
     def mutate(path: tuple[str | int, ...], replacement: Any) -> Any:
         return lambda value: set_path(value, path, replacement)
@@ -758,6 +848,147 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         ),
     ]:
         cases.append(proposal_case(base, base_anchor, case_id, 2, code, mutate(path, replacement)))
+
+    nested_version_paths = [
+        ("proposal", ("payload", "proposal_version")),
+        ("promotion-envelope", ("payload", "promotion_input", "envelope_version")),
+        ("promotion-payload", ("payload", "promotion_input", "payload", "protocol_version")),
+        ("candidate-envelope", candidate_payload[:-1] + ("envelope_version",)),
+        ("candidate-payload", candidate_payload + ("candidate_version",)),
+        ("candidate-signature", candidate_sig + ("signature_version",)),
+        ("evidence-envelope", evidence_payload[:-1] + ("envelope_version",)),
+        ("evidence-payload", evidence_payload + ("evidence_version",)),
+        ("evidence-signature", evidence_sig + ("signature_version",)),
+        (
+            "constitution-envelope",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "constitution",
+                "envelope",
+                "envelope_version",
+            ),
+        ),
+        (
+            "constitution-payload",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "constitution",
+                "envelope",
+                "payload",
+                "version",
+            ),
+        ),
+        (
+            "identity-envelope",
+            ("payload", "promotion_input", "payload", "identity_context", "envelope_version"),
+        ),
+        (
+            "identity-payload",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "identity_context",
+                "payload",
+                "identity_context_version",
+            ),
+        ),
+        (
+            "principal",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "identity_context",
+                "payload",
+                "principals",
+                0,
+                "principal_version",
+            ),
+        ),
+        (
+            "key-binding",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "identity_context",
+                "payload",
+                "principals",
+                0,
+                "keys",
+                0,
+                "key_binding_version",
+            ),
+        ),
+        (
+            "authorization-envelope",
+            ("payload", "promotion_input", "payload", "authorization_context", "envelope_version"),
+        ),
+        (
+            "authorization-payload",
+            (
+                "payload",
+                "promotion_input",
+                "payload",
+                "authorization_context",
+                "payload",
+                "authorization_context_version",
+            ),
+        ),
+        ("grant-envelope", grant_payload[:-1] + ("envelope_version",)),
+        ("grant-payload", grant_payload + ("grant_version",)),
+        ("grant-signature", grant_sig + ("signature_version",)),
+        ("decision-envelope", ("payload", "decision", "envelope_version")),
+        ("selector-signature", ("payload", "selector_signature", "payload", "signature_version")),
+    ]
+    for label, path in nested_version_paths:
+        cases.append(
+            proposal_case(
+                base,
+                base_anchor,
+                f"nested-{label}-version-unsupported",
+                2,
+                "input.version_unsupported",
+                mutate(path, "unsupported/v9"),
+            )
+        )
+
+    nested_kind_paths = [
+        ("promotion", ("payload", "promotion_input", "kind")),
+        ("candidate", candidate_payload[:-1] + ("kind",)),
+        ("candidate-signature", candidate_sig[:-1] + ("kind",)),
+        ("evidence", evidence_payload[:-1] + ("kind",)),
+        ("evidence-signature", evidence_sig[:-1] + ("kind",)),
+        (
+            "constitution",
+            ("payload", "promotion_input", "payload", "constitution", "envelope", "kind"),
+        ),
+        ("identity", ("payload", "promotion_input", "payload", "identity_context", "kind")),
+        (
+            "authorization",
+            ("payload", "promotion_input", "payload", "authorization_context", "kind"),
+        ),
+        ("grant", grant_payload[:-1] + ("kind",)),
+        ("grant-signature", grant_sig[:-1] + ("kind",)),
+        ("decision", ("payload", "decision", "kind")),
+        ("selector-signature", ("payload", "selector_signature", "kind")),
+    ]
+    for label, path in nested_kind_paths:
+        cases.append(
+            proposal_case(
+                base,
+                base_anchor,
+                f"nested-{label}-kind-mismatch",
+                2,
+                "input.kind_mismatch",
+                mutate(path, "wrong-kind"),
+            )
+        )
 
     def add_unknown(value: dict[str, Any]) -> None:
         value["surprise"] = True
@@ -1326,6 +1557,24 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         )
     )
 
+    def coordinated_authorization_domain(value: dict[str, Any]) -> None:
+        body = promotion(value)
+        body["authorization_context"]["payload"]["trust_domain_id"] = "trust-domain:attacker"
+        body["authority_grant"]["envelope"]["payload"]["trust_domain_id"] = "trust-domain:attacker"
+        resign_all(value)
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "authorization-domain-reanchored-confused-deputy",
+            3,
+            "authorization.context_untrusted",
+            coordinated_authorization_domain,
+            reanchor=True,
+        )
+    )
+
     # Stage 4: binding before identity lookup or cryptography.
     for case_id, path, replacement, code in [
         (
@@ -1524,6 +1773,52 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         make_case("revoked-proposer-key", 5, base, revoked_anchor, "signature.key_revoked")
     )
 
+    def minimum_two_verifiers(value: dict[str, Any]) -> None:
+        body = promotion(value)
+        constitution_pair = body["constitution"]
+        constitution_pair["envelope"]["payload"]["minimum_independent_verifiers"] = 2
+        constitution_pair["artifact_hash"] = digest(constitution_pair["envelope"]["payload"])
+        authorization = body["authorization_context"]["payload"]
+        authorization["constitution_envelope_digest"] = digest(constitution_pair["envelope"])
+        authorization["constitution_artifact_hash"] = constitution_pair["artifact_hash"]
+        body["authority_grant"]["envelope"]["payload"]["constitution_digest"] = digest(
+            constitution_pair["envelope"]
+        )
+        resign_all(value)
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "insufficient-independent-verifiers",
+            5,
+            "identity.not_independent",
+            minimum_two_verifiers,
+            reanchor=True,
+        )
+    )
+
+    def unsupported_binding_algorithm(value: dict[str, Any]) -> None:
+        builder = next(
+            item
+            for item in promotion(value)["identity_context"]["payload"]["principals"]
+            if item["principal_id"] == "principal:builder"
+        )
+        builder["keys"][0]["algorithm"] = "Ed448"
+        resign_all(value)
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "unsupported-key-binding-algorithm",
+            6,
+            "signature.algorithm_unsupported",
+            unsupported_binding_algorithm,
+            reanchor=True,
+        )
+    )
+
     # Stage 6: strict encoding and Ed25519 equation.
     cases.append(
         proposal_case(
@@ -1700,6 +1995,71 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             "signature.encoding_invalid",
             lambda value: replace_builder_public(value, alternate_public),
             reanchor=True,
+        )
+    )
+
+    def vector_only_case(
+        case_id: str, mutate_vector: Any, code: str = "signature.encoding_invalid"
+    ) -> dict[str, Any]:
+        case = make_case(
+            case_id,
+            11,
+            base,
+            base_anchor,
+            None,
+            decision_status="accepted",
+            notes="Valid proposal with an independent negative signing-vector boundary.",
+        )
+        item = copy.deepcopy(vectors(base)[0])
+        mutate_vector(item)
+        item["expected"] = "rejected"
+        item["expected_code"] = code
+        case["signature_vectors"] = [item]
+        return case
+
+    cases.append(
+        vector_only_case(
+            "signing-message-missing-final-lf",
+            lambda item: item.__setitem__("message_hex", item["message_hex"][:-2]),
+            "signature.invalid",
+        )
+    )
+    cases.append(
+        vector_only_case(
+            "signing-message-extra-final-lf",
+            lambda item: item.__setitem__("message_hex", item["message_hex"] + "0a"),
+            "signature.invalid",
+        )
+    )
+
+    def standard_base64_signature(item: dict[str, Any]) -> None:
+        item["signature_base64url"] = base64.b64encode(b"\xfb" * 64).decode().rstrip("=")
+
+    cases.append(vector_only_case("standard-base64-signature-rejected", standard_base64_signature))
+
+    def short_public_key(item: dict[str, Any]) -> None:
+        encoded = raw_base64url(b"\x01" * 31)
+        item["public_key_base64url"] = encoded
+        item["key_id"] = key_id_from_public(encoded)
+        item["message_hex"] = signing_message(
+            {
+                "algorithm": item["algorithm"],
+                "trust_domain_id": item["trust_domain_id"],
+                "principal_id": item["principal_id"],
+                "key_id": item["key_id"],
+                "signed_kind": item["signed_kind"],
+                "signed_digest": item["target_digest"],
+            }
+        ).hex()
+
+    cases.append(vector_only_case("public-key-wrong-length", short_public_key))
+    cases.append(
+        vector_only_case(
+            "signature-wrong-length",
+            lambda item: item.__setitem__(
+                "signature_base64url",
+                raw_base64url(decode_base64url(item["signature_base64url"])[:-1]),
+            ),
         )
     )
 
@@ -2013,6 +2373,265 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         )
     )
 
+    def precedence_digest_key_id(value: dict[str, Any]) -> None:
+        key_id_mismatch(value)
+        promotion(value)["candidate"]["signature"]["payload"]["signed_digest"] = "a" * 64
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-digest-before-key-id",
+            4,
+            "signature.digest_mismatch",
+            precedence_digest_key_id,
+            reanchor=True,
+        )
+    )
+
+    def precedence_key_id_kind(value: dict[str, Any]) -> None:
+        key_id_mismatch(value)
+        promotion(value)["candidate"]["signature"]["payload"]["signed_kind"] = "evidence"
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-key-id-before-kind",
+            4,
+            "signature.key_id_mismatch",
+            precedence_key_id_kind,
+            reanchor=True,
+        )
+    )
+
+    def precedence_cross_object(value: dict[str, Any]) -> None:
+        body = promotion(value)
+        body["candidate"]["signature"]["payload"]["signed_kind"] = "evidence"
+        body["evidence"][0]["signature"]["payload"]["signed_digest"] = "a" * 64
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-evidence-digest-before-candidate-kind",
+            4,
+            "signature.digest_mismatch",
+            precedence_cross_object,
+        )
+    )
+
+    def precedence_stage_four_before_five(value: dict[str, Any]) -> None:
+        duplicate_key(value)
+        promotion(value)["candidate"]["signature"]["payload"]["signed_digest"] = "a" * 64
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-stage-four-before-five",
+            4,
+            "signature.digest_mismatch",
+            precedence_stage_four_before_five,
+            reanchor=True,
+        )
+    )
+
+    def precedence_principal_before_ambiguous(value: dict[str, Any]) -> None:
+        duplicate_key(value)
+        principal_mismatch(value)
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-principal-before-ambiguous",
+            5,
+            "signature.principal_mismatch",
+            precedence_principal_before_ambiguous,
+            reanchor=True,
+        )
+    )
+
+    def precedence_ambiguous_before_unknown(value: dict[str, Any]) -> None:
+        duplicate_key(value)
+        unknown_candidate(value)
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-ambiguous-before-unknown",
+            5,
+            "identity.key_ambiguous",
+            precedence_ambiguous_before_unknown,
+            reanchor=True,
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-unknown-before-unbound",
+            5,
+            "identity.principal_unknown",
+            unknown_candidate,
+        )
+    )
+
+    unbound_revoked_value = copy.deepcopy(base)
+    unbound_candidate(unbound_revoked_value)
+    unbound_revoked_anchor = copy.deepcopy(base_anchor)
+    unbound_revoked_anchor["revoked_key_ids"] = [key_id("verifier")]
+    cases.append(
+        make_case(
+            "precedence-unbound-before-revoked-key",
+            5,
+            unbound_revoked_value,
+            unbound_revoked_anchor,
+            "identity.key_unbound",
+        )
+    )
+
+    revoked_both_anchor = copy.deepcopy(base_anchor)
+    revoked_both_anchor["revoked_key_ids"] = [key_id("builder")]
+    revoked_both_anchor["revoked_grant_ids"] = [
+        "grant:sha256:" + digest(promotion(base)["authority_grant"]["envelope"])
+    ]
+    cases.append(
+        make_case(
+            "precedence-revoked-key-before-grant",
+            5,
+            base,
+            revoked_both_anchor,
+            "signature.key_revoked",
+        )
+    )
+
+    grant_revoked_role_value = copy.deepcopy(base)
+    wrong_role(grant_revoked_role_value)
+    grant_revoked_role_anchor = copy.deepcopy(base_anchor)
+    grant_revoked_role_anchor["revoked_grant_ids"] = [
+        "grant:sha256:" + digest(promotion(grant_revoked_role_value)["authority_grant"]["envelope"])
+    ]
+    cases.append(
+        make_case(
+            "precedence-revoked-grant-before-role",
+            5,
+            grant_revoked_role_value,
+            grant_revoked_role_anchor,
+            "grant.revoked",
+        )
+    )
+
+    def missing_role_and_conflict(value: dict[str, Any]) -> None:
+        body = promotion(value)
+        body["evidence"][0]["envelope"]["payload"]["verifier"] = "principal:builder"
+        builder = next(
+            item
+            for item in body["identity_context"]["payload"]["principals"]
+            if item["principal_id"] == "principal:builder"
+        )
+        builder["roles"] = ["evidence-verifier"]
+        resign_all(value, {"evidence:unit": "builder"})
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-role-before-conflict",
+            5,
+            "identity.role_missing",
+            missing_role_and_conflict,
+            reanchor=True,
+        )
+    )
+
+    def conflict_and_not_independent(value: dict[str, Any]) -> None:
+        role_conflict(value)
+        minimum_two_verifiers(value)
+        resign_all(value, {"evidence:unit": "builder"})
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-conflict-before-independence",
+            5,
+            "identity.role_conflict",
+            conflict_and_not_independent,
+            reanchor=True,
+        )
+    )
+
+    def precedence_encoding_before_equation(value: dict[str, Any]) -> None:
+        body = promotion(value)
+        body["candidate"]["signature"]["payload"]["signature_base64url"] = "short"
+        body["evidence"][0]["signature"]["payload"]["signature_base64url"] = invalid_equation
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "precedence-encoding-before-equation",
+            6,
+            "signature.encoding_invalid",
+            precedence_encoding_before_equation,
+        )
+    )
+
+    def grant_multifault(value: dict[str, Any], changes: dict[str, Any]) -> None:
+        grant = promotion(value)["authority_grant"]["envelope"]["payload"]
+        grant.update(changes)
+        resign_all(value)
+
+    for case_id, changes, code in [
+        (
+            "precedence-context-before-subject",
+            {"trust_domain_id": "trust-domain:other", "subject_candidate_digest": "a" * 64},
+            "grant.context_mismatch",
+        ),
+        (
+            "precedence-subject-before-capability",
+            {"subject_candidate_digest": "a" * 64, "capabilities": ["filesystem.write"]},
+            "grant.subject_mismatch",
+        ),
+        (
+            "precedence-capability-before-interval",
+            {"capabilities": ["filesystem.write"], "not_before_unix_s": EVALUATION_TIME + 3600},
+            "grant.capability_mismatch",
+        ),
+        (
+            "precedence-interval-before-early",
+            {"not_before_unix_s": EVALUATION_TIME + 3600, "expires_at_unix_s": EVALUATION_TIME + 1},
+            "grant.interval_invalid",
+        ),
+        (
+            "precedence-early-before-delegation",
+            {"not_before_unix_s": EVALUATION_TIME + 1, "delegable": True},
+            "grant.not_yet_valid",
+        ),
+        (
+            "precedence-expired-before-delegation",
+            {
+                "not_before_unix_s": EVALUATION_TIME - 2,
+                "expires_at_unix_s": EVALUATION_TIME,
+                "delegable": True,
+            },
+            "grant.expired",
+        ),
+    ]:
+        cases.append(
+            proposal_case(
+                base,
+                base_anchor,
+                case_id,
+                8,
+                code,
+                lambda value, changes=changes: grant_multifault(value, changes),
+            )
+        )
+
     def selector_domain(value: dict[str, Any]) -> None:
         value["payload"]["selector_signature"] = signature(
             value["payload"]["decision"],
@@ -2047,6 +2666,31 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             selector_wrong_role,
         )
     )
+
+    def selector_overlap(value: dict[str, Any], signer: str) -> None:
+        principals = promotion(value)["identity_context"]["payload"]["principals"]
+        descriptor = next(
+            item for item in principals if item["principal_id"] == f"principal:{signer}"
+        )
+        descriptor["roles"] = sorted(set(descriptor["roles"]) | {"promotion-selector"})
+        resign_all(value, {"promotion-decision": signer})
+
+    for signer, label in (
+        ("builder", "proposer"),
+        ("verifier", "verifier"),
+        ("issuer", "issuer"),
+    ):
+        cases.append(
+            proposal_case(
+                base,
+                base_anchor,
+                f"selector-{label}-role-conflict",
+                11,
+                "identity.role_conflict",
+                lambda value, signer=signer: selector_overlap(value, signer),
+                reanchor=True,
+            )
+        )
 
     # Historical replay is reproducible but never authorizing.
     cases.append(
@@ -2149,13 +2793,40 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         if item["principal_id"] != "principal:builder"
     ]
     revoke_key_2 = next_identity(
-        revoke_key_1, 2, principals=principals_without_builder, revoked_key_ids=[]
+        revoke_key_1,
+        2,
+        principals=principals_without_builder,
+        revoked_key_ids=[key_id("builder")],
     )
     revoke_key_3 = next_identity(
         revoke_key_2,
         3,
         principals=identity0["payload"]["principals"],
-        revoked_key_ids=[],
+        revoked_key_ids=[key_id("builder")],
+    )
+    removed_key_revocation = next_identity(
+        revoke_key_1, 2, principals=principals_without_builder, revoked_key_ids=[]
+    )
+    cases.append(
+        history_case(
+            "revoked-key-removal",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": revoke_key_1,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                },
+                {
+                    "next_identity_context": removed_key_revocation,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 2,
+                },
+            ],
+            "identity.context_untrusted",
+            3,
+        )
     )
     cases.append(
         history_case(
@@ -2186,8 +2857,30 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
 
     old_grant_id = "grant:sha256:" + digest(base_body["authority_grant"]["envelope"])
     revoke_grant_1 = next_identity(identity0, 1, revoked_grant_ids=[old_grant_id])
-    revoke_grant_2 = next_identity(revoke_grant_1, 2, revoked_grant_ids=[])
-    revoke_grant_3 = next_identity(revoke_grant_2, 3, revoked_grant_ids=[])
+    revoke_grant_2 = next_identity(revoke_grant_1, 2, revoked_grant_ids=[old_grant_id])
+    revoke_grant_3 = next_identity(revoke_grant_2, 3, revoked_grant_ids=[old_grant_id])
+    removed_grant_revocation = next_identity(revoke_grant_1, 2, revoked_grant_ids=[])
+    cases.append(
+        history_case(
+            "revoked-grant-removal",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": revoke_grant_1,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                },
+                {
+                    "next_identity_context": removed_grant_revocation,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 2,
+                },
+            ],
+            "identity.context_untrusted",
+            3,
+        )
+    )
     revoked_probe = copy.deepcopy(base)
     promotion(revoked_probe)["identity_context"] = revoke_grant_3
     resign_all(revoked_probe)

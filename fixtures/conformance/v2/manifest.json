@@ -72,6 +72,16 @@
       "stage": 2
     },
     {
+      "case_id": "initialize-anchor-nonzero-sequence",
+      "fixture": "cases/initialize-anchor-nonzero-sequence.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-previous-snapshot",
+      "fixture": "cases/initialize-anchor-previous-snapshot.json",
+      "stage": 2
+    },
+    {
       "case_id": "keys-per-principal-limit-plus-one",
       "fixture": "cases/keys-per-principal-limit-plus-one.json",
       "stage": 2
@@ -89,6 +99,176 @@
     {
       "case_id": "missing-selector",
       "fixture": "cases/missing-selector.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-authorization-envelope-version-unsupported",
+      "fixture": "cases/nested-authorization-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-authorization-kind-mismatch",
+      "fixture": "cases/nested-authorization-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-authorization-payload-version-unsupported",
+      "fixture": "cases/nested-authorization-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-candidate-envelope-version-unsupported",
+      "fixture": "cases/nested-candidate-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-candidate-kind-mismatch",
+      "fixture": "cases/nested-candidate-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-candidate-payload-version-unsupported",
+      "fixture": "cases/nested-candidate-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-candidate-signature-kind-mismatch",
+      "fixture": "cases/nested-candidate-signature-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-candidate-signature-version-unsupported",
+      "fixture": "cases/nested-candidate-signature-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-constitution-envelope-version-unsupported",
+      "fixture": "cases/nested-constitution-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-constitution-kind-mismatch",
+      "fixture": "cases/nested-constitution-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-constitution-payload-version-unsupported",
+      "fixture": "cases/nested-constitution-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-decision-envelope-version-unsupported",
+      "fixture": "cases/nested-decision-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-decision-kind-mismatch",
+      "fixture": "cases/nested-decision-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-evidence-envelope-version-unsupported",
+      "fixture": "cases/nested-evidence-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-evidence-kind-mismatch",
+      "fixture": "cases/nested-evidence-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-evidence-payload-version-unsupported",
+      "fixture": "cases/nested-evidence-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-evidence-signature-kind-mismatch",
+      "fixture": "cases/nested-evidence-signature-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-evidence-signature-version-unsupported",
+      "fixture": "cases/nested-evidence-signature-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-grant-envelope-version-unsupported",
+      "fixture": "cases/nested-grant-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-grant-kind-mismatch",
+      "fixture": "cases/nested-grant-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-grant-payload-version-unsupported",
+      "fixture": "cases/nested-grant-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-grant-signature-kind-mismatch",
+      "fixture": "cases/nested-grant-signature-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-grant-signature-version-unsupported",
+      "fixture": "cases/nested-grant-signature-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-identity-envelope-version-unsupported",
+      "fixture": "cases/nested-identity-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-identity-kind-mismatch",
+      "fixture": "cases/nested-identity-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-identity-payload-version-unsupported",
+      "fixture": "cases/nested-identity-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-key-binding-version-unsupported",
+      "fixture": "cases/nested-key-binding-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-principal-version-unsupported",
+      "fixture": "cases/nested-principal-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-promotion-envelope-version-unsupported",
+      "fixture": "cases/nested-promotion-envelope-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-promotion-kind-mismatch",
+      "fixture": "cases/nested-promotion-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-promotion-payload-version-unsupported",
+      "fixture": "cases/nested-promotion-payload-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-proposal-version-unsupported",
+      "fixture": "cases/nested-proposal-version-unsupported.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-selector-signature-kind-mismatch",
+      "fixture": "cases/nested-selector-signature-kind-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "nested-selector-signature-version-unsupported",
+      "fixture": "cases/nested-selector-signature-version-unsupported.json",
       "stage": 2
     },
     {
@@ -192,6 +372,11 @@
       "stage": 3
     },
     {
+      "case_id": "authorization-domain-reanchored-confused-deputy",
+      "fixture": "cases/authorization-domain-reanchored-confused-deputy.json",
+      "stage": 3
+    },
+    {
       "case_id": "authorization-lineage-capabilities-untrusted",
       "fixture": "cases/authorization-lineage-capabilities-untrusted.json",
       "stage": 3
@@ -237,6 +422,21 @@
       "stage": 3
     },
     {
+      "case_id": "initialize-anchor-domain-mismatch",
+      "fixture": "cases/initialize-anchor-domain-mismatch.json",
+      "stage": 3
+    },
+    {
+      "case_id": "revoked-grant-removal",
+      "fixture": "cases/revoked-grant-removal.json",
+      "stage": 3
+    },
+    {
+      "case_id": "revoked-key-removal",
+      "fixture": "cases/revoked-key-removal.json",
+      "stage": 3
+    },
+    {
       "case_id": "trusted-time-untrusted",
       "fixture": "cases/trusted-time-untrusted.json",
       "stage": 3
@@ -267,8 +467,28 @@
       "stage": 4
     },
     {
+      "case_id": "precedence-digest-before-key-id",
+      "fixture": "cases/precedence-digest-before-key-id.json",
+      "stage": 4
+    },
+    {
       "case_id": "precedence-digest-before-kind",
       "fixture": "cases/precedence-digest-before-kind.json",
+      "stage": 4
+    },
+    {
+      "case_id": "precedence-evidence-digest-before-candidate-kind",
+      "fixture": "cases/precedence-evidence-digest-before-candidate-kind.json",
+      "stage": 4
+    },
+    {
+      "case_id": "precedence-key-id-before-kind",
+      "fixture": "cases/precedence-key-id-before-kind.json",
+      "stage": 4
+    },
+    {
+      "case_id": "precedence-stage-four-before-five",
+      "fixture": "cases/precedence-stage-four-before-five.json",
       "stage": 4
     },
     {
@@ -314,6 +534,56 @@
     {
       "case_id": "historical-key-reassignment",
       "fixture": "cases/historical-key-reassignment.json",
+      "stage": 5
+    },
+    {
+      "case_id": "initialize-anchor-genesis",
+      "fixture": "cases/initialize-anchor-genesis.json",
+      "stage": 5
+    },
+    {
+      "case_id": "insufficient-independent-verifiers",
+      "fixture": "cases/insufficient-independent-verifiers.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-ambiguous-before-unknown",
+      "fixture": "cases/precedence-ambiguous-before-unknown.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-conflict-before-independence",
+      "fixture": "cases/precedence-conflict-before-independence.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-principal-before-ambiguous",
+      "fixture": "cases/precedence-principal-before-ambiguous.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-revoked-grant-before-role",
+      "fixture": "cases/precedence-revoked-grant-before-role.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-revoked-key-before-grant",
+      "fixture": "cases/precedence-revoked-key-before-grant.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-role-before-conflict",
+      "fixture": "cases/precedence-role-before-conflict.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-unbound-before-revoked-key",
+      "fixture": "cases/precedence-unbound-before-revoked-key.json",
+      "stage": 5
+    },
+    {
+      "case_id": "precedence-unknown-before-unbound",
+      "fixture": "cases/precedence-unknown-before-unbound.json",
       "stage": 5
     },
     {
@@ -392,6 +662,11 @@
       "stage": 6
     },
     {
+      "case_id": "precedence-encoding-before-equation",
+      "fixture": "cases/precedence-encoding-before-equation.json",
+      "stage": 6
+    },
+    {
       "case_id": "signature-s-l",
       "fixture": "cases/signature-s-l.json",
       "stage": 6
@@ -444,6 +719,11 @@
     {
       "case_id": "torsion-r-7-rejected",
       "fixture": "cases/torsion-r-7-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "unsupported-key-binding-algorithm",
+      "fixture": "cases/unsupported-key-binding-algorithm.json",
       "stage": 6
     },
     {
@@ -524,6 +804,36 @@
     {
       "case_id": "precedence-audience-before-context",
       "fixture": "cases/precedence-audience-before-context.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-capability-before-interval",
+      "fixture": "cases/precedence-capability-before-interval.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-context-before-subject",
+      "fixture": "cases/precedence-context-before-subject.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-early-before-delegation",
+      "fixture": "cases/precedence-early-before-delegation.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-expired-before-delegation",
+      "fixture": "cases/precedence-expired-before-delegation.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-interval-before-early",
+      "fixture": "cases/precedence-interval-before-early.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-subject-before-capability",
+      "fixture": "cases/precedence-subject-before-capability.json",
       "stage": 8
     },
     {
@@ -617,6 +927,11 @@
       "stage": 11
     },
     {
+      "case_id": "public-key-wrong-length",
+      "fixture": "cases/public-key-wrong-length.json",
+      "stage": 11
+    },
+    {
       "case_id": "revoked-grants-exact-limit",
       "fixture": "cases/revoked-grants-exact-limit.json",
       "stage": 11
@@ -637,6 +952,16 @@
       "stage": 11
     },
     {
+      "case_id": "selector-issuer-role-conflict",
+      "fixture": "cases/selector-issuer-role-conflict.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-proposer-role-conflict",
+      "fixture": "cases/selector-proposer-role-conflict.json",
+      "stage": 11
+    },
+    {
       "case_id": "selector-role-missing",
       "fixture": "cases/selector-role-missing.json",
       "stage": 11
@@ -644,6 +969,31 @@
     {
       "case_id": "selector-signature-invalid",
       "fixture": "cases/selector-signature-invalid.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-verifier-role-conflict",
+      "fixture": "cases/selector-verifier-role-conflict.json",
+      "stage": 11
+    },
+    {
+      "case_id": "signature-wrong-length",
+      "fixture": "cases/signature-wrong-length.json",
+      "stage": 11
+    },
+    {
+      "case_id": "signing-message-extra-final-lf",
+      "fixture": "cases/signing-message-extra-final-lf.json",
+      "stage": 11
+    },
+    {
+      "case_id": "signing-message-missing-final-lf",
+      "fixture": "cases/signing-message-missing-final-lf.json",
+      "stage": 11
+    },
+    {
+      "case_id": "standard-base64-signature-rejected",
+      "fixture": "cases/standard-base64-signature-rejected.json",
       "stage": 11
     },
     {
@@ -668,5 +1018,5 @@
     }
   ],
   "manifest_version": "m2.1-conformance-manifest/v2",
-  "spec_revision": "0e93545510aae6126c8caf5c78eacab0036f80339f2d177d1d8da7bca67433cb"
+  "spec_revision": "f76fe6239f713e9234c6f8d494e23ce3c5ff5e31ea8a0fe4a668e700c61e2639"
 }

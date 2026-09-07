@@ -13,6 +13,7 @@
   "notes": "Policy rejection is a verified, signed result rather than a verifier error.",
   "signature_vectors": [
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
@@ -20,6 +21,7 @@
       "principal_id": "principal:builder",
       "public_key_base64url": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo",
       "signature_base64url": "H_VvfpGwy-15yCn2DYfRtewvLV5e_yioAN-PZFcBOKVvTkG5I20_3qKe4-CMfdwpQE53QncvZZQAyhW1sjgdCQ",
+      "signed_digest": "6524696ef7aad789cb2b90489c42953f7e341403af765603ec121bbc16ebefb9",
       "signed_kind": "candidate",
       "target_digest": "6524696ef7aad789cb2b90489c42953f7e341403af765603ec121bbc16ebefb9",
       "target_envelope": {
@@ -45,6 +47,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
@@ -52,6 +55,7 @@
       "principal_id": "principal:verifier",
       "public_key_base64url": "J4EX_BRMcjQPZ9DyMW6Dhs7_vyskKMnFH-98WX8dQm4",
       "signature_base64url": "lbOQAS9FI5vT6Ng8x88RAge6twuJGh3v331p_IaoZqkfN91rzrveJHWBziNNGQ4MQepehKFJzOowFKZRge5SDg",
+      "signed_digest": "5732313bf777a5fa4a2941baa2ad235733aaa646a7f4e62ff3446289302a1bf1",
       "signed_kind": "evidence",
       "target_digest": "5732313bf777a5fa4a2941baa2ad235733aaa646a7f4e62ff3446289302a1bf1",
       "target_envelope": {
@@ -74,6 +78,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
@@ -81,6 +86,7 @@
       "principal_id": "principal:issuer",
       "public_key_base64url": "PUAXw-hDiVqStwqnTRt-vJyYLM8uxJaMwM1V8Sr0Zgw",
       "signature_base64url": "n42u0snfsF1AqI64jlJCWgW3GmJaD822t-KVkenwozlWjBNqdtkTEyJrtLwdTtBfoxJFa3LXZCInkhC-iIh8CQ",
+      "signed_digest": "4b9b7662b582d6bd8659607d525ee4d5b508fc4516d1e51703939d1c51b229fe",
       "signed_kind": "authority-grant",
       "target_digest": "4b9b7662b582d6bd8659607d525ee4d5b508fc4516d1e51703939d1c51b229fe",
       "target_envelope": {
@@ -108,6 +114,7 @@
       "vector_version": "m2.1-signature-vector/v1"
     },
     {
+      "algorithm": "Ed25519",
       "expected": "verified",
       "expected_code": null,
       "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
@@ -115,6 +122,7 @@
       "principal_id": "principal:selector",
       "public_key_base64url": "_FHNjmIYoaONpH7QAjDwWAgW7RO6MwOsXeuRFUiQgCU",
       "signature_base64url": "lDLdqujb5xkRd1KHO4xzAA93zRDXAtoMbxBRsRt1v0A1Owoy1Kh4XeqilWbFi3gNzcIZEZ0HFuXo5IvJeBd3CA",
+      "signed_digest": "64cfa89b728f566743dc651a24d215c27fdc2dec561c6c6bceecb1c7b1cbc43a",
       "signed_kind": "promotion-decision",
       "target_digest": "64cfa89b728f566743dc651a24d215c27fdc2dec561c6c6bceecb1c7b1cbc43a",
       "target_envelope": {

@@ -10,6 +10,8 @@ This directory contains the implementation-independent M2.1 wire-contract candid
   cases under `cases/`.
 - every case carries exact canonical input bytes, their digest, its trusted anchor or ordered
   anchor history, expected stage/code, and the relevant complete signature vectors.
+- `schemas/v2/anchor-initialization.schema.json` defines the exact genesis input used by the
+  `initialize-anchor` entry point.
 
 The only signing seeds in the generator are the four published RFC 8032 section 7.1 test vectors,
 explicitly labelled non-secret interoperability material. No project-generated private key or
@@ -22,6 +24,11 @@ The Rust test independently verifies the same positive and invalid Ed25519 vecto
 runners never treat those pretty-printed bytes as wire input; `input_base64url` is authoritative.
 `wycheproof-ed25519-subset.json` adds a provenance-pinned Apache-2.0 subset of C2SP Project
 Wycheproof; Python and Rust both execute every selected valid and invalid vector.
+
+Schema resolution is offline and deterministic: consumers preload every `$id` from the repository
+`schemas/` tree into a local Draft 2020-12 registry. HTTPS schema identifiers are stable names, not
+network fetch instructions; the repository verifier exercises the published manifest wrapper with
+that registry.
 
 These fixtures do not enable the M2.1 runtime verifier and cannot append lineage. Freeze status is
 granted only after the independent automated council reviews the exact commit and reports no P0/P1.

@@ -10,6 +10,9 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::traits::IsIdentity;
 use ed25519_dalek::{Signature, VerifyingKey};
 use serde::Deserialize;
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use variaxiom_protocol::canonical_digest;
 
 const L: [u8; 32] = [
     0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
@@ -34,7 +37,15 @@ struct Case {
 #[derive(Deserialize)]
 struct Vector {
     vector_id: String,
+    target_envelope: Value,
+    target_digest: String,
+    algorithm: String,
+    trust_domain_id: String,
+    principal_id: String,
+    key_id: String,
     public_key_base64url: String,
+    signed_kind: String,
+    signed_digest: String,
     message_hex: String,
     signature_base64url: String,
     expected: String,
@@ -92,9 +103,32 @@ fn point_is_accepted(encoded: &[u8; 32]) -> bool {
 }
 
 fn classify(vector: &Vector) -> Result<(), &'static str> {
+    let target_digest =
+        canonical_digest(&vector.target_envelope).map_err(|_| "signature.digest_mismatch")?;
+    if target_digest != vector.target_digest {
+        return Err("signature.digest_mismatch");
+    }
+    if vector.signed_digest != vector.target_digest {
+        return Err("signature.digest_mismatch");
+    }
     let public = URL_SAFE_NO_PAD
         .decode(&vector.public_key_base64url)
         .map_err(|_| "signature.encoding_invalid")?;
+    let computed_key_id = format!(
+        "key:sha256:{:x}",
+        Sha256::digest([b"variaxiom-key/v1\0Ed25519\0".as_slice(), &public].concat())
+    );
+    if computed_key_id != vector.key_id {
+        return Err("signature.key_id_mismatch");
+    }
+    if vector.target_envelope.get("kind").and_then(Value::as_str)
+        != Some(vector.signed_kind.as_str())
+    {
+        return Err("signature.kind_mismatch");
+    }
+    if vector.algorithm != "Ed25519" {
+        return Err("signature.algorithm_unsupported");
+    }
     let signature = URL_SAFE_NO_PAD
         .decode(&vector.signature_base64url)
         .map_err(|_| "signature.encoding_invalid")?;
@@ -122,6 +156,19 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
         VerifyingKey::from_bytes(&public).map_err(|_| "signature.encoding_invalid")?;
     let signature = Signature::from_bytes(&signature);
     let message = decode_hex(&vector.message_hex).ok_or("signature.encoding_invalid")?;
+    let expected_message = format!(
+        "variaxiom-signature/v1\n{}\n{}\n{}\n{}\n{}\n{}\n",
+        vector.algorithm,
+        vector.trust_domain_id,
+        vector.principal_id,
+        vector.key_id,
+        vector.signed_kind,
+        vector.signed_digest
+    )
+    .into_bytes();
+    if message != expected_message {
+        return Err("signature.invalid");
+    }
     verifying_key
         .verify_strict(&message, &signature)
         .map_err(|_| "signature.invalid")
@@ -166,7 +213,7 @@ fn shared_m2_signature_vectors_match_strict_rust_profile() {
                     "{} unexpectedly rejected: {observed:?}",
                     vector.vector_id
                 ),
-                ("rejected", Some("signature.encoding_invalid" | "signature.invalid")) => {
+                ("rejected", Some(_)) => {
                     assert_eq!(
                         observed.unwrap_err(),
                         vector.expected_code.as_deref().unwrap()

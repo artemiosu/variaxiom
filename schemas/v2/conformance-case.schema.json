@@ -56,11 +56,22 @@
   "allOf": [
     {
       "if": {"properties": {"entrypoint": {"enum": ["verify-attested-proposal", "replay-historical"]}}},
-      "then": {"required": ["trusted_anchor"]}
+      "then": {"required": ["trusted_anchor"], "not": {"required": ["anchor_history"]}}
     },
     {
       "if": {"properties": {"entrypoint": {"const": "advance-anchor-history"}}},
-      "then": {"required": ["anchor_history"]}
+      "then": {"required": ["anchor_history"], "not": {"required": ["trusted_anchor"]}}
+    },
+    {
+      "if": {"properties": {"entrypoint": {"const": "initialize-anchor"}}},
+      "then": {
+        "not": {
+          "anyOf": [
+            {"required": ["trusted_anchor"]},
+            {"required": ["anchor_history"]}
+          ]
+        }
+      }
     },
     {
       "if": {"properties": {"expected": {"properties": {"status": {"const": "verified"}}}}},
@@ -68,7 +79,17 @@
     },
     {
       "if": {"properties": {"expected": {"properties": {"status": {"const": "rejected"}}}}},
-      "then": {"properties": {"expected": {"properties": {"code": {"type": "string"}}}}}
+      "then": {
+        "properties": {
+          "expected": {
+            "properties": {"code": {"type": "string"}, "authorizing": {"const": false}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"entrypoint": {"enum": ["initialize-anchor", "advance-anchor-history", "replay-historical"]}}},
+      "then": {"properties": {"expected": {"properties": {"authorizing": {"const": false}}}}}
     }
   ],
   "$defs": {

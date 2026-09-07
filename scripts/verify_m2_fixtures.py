@@ -34,6 +34,47 @@ ROLE_FOR_KIND = {
     "promotion-decision": "promotion-selector",
 }
 
+REQUIRED_CASE_IDS = {
+    "authorization-domain-reanchored-confused-deputy",
+    "initialize-anchor-genesis",
+    "initialize-anchor-domain-mismatch",
+    "insufficient-independent-verifiers",
+    "nested-candidate-envelope-version-unsupported",
+    "nested-candidate-kind-mismatch",
+    "precedence-digest-before-key-id",
+    "precedence-key-id-before-kind",
+    "precedence-evidence-digest-before-candidate-kind",
+    "precedence-stage-four-before-five",
+    "precedence-principal-before-ambiguous",
+    "precedence-ambiguous-before-unknown",
+    "precedence-unknown-before-unbound",
+    "precedence-unbound-before-revoked-key",
+    "precedence-revoked-key-before-grant",
+    "precedence-revoked-grant-before-role",
+    "precedence-role-before-conflict",
+    "precedence-conflict-before-independence",
+    "precedence-encoding-before-equation",
+    "precedence-context-before-subject",
+    "precedence-subject-before-capability",
+    "precedence-capability-before-interval",
+    "precedence-interval-before-early",
+    "precedence-early-before-delegation",
+    "precedence-expired-before-delegation",
+    "public-key-wrong-length",
+    "revoked-grant-removal",
+    "revoked-key-removal",
+    "selector-issuer-role-conflict",
+    "selector-proposer-role-conflict",
+    "selector-verifier-role-conflict",
+    "signature-wrong-length",
+    "signing-message-extra-final-lf",
+    "signing-message-missing-final-lf",
+    "standard-base64-signature-rejected",
+    "unsupported-key-binding-algorithm",
+}
+
+Result = tuple[str, int | None, str | None, str, bool]
+
 
 class Rejected(Exception):
     def __init__(self, stage: int, code: str) -> None:
@@ -96,6 +137,183 @@ SCHEMAS, REGISTRY = load_schemas()
 def schema_errors(value: object, schema_name: str) -> list[Any]:
     validator = Draft202012Validator(SCHEMAS[schema_name], registry=REGISTRY)
     return list(validator.iter_errors(value))
+
+
+def at_path(value: object, path: tuple[str | int, ...]) -> object | None:
+    current = value
+    for part in path:
+        if isinstance(part, str) and isinstance(current, dict):
+            current = current.get(part)
+        elif isinstance(part, int) and isinstance(current, list) and part < len(current):
+            current = current[part]
+        else:
+            return None
+    return current
+
+
+def version_kind_preflight(value: dict[str, Any]) -> None:
+    """Check every known nested version and envelope kind before JSON Schema."""
+    envelope_paths: list[tuple[tuple[str | int, ...], str]] = [
+        ((), "attested-proposal"),
+        (("payload", "promotion_input"), "promotion-input"),
+        (("payload", "promotion_input", "payload", "candidate", "envelope"), "candidate"),
+        (("payload", "promotion_input", "payload", "candidate", "signature"), "detached-signature"),
+        (("payload", "promotion_input", "payload", "constitution", "envelope"), "constitution"),
+        (("payload", "promotion_input", "payload", "identity_context"), "identity-context"),
+        (
+            ("payload", "promotion_input", "payload", "authorization_context"),
+            "authorization-context",
+        ),
+        (("payload", "decision"), "promotion-decision"),
+        (("payload", "selector_signature"), "detached-signature"),
+    ]
+    body = at_path(value, ("payload", "promotion_input", "payload"))
+    if isinstance(body, dict):
+        for index, _ in enumerate(body.get("evidence", [])):
+            envelope_paths.extend(
+                [
+                    (
+                        ("payload", "promotion_input", "payload", "evidence", index, "envelope"),
+                        "evidence",
+                    ),
+                    (
+                        ("payload", "promotion_input", "payload", "evidence", index, "signature"),
+                        "detached-signature",
+                    ),
+                ]
+            )
+        if "authority_grant" in body:
+            envelope_paths.extend(
+                [
+                    (
+                        ("payload", "promotion_input", "payload", "authority_grant", "envelope"),
+                        "authority-grant",
+                    ),
+                    (
+                        ("payload", "promotion_input", "payload", "authority_grant", "signature"),
+                        "detached-signature",
+                    ),
+                ]
+            )
+    version_fields: list[tuple[tuple[str | int, ...], str, str]] = []
+    for path, _ in envelope_paths:
+        version_fields.append((path, "envelope_version", "variaxiom-envelope/v1"))
+    for path, expected_kind in envelope_paths:
+        if expected_kind == "detached-signature":
+            version_fields.append(
+                ((*path, "payload"), "signature_version", "detached-signature/v1")
+            )
+    version_fields.extend(
+        [
+            (("payload",), "proposal_version", "attested-proposal/v1"),
+            (("payload", "promotion_input", "payload"), "protocol_version", "promotion-input/v2"),
+            (
+                ("payload", "promotion_input", "payload", "candidate", "envelope", "payload"),
+                "candidate_version",
+                "candidate/v2",
+            ),
+            (
+                ("payload", "promotion_input", "payload", "constitution", "envelope", "payload"),
+                "version",
+                "constitution/v1",
+            ),
+            (
+                ("payload", "promotion_input", "payload", "identity_context", "payload"),
+                "identity_context_version",
+                "identity-context/v1",
+            ),
+            (
+                ("payload", "promotion_input", "payload", "authorization_context", "payload"),
+                "authorization_context_version",
+                "authorization-context/v1",
+            ),
+        ]
+    )
+    if isinstance(body, dict):
+        for index, _ in enumerate(body.get("evidence", [])):
+            version_fields.append(
+                (
+                    (
+                        "payload",
+                        "promotion_input",
+                        "payload",
+                        "evidence",
+                        index,
+                        "envelope",
+                        "payload",
+                    ),
+                    "evidence_version",
+                    "evidence/v2",
+                )
+            )
+        if "authority_grant" in body:
+            version_fields.append(
+                (
+                    (
+                        "payload",
+                        "promotion_input",
+                        "payload",
+                        "authority_grant",
+                        "envelope",
+                        "payload",
+                    ),
+                    "grant_version",
+                    "authority-grant/v1",
+                )
+            )
+        identity = body.get("identity_context", {}).get("payload", {})
+        if isinstance(identity, dict):
+            for p_index, principal in enumerate(identity.get("principals", [])):
+                version_fields.append(
+                    (
+                        (
+                            "payload",
+                            "promotion_input",
+                            "payload",
+                            "identity_context",
+                            "payload",
+                            "principals",
+                            p_index,
+                        ),
+                        "principal_version",
+                        "principal/v1",
+                    )
+                )
+                if isinstance(principal, dict):
+                    for k_index, _ in enumerate(principal.get("keys", [])):
+                        version_fields.append(
+                            (
+                                (
+                                    "payload",
+                                    "promotion_input",
+                                    "payload",
+                                    "identity_context",
+                                    "payload",
+                                    "principals",
+                                    p_index,
+                                    "keys",
+                                    k_index,
+                                ),
+                                "key_binding_version",
+                                "key-binding/v1",
+                            )
+                        )
+    for path, _ in sorted(envelope_paths, key=lambda item: str(item[0])):
+        node = at_path(value, path)
+        if (
+            isinstance(node, dict)
+            and "envelope_version" in node
+            and node["envelope_version"] != "variaxiom-envelope/v1"
+        ):
+            reject(2, "input.version_unsupported")
+    for path, field, expected in sorted(version_fields, key=lambda item: (str(item[0]), item[1])):
+        node = at_path(value, path)
+        if isinstance(node, dict) and field in node and node[field] != expected:
+            reject(2, "input.version_unsupported")
+    for path, expected_kind in sorted(envelope_paths, key=lambda item: str(item[0])):
+        node = at_path(value, path)
+        if isinstance(node, dict) and "kind" in node and node["kind"] != expected_kind:
+            reject(2, "input.kind_mismatch")
 
 
 def walk(value: object) -> list[object]:
@@ -238,7 +456,7 @@ def all_pairs(
 
 def identity_maps(
     attested: dict[str, Any],
-) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]]]:
+) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]], bool]:
     identity = attested["payload"]["promotion_input"]["payload"]["identity_context"]["payload"]
     principals: dict[str, dict[str, Any]] = {}
     keys: dict[str, tuple[str, dict[str, Any]]] = {}
@@ -254,18 +472,18 @@ def identity_maps(
                 ambiguous = True
             keys[key["key_id"]] = (principal_id, key)
             public_keys.add(key["public_key_base64url"])
-    if ambiguous:
-        reject(5, "identity.key_ambiguous")
-    return principals, keys
+    return principals, keys, ambiguous
 
 
 def stage_four(
     pairs: list[tuple[dict[str, Any], str, str]], keys: dict[str, tuple[str, dict[str, Any]]]
 ) -> None:
-    for pair, kind, _ in pairs:
+    for pair, _, _ in pairs:
         signature = pair["signature"]["payload"]
         if signature["signed_digest"] != digest(pair["envelope"]):
             reject(4, "signature.digest_mismatch")
+    for pair, _kind, _ in pairs:
+        signature = pair["signature"]["payload"]
         binding = keys.get(signature["key_id"])
         if binding is not None:
             try:
@@ -274,6 +492,8 @@ def stage_four(
                 reject(6, "signature.encoding_invalid")
             if computed != binding[1]["key_id"]:
                 reject(4, "signature.key_id_mismatch")
+    for pair, kind, _ in pairs:
+        signature = pair["signature"]["payload"]
         if signature["signed_kind"] != kind:
             reject(4, "signature.kind_mismatch")
 
@@ -284,34 +504,46 @@ def stage_five(
     pairs: list[tuple[dict[str, Any], str, str]],
     principals: dict[str, dict[str, Any]],
     keys: dict[str, tuple[str, dict[str, Any]]],
+    ambiguous: bool,
+    *,
+    role_pairs: list[tuple[dict[str, Any], str, str]] | None = None,
 ) -> None:
-    actors: list[str] = []
-    for pair, kind, actor in pairs:
+    for pair, _, actor in pairs:
         sig = pair["signature"]["payload"]
         if sig["principal_id"] != actor:
             reject(5, "signature.principal_mismatch")
+    if ambiguous:
+        reject(5, "identity.key_ambiguous")
+    for pair, _, _ in pairs:
+        sig = pair["signature"]["payload"]
         if sig["principal_id"] not in principals:
             reject(5, "identity.principal_unknown")
+    for pair, _, _ in pairs:
+        sig = pair["signature"]["payload"]
         binding = keys.get(sig["key_id"])
         if binding is None or binding[0] != sig["principal_id"]:
             reject(5, "identity.key_unbound")
+    for pair, _, _ in pairs:
+        sig = pair["signature"]["payload"]
         if sig["key_id"] in anchor["revoked_key_ids"]:
             reject(5, "signature.key_revoked")
-        if ROLE_FOR_KIND[kind] not in principals[sig["principal_id"]]["roles"]:
-            reject(5, "identity.role_missing")
-        actors.append(actor)
     body = attested["payload"]["promotion_input"]["payload"]
     grant = body.get("authority_grant")
     if isinstance(grant, dict):
         grant_id = "grant:sha256:" + digest(grant["envelope"])
         if grant_id in anchor["revoked_grant_ids"]:
             reject(5, "grant.revoked")
-    evidence_actors = [actor for (_, kind, actor) in pairs if kind == "evidence"]
-    other_actors = [actor for (_, kind, actor) in pairs if kind != "evidence"]
+    for pair, kind, _ in pairs:
+        sig = pair["signature"]["payload"]
+        if ROLE_FOR_KIND[kind] not in principals[sig["principal_id"]]["roles"]:
+            reject(5, "identity.role_missing")
+    actors_to_compare = role_pairs or pairs
+    evidence_actors = [actor for (_, kind, actor) in actors_to_compare if kind == "evidence"]
+    other_actors = [actor for (_, kind, actor) in actors_to_compare if kind != "evidence"]
     if len(other_actors) != len(set(other_actors)) or set(evidence_actors) & set(other_actors):
         reject(5, "identity.role_conflict")
     constitution = body["constitution"]["envelope"]["payload"]
-    evidence_principals = {item[2] for item in pairs if item[1] == "evidence"}
+    evidence_principals = {item[2] for item in actors_to_compare if item[1] == "evidence"}
     if (
         evidence_principals
         and len(evidence_principals) < constitution["minimum_independent_verifiers"]
@@ -319,30 +551,91 @@ def stage_five(
         reject(5, "identity.not_independent")
 
 
-def verify_signature(pair: dict[str, Any], keys: dict[str, tuple[str, dict[str, Any]]]) -> None:
-    sig = pair["signature"]["payload"]
-    if sig["algorithm"] != "Ed25519":
-        reject(6, "signature.algorithm_unsupported")
-    binding = keys[sig["key_id"]][1]
-    public = decode_unpadded(binding["public_key_base64url"], 32)
-    raw_signature = decode_unpadded(sig["signature_base64url"], 64)
-    if not bindings.crypto_core_ed25519_is_valid_point(public):
-        reject(6, "signature.encoding_invalid")
-    r_value, s_value = raw_signature[:32], raw_signature[32:]
-    if (
-        not bindings.crypto_core_ed25519_is_valid_point(r_value)
-        or int.from_bytes(s_value, "little") >= L
-    ):
-        reject(6, "signature.encoding_invalid")
+def stage_six(
+    pairs: list[tuple[dict[str, Any], str, str]],
+    keys: dict[str, tuple[str, dict[str, Any]]],
+) -> None:
+    prepared: list[tuple[bytes, bytes, bytes]] = []
+    for pair, _, _ in pairs:
+        sig = pair["signature"]["payload"]
+        binding = keys[sig["key_id"]][1]
+        if sig["algorithm"] != "Ed25519" or binding["algorithm"] != "Ed25519":
+            reject(6, "signature.algorithm_unsupported")
+    for pair, _, _ in pairs:
+        sig = pair["signature"]["payload"]
+        binding = keys[sig["key_id"]][1]
+        public = decode_unpadded(binding["public_key_base64url"], 32)
+        raw_signature = decode_unpadded(sig["signature_base64url"], 64)
+        if not bindings.crypto_core_ed25519_is_valid_point(public):
+            reject(6, "signature.encoding_invalid")
+        r_value, s_value = raw_signature[:32], raw_signature[32:]
+        if (
+            not bindings.crypto_core_ed25519_is_valid_point(r_value)
+            or int.from_bytes(s_value, "little") >= L
+        ):
+            reject(6, "signature.encoding_invalid")
+        prepared.append((public, signing_message(sig), raw_signature))
+    for public, message, raw_signature in prepared:
+        try:
+            VerifyKey(public).verify(message, raw_signature)
+        except BadSignatureError:
+            reject(6, "signature.invalid")
+
+
+def classify_signature_vector(vector: dict[str, Any]) -> str | None:
+    """Independently derive every field in a published signature vector."""
     try:
-        VerifyKey(public).verify(signing_message(sig), raw_signature)
-    except BadSignatureError:
-        reject(6, "signature.invalid")
+        if vector["target_digest"] != digest(vector["target_envelope"]):
+            reject(4, "signature.digest_mismatch")
+        if vector["signed_digest"] != vector["target_digest"]:
+            reject(4, "signature.digest_mismatch")
+        try:
+            public = decode_unpadded(vector["public_key_base64url"], 32)
+            computed_key_id = (
+                "key:sha256:" + hashlib.sha256(b"variaxiom-key/v1\0Ed25519\0" + public).hexdigest()
+            )
+        except Rejected:
+            reject(6, "signature.encoding_invalid")
+        if vector["key_id"] != computed_key_id:
+            reject(4, "signature.key_id_mismatch")
+        if vector["signed_kind"] != vector["target_envelope"]["kind"]:
+            reject(4, "signature.kind_mismatch")
+        if vector["algorithm"] != "Ed25519":
+            reject(6, "signature.algorithm_unsupported")
+        raw_signature = decode_unpadded(vector["signature_base64url"], 64)
+        r_value, s_value = raw_signature[:32], raw_signature[32:]
+        if (
+            not bindings.crypto_core_ed25519_is_valid_point(public)
+            or not bindings.crypto_core_ed25519_is_valid_point(r_value)
+            or int.from_bytes(s_value, "little") >= L
+        ):
+            reject(6, "signature.encoding_invalid")
+        payload = {
+            "algorithm": vector["algorithm"],
+            "trust_domain_id": vector["trust_domain_id"],
+            "principal_id": vector["principal_id"],
+            "key_id": vector["key_id"],
+            "signed_kind": vector["signed_kind"],
+            "signed_digest": vector["signed_digest"],
+        }
+        try:
+            supplied_message = bytes.fromhex(vector["message_hex"])
+        except ValueError:
+            reject(6, "signature.encoding_invalid")
+        if supplied_message != signing_message(payload):
+            reject(6, "signature.invalid")
+        try:
+            VerifyKey(public).verify(supplied_message, raw_signature)
+        except BadSignatureError:
+            reject(6, "signature.invalid")
+        return None
+    except (KeyError, TypeError):
+        return "input.schema_invalid"
+    except Rejected as error:
+        return error.code
 
 
-def evaluate_anchor_history(
-    case: dict[str, Any], history: dict[str, Any]
-) -> tuple[str, int | None, str | None, str]:
+def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Result:
     try:
         anchor = history["initial_anchor"]
         previous_identity = history["initial_identity_context"]
@@ -368,6 +661,8 @@ def evaluate_anchor_history(
                 or payload["previous_snapshot_digest"] != digest(previous_identity)
                 or payload["evaluation_time_unix_s"] != now
                 or next_authorization["payload"]["trust_domain_id"] != anchor["trust_domain_id"]
+                or not set(anchor["revoked_key_ids"]).issubset(payload["revoked_key_ids"])
+                or not set(anchor["revoked_grant_ids"]).issubset(payload["revoked_grant_ids"])
             ):
                 reject(3, "identity.context_untrusted")
             seen_ids: set[str] = set()
@@ -419,21 +714,79 @@ def evaluate_anchor_history(
                 "trusted_anchor": anchor,
             }
             return evaluate_case(probe_case)
-        return "verified", None, None, "not-reached"
+        return "verified", None, None, "not-reached", False
     except (KeyError, TypeError):
-        return "rejected", 2, "input.schema_invalid", "not-reached"
+        return "rejected", 2, "input.schema_invalid", "not-reached", False
     except Rejected as error:
-        return "rejected", error.stage, error.code, "not-reached"
+        return "rejected", error.stage, error.code, "not-reached", False
 
 
-def evaluate_case(case: dict[str, Any]) -> tuple[str, int | None, str | None, str]:
+def evaluate_initialize_anchor(value: dict[str, Any]) -> Result:
+    try:
+        identity = value["initial_identity_context"]
+        authorization = value["initial_authorization_context"]
+        identity_payload = identity["payload"]
+        authorization_payload = authorization["payload"]
+        for item, _expected_kind, version_field, expected_version in (
+            (identity, "identity-context", "identity_context_version", "identity-context/v1"),
+            (
+                authorization,
+                "authorization-context",
+                "authorization_context_version",
+                "authorization-context/v1",
+            ),
+        ):
+            if (
+                item.get("envelope_version") != "variaxiom-envelope/v1"
+                or item["payload"].get(version_field) != expected_version
+            ):
+                reject(2, "input.version_unsupported")
+        for item, expected_kind in (
+            (identity, "identity-context"),
+            (authorization, "authorization-context"),
+        ):
+            if item.get("kind") != expected_kind:
+                reject(2, "input.kind_mismatch")
+        if schema_errors(value, "v2/anchor-initialization.schema.json"):
+            reject(2, "input.schema_invalid")
+        if (
+            identity_payload["snapshot_sequence"] != 0
+            or identity_payload["previous_snapshot_digest"] is not None
+            or identity_payload["evaluation_time_unix_s"] != value["trusted_now_unix_s"]
+            or authorization_payload["trust_domain_id"] != identity_payload["trust_domain_id"]
+        ):
+            reject(3, "identity.context_untrusted")
+        if len(identity_payload["principals"]) > 64:
+            reject(2, "input.limit_exceeded")
+        seen_principals: set[str] = set()
+        seen_keys: set[str] = set()
+        seen_public: set[str] = set()
+        for principal in identity_payload["principals"]:
+            if principal["principal_id"] in seen_principals:
+                reject(5, "identity.key_ambiguous")
+            seen_principals.add(principal["principal_id"])
+            if len(principal["keys"]) > 8 or len(principal["roles"]) > 8:
+                reject(2, "input.limit_exceeded")
+            for binding in principal["keys"]:
+                if binding["key_id"] in seen_keys or binding["public_key_base64url"] in seen_public:
+                    reject(5, "identity.key_ambiguous")
+                seen_keys.add(binding["key_id"])
+                seen_public.add(binding["public_key_base64url"])
+        return "verified", None, None, "not-reached", False
+    except (KeyError, TypeError):
+        return "rejected", 2, "input.schema_invalid", "not-reached", False
+    except Rejected as error:
+        return "rejected", error.stage, error.code, "not-reached", False
+
+
+def evaluate_case(case: dict[str, Any]) -> Result:
     raw = base64.urlsafe_b64decode(
         case["input_base64url"] + "=" * ((4 - len(case["input_base64url"]) % 4) % 4)
     )
     if hashlib.sha256(raw).hexdigest() != case["input_sha256"]:
-        return "rejected", 1, "input.encoding_invalid", "not-reached"
+        return "rejected", 1, "input.encoding_invalid", "not-reached", False
     if len(raw) > 1_048_576:
-        return "rejected", 1, "input.limit_exceeded", "not-reached"
+        return "rejected", 1, "input.limit_exceeded", "not-reached", False
     try:
         value = strict_json_loads(raw)
     except ValueError as error:
@@ -445,18 +798,17 @@ def evaluate_case(case: dict[str, Any]) -> tuple[str, int | None, str | None, st
         )
         if "nesting exceeds" in message:
             code = "input.limit_exceeded"
-        return "rejected", 1, code, "not-reached"
+        return "rejected", 1, code, "not-reached", False
     if canonical_json(value) != raw:
-        return "rejected", 1, "input.encoding_invalid", "not-reached"
+        return "rejected", 1, "input.encoding_invalid", "not-reached", False
     if not isinstance(value, dict):
-        return "rejected", 2, "input.schema_invalid", "not-reached"
+        return "rejected", 2, "input.schema_invalid", "not-reached", False
     if case["entrypoint"] == "advance-anchor-history":
         return evaluate_anchor_history(case, value)
+    if case["entrypoint"] == "initialize-anchor":
+        return evaluate_initialize_anchor(value)
     try:
-        if value.get("envelope_version") != "variaxiom-envelope/v1":
-            reject(2, "input.version_unsupported")
-        if value.get("kind") != "attested-proposal":
-            reject(2, "input.kind_mismatch")
+        version_kind_preflight(value)
         if schema_errors(value, "v2/envelope.schema.json"):
             reject(2, "input.schema_invalid")
         semantic_stage_two(value)
@@ -480,17 +832,19 @@ def evaluate_case(case: dict[str, Any]) -> tuple[str, int | None, str | None, st
             or identity_payload["evaluation_time_unix_s"] != anchor["trusted_now_unix_s"]
         ):
             reject(3, "identity.context_untrusted")
-        if digest(authorization) != anchor["current_authorization_context_digest"]:
+        if (
+            authorization["payload"]["trust_domain_id"] != anchor["trust_domain_id"]
+            or digest(authorization) != anchor["current_authorization_context_digest"]
+        ):
             reject(3, "authorization.context_untrusted")
         for pair, _, _ in all_pairs(value):
             if pair["signature"]["payload"]["trust_domain_id"] != anchor["trust_domain_id"]:
                 reject(3, "signature.domain_mismatch")
-        principals, keys = identity_maps(value)
+        principals, keys, ambiguous = identity_maps(value)
         pairs = all_pairs(value)
         stage_four(pairs, keys)
-        stage_five(value, anchor, pairs, principals, keys)
-        for pair, _, _ in pairs:
-            verify_signature(pair, keys)
+        stage_five(value, anchor, pairs, principals, keys, ambiguous)
+        stage_six(pairs, keys)
         candidate_digest = digest(body["candidate"]["envelope"])
         for item in body["evidence"]:
             if item["envelope"]["payload"]["subject_candidate_digest"] != candidate_digest:
@@ -547,22 +901,42 @@ def evaluate_case(case: dict[str, Any]) -> tuple[str, int | None, str | None, st
             ):
                 raise Rejected(11, "signature.domain_mismatch")
             stage_four([selector_pair], keys)
-            stage_five(value, anchor, [selector_pair], principals, keys)
-            verify_signature(selector_pair[0], keys)
+            stage_five(
+                value,
+                anchor,
+                [selector_pair],
+                principals,
+                keys,
+                ambiguous,
+                role_pairs=all_pairs(value, include_selector=True),
+            )
+            stage_six([selector_pair], keys)
         except Rejected as selector_error:
             raise Rejected(11, selector_error.code) from selector_error
-        return "verified", None, None, expected_decision["payload"]["status"]
+        return (
+            "verified",
+            None,
+            None,
+            expected_decision["payload"]["status"],
+            case["entrypoint"] == "verify-attested-proposal",
+        )
     except Rejected as error:
-        return "rejected", error.stage, error.code, "not-reached"
+        return "rejected", error.stage, error.code, "not-reached", False
 
 
 def main() -> int:
     manifest = json.loads((FIXTURES / "manifest.json").read_text("utf-8"))
     failures: list[str] = []
     counts: dict[int, int] = {}
+    case_ids = {item["case_id"] for item in manifest["cases"]}
+    missing_required = sorted(REQUIRED_CASE_IDS - case_ids)
+    if missing_required:
+        failures.append(f"manifest missing required adversarial cases: {missing_required}")
     for item in manifest["cases"]:
         case = json.loads((FIXTURES / item["fixture"]).read_text("utf-8"))
-        observed_status, observed_stage, observed_code, decision_status = evaluate_case(case)
+        observed_status, observed_stage, observed_code, decision_status, authorizing = (
+            evaluate_case(case)
+        )
         expected = case["expected"]
         if observed_stage is not None:
             counts[observed_stage] = counts.get(observed_stage, 0) + 1
@@ -571,13 +945,20 @@ def main() -> int:
             or observed_code != expected["code"]
             or (observed_stage or case["stage"]) != case["stage"]
             or decision_status != expected["decision_status"]
+            or authorizing != expected["authorizing"]
         ):
             failures.append(
-                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status)} "
-                f"expected={(expected['status'], case['stage'], expected['code'], expected['decision_status'])}"
+                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status, authorizing)} "
+                f"expected={(expected['status'], case['stage'], expected['code'], expected['decision_status'], expected['authorizing'])}"
             )
-        if case["entrypoint"] == "replay-historical" and expected["authorizing"]:
-            failures.append(f"{case['case_id']}: replay case must be non-authorizing")
+        for vector in case["signature_vectors"]:
+            observed_vector_code = classify_signature_vector(vector)
+            expected_vector_code = vector["expected_code"]
+            if observed_vector_code != expected_vector_code:
+                failures.append(
+                    f"{case['case_id']}/{vector['vector_id']}: signature-vector code "
+                    f"{observed_vector_code!r} != {expected_vector_code!r}"
+                )
     wycheproof = json.loads((FIXTURES / "wycheproof-ed25519-subset.json").read_text("utf-8"))
     for item in wycheproof["vectors"]:
         accepted = False

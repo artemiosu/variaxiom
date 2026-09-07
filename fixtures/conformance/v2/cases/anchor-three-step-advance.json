@@ -415,7 +415,7 @@
   "case_version": "m2.1-conformance-case/v1",
   "entrypoint": "advance-anchor-history",
   "expected": {
-    "authorizing": true,
+    "authorizing": false,
     "code": null,
     "decision_status": "not-reached",
     "status": "verified"

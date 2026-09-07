@@ -1,4 +1,5 @@
 {
+  "algorithm": "Ed25519",
   "expected": "verified",
   "expected_code": null,
   "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
@@ -6,6 +7,7 @@
   "principal_id": "principal:selector",
   "public_key_base64url": "_FHNjmIYoaONpH7QAjDwWAgW7RO6MwOsXeuRFUiQgCU",
   "signature_base64url": "7ufVvvPCzYkEwvT3SycR60pK-sqxcI_0kzMNMBbJqPM5TDmCkrNsxqK0ZVOHZwulpHxR45w-6tEQhsjomqmqBQ",
+  "signed_digest": "21e2113480e4457975aa2a7aba2bb83058ff97d6d7c7a74a0d627a918f301c25",
   "signed_kind": "promotion-decision",
   "target_digest": "21e2113480e4457975aa2a7aba2bb83058ff97d6d7c7a74a0d627a918f301c25",
   "target_envelope": {

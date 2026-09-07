@@ -61,6 +61,7 @@ REQUIRED_FILES = (
     "schemas/v2/promotion-input.schema.json",
     "schemas/v2/attested-proposal.schema.json",
     "schemas/v2/trusted-anchor.schema.json",
+    "schemas/v2/anchor-initialization.schema.json",
     "schemas/v2/signature-vector.schema.json",
     "schemas/v2/conformance-case.schema.json",
     "fixtures/conformance/v2/base-attested-proposal.json",
@@ -757,7 +758,7 @@ def main() -> int:
                 errors.append("M2.1 golden signature target_digest does not match target envelope")
             fields = [
                 "variaxiom-signature/v1",
-                "Ed25519",
+                golden.get("algorithm"),
                 golden.get("trust_domain_id"),
                 golden.get("principal_id"),
                 golden.get("key_id"),

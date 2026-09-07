@@ -5,8 +5,8 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "vector_version", "vector_id", "target_envelope", "target_digest", "trust_domain_id", "principal_id",
-    "key_id", "public_key_base64url", "signed_kind", "message_hex",
+    "vector_version", "vector_id", "target_envelope", "target_digest", "algorithm", "trust_domain_id", "principal_id",
+    "key_id", "public_key_base64url", "signed_kind", "signed_digest", "message_hex",
     "signature_base64url", "expected", "expected_code"
   ],
   "properties": {
@@ -14,13 +14,15 @@
     "vector_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9:-]+$"},
     "target_envelope": {"$ref": "envelope.schema.json"},
     "target_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "algorithm": {"type": "string", "minLength": 1, "maxLength": 32},
     "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
     "principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
     "key_id": {"$ref": "common.schema.json#/$defs/keyId"},
-    "public_key_base64url": {"$ref": "common.schema.json#/$defs/publicKeyBase64url"},
+    "public_key_base64url": {"type": "string", "minLength": 1, "maxLength": 128},
     "signed_kind": {"enum": ["candidate", "evidence", "authority-grant", "promotion-decision"]},
+    "signed_digest": {"$ref": "common.schema.json#/$defs/sha256"},
     "message_hex": {"type": "string", "pattern": "^(?:[a-f0-9]{2})+$"},
-    "signature_base64url": {"$ref": "common.schema.json#/$defs/signatureBase64url"},
+    "signature_base64url": {"type": "string", "minLength": 1, "maxLength": 256},
     "expected": {"enum": ["verified", "rejected"]},
     "expected_code": {
       "oneOf": [

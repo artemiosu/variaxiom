@@ -43,6 +43,7 @@ struct Vector {
     trust_domain_id: String,
     principal_id: String,
     key_id: String,
+    key_binding_algorithm: String,
     public_key_base64url: String,
     signed_kind: String,
     signed_digest: String,
@@ -126,7 +127,7 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
     {
         return Err("signature.kind_mismatch");
     }
-    if vector.algorithm != "Ed25519" {
+    if vector.algorithm != "Ed25519" || vector.key_binding_algorithm != "Ed25519" {
         return Err("signature.algorithm_unsupported");
     }
     let signature = URL_SAFE_NO_PAD

@@ -360,6 +360,23 @@ def anchor_for(attested: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def anchor_from_contexts(
+    identity: dict[str, Any], authorization: dict[str, Any], trusted_now_unix_s: int
+) -> dict[str, Any]:
+    principals = identity["payload"]["principals"]
+    registry = {key["key_id"]: item["principal_id"] for item in principals for key in item["keys"]}
+    return {
+        "trust_domain_id": identity["payload"]["trust_domain_id"],
+        "current_identity_context_digest": digest(identity),
+        "current_authorization_context_digest": digest(authorization),
+        "current_snapshot_sequence": identity["payload"]["snapshot_sequence"],
+        "trusted_now_unix_s": trusted_now_unix_s,
+        "key_ownership_registry": dict(sorted(registry.items())),
+        "revoked_key_ids": identity["payload"]["revoked_key_ids"],
+        "revoked_grant_ids": identity["payload"]["revoked_grant_ids"],
+    }
+
+
 def promotion(attested: dict[str, Any]) -> dict[str, Any]:
     return attested["payload"]["promotion_input"]["payload"]
 
@@ -386,13 +403,13 @@ def resign_all(attested: dict[str, Any], signer_overrides: dict[str, str] | None
     )
 
 
-def find_public_key(attested: dict[str, Any], wanted_key_id: str) -> str:
+def find_key_binding(attested: dict[str, Any], wanted_key_id: str) -> dict[str, Any]:
     principals = promotion(attested)["identity_context"]["payload"]["principals"]
     for item in principals:
         for key in item["keys"]:
             if key["key_id"] == wanted_key_id:
-                return key["public_key_base64url"]
-    return public_key("builder")
+                return key
+    return principal("builder")["keys"][0]
 
 
 def vector(
@@ -405,14 +422,15 @@ def vector(
     actual_digest = digest(target)
     expected = "verified"
     code: str | None = None
-    encoded_public = find_public_key(attested, sig["key_id"])
+    binding = find_key_binding(attested, sig["key_id"])
+    encoded_public = binding["public_key_base64url"]
     if sig["signed_digest"] != actual_digest:
         expected, code = "rejected", "signature.digest_mismatch"
     elif key_id_from_public(encoded_public) != sig["key_id"]:
         expected, code = "rejected", "signature.key_id_mismatch"
     elif sig["signed_kind"] != target["kind"]:
         expected, code = "rejected", "signature.kind_mismatch"
-    elif sig["algorithm"] != "Ed25519":
+    elif sig["algorithm"] != "Ed25519" or binding["algorithm"] != "Ed25519":
         expected, code = "rejected", "signature.algorithm_unsupported"
     else:
         try:
@@ -451,6 +469,7 @@ def vector(
         "trust_domain_id": sig["trust_domain_id"],
         "principal_id": sig["principal_id"],
         "key_id": sig["key_id"],
+        "key_binding_algorithm": binding["algorithm"],
         "public_key_base64url": encoded_public,
         "signed_kind": sig["signed_kind"],
         "signed_digest": sig["signed_digest"],
@@ -517,6 +536,8 @@ def make_case(
             "code": code,
             "decision_status": decision_status,
             "authorizing": authorizing if code is None else False,
+            "expected_anchor": None,
+            "reached_stage": stage if code is not None else 11,
         },
         "signature_vectors": (
             vectors(source)
@@ -597,6 +618,16 @@ def history_case(
     if probe is not None:
         history["probe_attested_proposal"] = probe
     wire = canonical_bytes(history)
+    expected_anchor: dict[str, Any] | None = None
+    if code is None:
+        expected_anchor = copy.deepcopy(initial_anchor)
+        for step in steps:
+            expected_anchor = advance_expected_anchor(
+                expected_anchor,
+                step["next_identity_context"],
+                step["next_authorization_context"],
+                step["trusted_now_unix_s"],
+            )
     return {
         "case_version": "m2.1-conformance-case/v1",
         "case_id": case_id,
@@ -609,6 +640,8 @@ def history_case(
             "code": code,
             "decision_status": "not-reached",
             "authorizing": False,
+            "expected_anchor": expected_anchor,
+            "reached_stage": stage if code is not None else 6,
         },
         "signature_vectors": vectors(probe) if probe is not None else [],
         "anchor_history": history,
@@ -642,6 +675,12 @@ def initialization_case(
             "code": code,
             "decision_status": "not-reached",
             "authorizing": False,
+            "expected_anchor": (
+                anchor_from_contexts(identity, authorization, trusted_now_unix_s)
+                if code is None
+                else None
+            ),
+            "reached_stage": stage if code is not None else 6,
         },
         "signature_vectors": [],
         "notes": "Self-contained trusted-anchor genesis input.",
@@ -688,6 +727,9 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
     base_body = promotion(base)
     identity0 = base_body["identity_context"]
     authorization0 = base_body["authorization_context"]
+    genesis_identity = copy.deepcopy(identity0)
+    genesis_identity["payload"]["revoked_key_ids"] = ["key:sha256:" + "e" * 64]
+    genesis_identity["payload"]["revoked_grant_ids"] = ["grant:sha256:" + "e" * 64]
     cases: list[dict[str, Any]] = [
         make_case(
             "bounded-signed-proposal",
@@ -730,7 +772,7 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         ),
         initialization_case(
             "initialize-anchor-genesis",
-            identity0,
+            genesis_identity,
             authorization0,
             EVALUATION_TIME,
             None,
@@ -772,6 +814,98 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             EVALUATION_TIME,
             "identity.context_untrusted",
             3,
+        )
+    )
+
+    invalid_genesis_key_id = copy.deepcopy(identity0)
+    invalid_genesis_key_id["payload"]["principals"][0]["keys"][0]["key_id"] = (
+        "key:sha256:" + "a" * 64
+    )
+    cases.append(
+        initialization_case(
+            "initialize-anchor-key-id-mismatch",
+            invalid_genesis_key_id,
+            authorization0,
+            EVALUATION_TIME,
+            "signature.key_id_mismatch",
+            4,
+        )
+    )
+    invalid_genesis_algorithm = copy.deepcopy(identity0)
+    invalid_genesis_algorithm["payload"]["principals"][0]["keys"][0]["algorithm"] = "RSA"
+    cases.append(
+        initialization_case(
+            "initialize-anchor-unsupported-algorithm",
+            invalid_genesis_algorithm,
+            authorization0,
+            EVALUATION_TIME,
+            "signature.algorithm_unsupported",
+            6,
+        )
+    )
+    inconsistent_genesis_authorization = copy.deepcopy(authorization0)
+    inconsistent_genesis_authorization["payload"]["known_lineage_ids"] = []
+    cases.append(
+        initialization_case(
+            "initialize-anchor-lineage-map-mismatch",
+            identity0,
+            inconsistent_genesis_authorization,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    unsorted_genesis_roles = copy.deepcopy(identity0)
+    unsorted_genesis_roles["payload"]["principals"][0]["roles"] = [
+        "z-reserved",
+        "candidate-proposer",
+    ]
+    cases.append(
+        initialization_case(
+            "initialize-anchor-unsorted-roles",
+            unsorted_genesis_roles,
+            authorization0,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    excessive_genesis_revocations = copy.deepcopy(identity0)
+    excessive_genesis_revocations["payload"]["revoked_key_ids"] = [
+        "key:sha256:" + f"{index:064x}" for index in range(4097)
+    ]
+    cases.append(
+        initialization_case(
+            "initialize-anchor-revocation-limit-plus-one",
+            excessive_genesis_revocations,
+            authorization0,
+            EVALUATION_TIME,
+            "input.limit_exceeded",
+            2,
+        )
+    )
+    long_genesis_authorization = copy.deepcopy(authorization0)
+    long_genesis_authorization["payload"]["lineage_id"] = "x" * 257
+    cases.append(
+        initialization_case(
+            "initialize-anchor-token-limit-plus-one",
+            identity0,
+            long_genesis_authorization,
+            EVALUATION_TIME,
+            "input.limit_exceeded",
+            2,
+        )
+    )
+    nested_genesis_version = copy.deepcopy(identity0)
+    nested_genesis_version["payload"]["principals"][0]["principal_version"] = "principal/v9"
+    cases.append(
+        initialization_case(
+            "initialize-anchor-nested-version",
+            nested_genesis_version,
+            authorization0,
+            EVALUATION_TIME,
+            "input.version_unsupported",
+            2,
         )
     )
 
@@ -2017,23 +2151,38 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         case["signature_vectors"] = [item]
         return case
 
-    cases.append(
-        vector_only_case(
-            "signing-message-missing-final-lf",
-            lambda item: item.__setitem__("message_hex", item["message_hex"][:-2]),
-            "signature.invalid",
+    def signed_noncanonical_message(item: dict[str, Any], suffix: str) -> None:
+        canonical = bytes.fromhex(item["message_hex"])
+        malformed = canonical[:-1] if suffix == "missing" else canonical + b"\n"
+        trap_signature = signing_key("builder").sign(malformed).signature
+        VerifyKey(bytes(signing_key("builder").verify_key)).verify(malformed, trap_signature)
+        try:
+            VerifyKey(bytes(signing_key("builder").verify_key)).verify(canonical, trap_signature)
+        except BadSignatureError:
+            pass
+        else:
+            raise RuntimeError("malformed-LF trap signature also verifies canonical message")
+        item["message_hex"] = malformed.hex()
+        item["signature_base64url"] = raw_base64url(trap_signature)
+
+    for suffix in ("missing", "extra"):
+        cases.append(
+            vector_only_case(
+                f"signing-message-{suffix}-final-lf",
+                lambda item, suffix=suffix: signed_noncanonical_message(item, suffix),
+                "signature.invalid",
+            )
         )
-    )
-    cases.append(
-        vector_only_case(
-            "signing-message-extra-final-lf",
-            lambda item: item.__setitem__("message_hex", item["message_hex"] + "0a"),
-            "signature.invalid",
-        )
-    )
 
     def standard_base64_signature(item: dict[str, Any]) -> None:
-        item["signature_base64url"] = base64.b64encode(b"\xfb" * 64).decode().rstrip("=")
+        raw = decode_base64url(item["signature_base64url"])
+        alternate = base64.b64encode(raw).decode().rstrip("=")
+        if alternate == item["signature_base64url"] or not ({"+", "/"} & set(alternate)):
+            raise RuntimeError("selected valid signature does not distinguish standard base64")
+        VerifyKey(decode_base64url(item["public_key_base64url"])).verify(
+            bytes.fromhex(item["message_hex"]), raw
+        )
+        item["signature_base64url"] = alternate
 
     cases.append(vector_only_case("standard-base64-signature-rejected", standard_base64_signature))
 
@@ -2732,6 +2881,66 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
     ]
     cases.append(
         history_case("anchor-three-step-advance", base, base_anchor, positive_steps, None, 5)
+    )
+
+    advance_nested_version = copy.deepcopy(identity1)
+    advance_nested_version["payload"]["principals"][0]["principal_version"] = "principal/v9"
+    cases.append(
+        history_case(
+            "anchor-advance-nested-version",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": advance_nested_version,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.version_unsupported",
+            2,
+        )
+    )
+    advance_unsorted_roles = copy.deepcopy(identity1)
+    advance_unsorted_roles["payload"]["principals"][0]["roles"] = [
+        "z-reserved",
+        "candidate-proposer",
+    ]
+    cases.append(
+        history_case(
+            "anchor-advance-unsorted-roles",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": advance_unsorted_roles,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.schema_invalid",
+            2,
+        )
+    )
+    advance_excessive_revocations = copy.deepcopy(identity1)
+    advance_excessive_revocations["payload"]["revoked_key_ids"] = [
+        "key:sha256:" + f"{index:064x}" for index in range(4097)
+    ]
+    cases.append(
+        history_case(
+            "anchor-advance-revocation-limit-plus-one",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": advance_excessive_revocations,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.limit_exceeded",
+            2,
+        )
     )
 
     skipped = next_identity(identity0, 2)

@@ -42,6 +42,21 @@
       "stage": 1
     },
     {
+      "case_id": "anchor-advance-nested-version",
+      "fixture": "cases/anchor-advance-nested-version.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-revocation-limit-plus-one",
+      "fixture": "cases/anchor-advance-revocation-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-unsorted-roles",
+      "fixture": "cases/anchor-advance-unsorted-roles.json",
+      "stage": 2
+    },
+    {
       "case_id": "anchor-key-registry-limit-plus-one",
       "fixture": "cases/anchor-key-registry-limit-plus-one.json",
       "stage": 2
@@ -72,6 +87,16 @@
       "stage": 2
     },
     {
+      "case_id": "initialize-anchor-lineage-map-mismatch",
+      "fixture": "cases/initialize-anchor-lineage-map-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-nested-version",
+      "fixture": "cases/initialize-anchor-nested-version.json",
+      "stage": 2
+    },
+    {
       "case_id": "initialize-anchor-nonzero-sequence",
       "fixture": "cases/initialize-anchor-nonzero-sequence.json",
       "stage": 2
@@ -79,6 +104,21 @@
     {
       "case_id": "initialize-anchor-previous-snapshot",
       "fixture": "cases/initialize-anchor-previous-snapshot.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-revocation-limit-plus-one",
+      "fixture": "cases/initialize-anchor-revocation-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-token-limit-plus-one",
+      "fixture": "cases/initialize-anchor-token-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-unsorted-roles",
+      "fixture": "cases/initialize-anchor-unsorted-roles.json",
       "stage": 2
     },
     {
@@ -467,6 +507,11 @@
       "stage": 4
     },
     {
+      "case_id": "initialize-anchor-key-id-mismatch",
+      "fixture": "cases/initialize-anchor-key-id-mismatch.json",
+      "stage": 4
+    },
+    {
       "case_id": "precedence-digest-before-key-id",
       "fixture": "cases/precedence-digest-before-key-id.json",
       "stage": 4
@@ -610,6 +655,11 @@
       "case_id": "revoked-proposer-key",
       "fixture": "cases/revoked-proposer-key.json",
       "stage": 5
+    },
+    {
+      "case_id": "initialize-anchor-unsupported-algorithm",
+      "fixture": "cases/initialize-anchor-unsupported-algorithm.json",
+      "stage": 6
     },
     {
       "case_id": "invalid-signature-equation",
@@ -1018,5 +1068,5 @@
     }
   ],
   "manifest_version": "m2.1-conformance-manifest/v2",
-  "spec_revision": "f76fe6239f713e9234c6f8d494e23ce3c5ff5e31ea8a0fe4a668e700c61e2639"
+  "spec_revision": "a28cee963f0c403fa372172f9ddccb12c9ed320f08ea6d196493be26312e24d9"
 }

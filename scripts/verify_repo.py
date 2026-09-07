@@ -748,6 +748,12 @@ def main() -> int:
             raw = base64.urlsafe_b64decode(encoded + "=" * ((4 - len(encoded) % 4) % 4))
             if hashlib.sha256(raw).hexdigest() != case["input_sha256"]:
                 errors.append(f"{case_label}: input_sha256 is stale")
+            if case["entrypoint"] == "advance-anchor-history":
+                decoded_history = strict_json_loads(raw)
+                if canonical_json(decoded_history) != canonical_json(case["anchor_history"]):
+                    errors.append(
+                        f"{case_label}: anchor_history differs from authoritative wire input"
+                    )
         existing_case_paths = set((v2_root / "cases").glob("*.json"))
         for unreferenced in sorted(existing_case_paths - referenced_case_paths):
             errors.append(f"unreferenced M2.1 case fixture: {unreferenced.relative_to(root)}")

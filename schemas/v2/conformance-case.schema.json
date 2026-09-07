@@ -18,32 +18,20 @@
     "input_base64url": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
     "input_sha256": {"$ref": "common.schema.json#/$defs/sha256"},
     "trusted_anchor": {"$ref": "trusted-anchor.schema.json"},
-    "anchor_history": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "initial_anchor", "initial_identity_context", "initial_authorization_context", "steps"
-      ],
-      "properties": {
-        "initial_anchor": {"$ref": "trusted-anchor.schema.json"},
-        "initial_identity_context": {"$ref": "envelope.schema.json#/$defs/identityContext"},
-        "initial_authorization_context": {"$ref": "envelope.schema.json#/$defs/authorizationContext"},
-        "steps": {
-          "type": "array", "minItems": 1, "maxItems": 16,
-          "items": {"$ref": "#/$defs/anchorStep"}
-        },
-        "probe_attested_proposal": {"$ref": "envelope.schema.json#/$defs/attestedProposal"}
-      }
-    },
+    "anchor_history": {"$ref": "common.schema.json#/$defs/canonicalValue"},
     "expected": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "code", "decision_status", "authorizing"],
+      "required": ["status", "code", "decision_status", "authorizing", "reached_stage", "expected_anchor"],
       "properties": {
         "status": {"enum": ["verified", "rejected"]},
         "code": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/stableCode"}]},
         "decision_status": {"enum": ["accepted", "rejected", "not-reached"]},
-        "authorizing": {"type": "boolean"}
+        "authorizing": {"type": "boolean"},
+        "reached_stage": {"type": "integer", "minimum": 1, "maximum": 11},
+        "expected_anchor": {
+          "oneOf": [{"type": "null"}, {"$ref": "trusted-anchor.schema.json"}]
+        }
       }
     },
     "signature_vectors": {
@@ -90,19 +78,19 @@
     {
       "if": {"properties": {"entrypoint": {"enum": ["initialize-anchor", "advance-anchor-history", "replay-historical"]}}},
       "then": {"properties": {"expected": {"properties": {"authorizing": {"const": false}}}}}
+    },
+    {
+      "if": {
+        "properties": {
+          "entrypoint": {"enum": ["initialize-anchor", "advance-anchor-history"]},
+          "expected": {"properties": {"status": {"const": "verified"}}}
+        }
+      },
+      "then": {"properties": {"expected": {"properties": {"expected_anchor": {"$ref": "trusted-anchor.schema.json"}}}}},
+      "else": {"properties": {"expected": {"properties": {"expected_anchor": {"type": "null"}}}}}
     }
   ],
   "$defs": {
-    "anchorStep": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["next_identity_context", "next_authorization_context", "trusted_now_unix_s"],
-      "properties": {
-        "next_identity_context": {"$ref": "envelope.schema.json#/$defs/identityContext"},
-        "next_authorization_context": {"$ref": "envelope.schema.json#/$defs/authorizationContext"},
-        "trusted_now_unix_s": {"$ref": "common.schema.json#/$defs/safeUint"}
-      }
-    },
     "stableCode": {
       "enum": [
         "input.encoding_invalid", "input.duplicate_member", "input.schema_invalid",

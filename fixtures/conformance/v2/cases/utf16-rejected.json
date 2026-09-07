@@ -6,6 +6,8 @@
     "authorizing": false,
     "code": "input.encoding_invalid",
     "decision_status": "not-reached",
+    "expected_anchor": null,
+    "reached_stage": 1,
     "status": "rejected"
   },
   "input_base64url": "__57AH0A",

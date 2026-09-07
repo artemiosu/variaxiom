@@ -9,7 +9,8 @@ This directory contains the implementation-independent M2.1 wire-contract candid
 - `manifest.json` points to self-contained positive, negative, boundary, replay, and transition
   cases under `cases/`.
 - every case carries exact canonical input bytes, their digest, its trusted anchor or ordered
-  anchor history, expected stage/code, and the relevant complete signature vectors.
+  anchor history, expected reached stage/code, exact resulting anchor where applicable, and the
+  relevant complete signature vectors.
 - `schemas/v2/anchor-initialization.schema.json` defines the exact genesis input used by the
   `initialize-anchor` entry point.
 
@@ -19,6 +20,11 @@ production credential is stored here. `scripts/regenerate_m2_fixtures.py` determ
 rebuilds every object, digest, message, and test signature.
 
 `scripts/verify_m2_fixtures.py` executes the normative stage order and checks every declared result.
+It pins the complete ordered inventory at 213 cases with SHA-256
+`14967e4d946bb64bbcc4c4c76dfb2099a2e68d81fa5affd0a0244fa991c8d76f`; adding, removing,
+renaming, moving, or reclassifying a case requires an explicit reviewed update to that pin. The
+hashed UTF-8 preimage is one LF-terminated line per manifest entry in manifest order:
+`<stage>:<case_id>:<fixture>`.
 The Rust test independently verifies the same positive and invalid Ed25519 vectors with
 `curve25519-dalek` and `ed25519-dalek::verify_strict`. JSON files are formatted for review, but
 runners never treat those pretty-printed bytes as wire input; `input_base64url` is authoritative.

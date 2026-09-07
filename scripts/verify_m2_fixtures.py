@@ -33,11 +33,25 @@ ROLE_FOR_KIND = {
     "authority-grant": "authority-issuer",
     "promotion-decision": "promotion-selector",
 }
+EXPECTED_CASE_COUNT = 213
+EXPECTED_MANIFEST_INVENTORY_SHA256 = (
+    "14967e4d946bb64bbcc4c4c76dfb2099a2e68d81fa5affd0a0244fa991c8d76f"
+)
 
 REQUIRED_CASE_IDS = {
     "authorization-domain-reanchored-confused-deputy",
+    "anchor-advance-nested-version",
+    "anchor-advance-revocation-limit-plus-one",
+    "anchor-advance-unsorted-roles",
     "initialize-anchor-genesis",
     "initialize-anchor-domain-mismatch",
+    "initialize-anchor-key-id-mismatch",
+    "initialize-anchor-lineage-map-mismatch",
+    "initialize-anchor-nested-version",
+    "initialize-anchor-revocation-limit-plus-one",
+    "initialize-anchor-token-limit-plus-one",
+    "initialize-anchor-unsupported-algorithm",
+    "initialize-anchor-unsorted-roles",
     "insufficient-independent-verifiers",
     "nested-candidate-envelope-version-unsupported",
     "nested-candidate-kind-mismatch",
@@ -73,7 +87,7 @@ REQUIRED_CASE_IDS = {
     "unsupported-key-binding-algorithm",
 }
 
-Result = tuple[str, int | None, str | None, str, bool]
+Result = tuple[str, int | None, str | None, str, bool, dict[str, Any] | None]
 
 
 class Rejected(Exception):
@@ -489,7 +503,7 @@ def stage_four(
             try:
                 computed = key_id_from_public(binding[1]["public_key_base64url"])
             except Exception:
-                reject(6, "signature.encoding_invalid")
+                continue
             if computed != binding[1]["key_id"]:
                 reject(4, "signature.key_id_mismatch")
     for pair, kind, _ in pairs:
@@ -600,7 +614,7 @@ def classify_signature_vector(vector: dict[str, Any]) -> str | None:
             reject(4, "signature.key_id_mismatch")
         if vector["signed_kind"] != vector["target_envelope"]["kind"]:
             reject(4, "signature.kind_mismatch")
-        if vector["algorithm"] != "Ed25519":
+        if vector["algorithm"] != "Ed25519" or vector["key_binding_algorithm"] != "Ed25519":
             reject(6, "signature.algorithm_unsupported")
         raw_signature = decode_unpadded(vector["signature_base64url"], 64)
         r_value, s_value = raw_signature[:32], raw_signature[32:]
@@ -635,20 +649,178 @@ def classify_signature_vector(vector: dict[str, Any]) -> str | None:
         return error.code
 
 
+def context_version_kind_preflight(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
+    for item, version_field, expected_version in (
+        (identity, "identity_context_version", "identity-context/v1"),
+        (authorization, "authorization_context_version", "authorization-context/v1"),
+    ):
+        if (
+            item.get("envelope_version") != "variaxiom-envelope/v1"
+            or item.get("payload", {}).get(version_field) != expected_version
+        ):
+            reject(2, "input.version_unsupported")
+    identity_payload = identity.get("payload", {})
+    if isinstance(identity_payload, dict):
+        for principal in identity_payload.get("principals", []):
+            if isinstance(principal, dict) and principal.get("principal_version") not in {
+                None,
+                "principal/v1",
+            }:
+                reject(2, "input.version_unsupported")
+            if isinstance(principal, dict):
+                for binding in principal.get("keys", []):
+                    if isinstance(binding, dict) and binding.get("key_binding_version") not in {
+                        None,
+                        "key-binding/v1",
+                    }:
+                        reject(2, "input.version_unsupported")
+    if (
+        identity.get("kind") != "identity-context"
+        or authorization.get("kind") != "authorization-context"
+    ):
+        reject(2, "input.kind_mismatch")
+
+
+def context_stage_two(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
+    if schema_errors(identity, "v2/envelope.schema.json") or schema_errors(
+        authorization, "v2/envelope.schema.json"
+    ):
+        reject(2, "input.schema_invalid")
+    identity_payload = identity["payload"]
+    auth = authorization["payload"]
+    strings = [item for item in walk([identity, authorization]) if isinstance(item, str)]
+    if any(len(item.encode("utf-8")) > 256 for item in strings):
+        reject(2, "input.limit_exceeded")
+    if (
+        len(identity_payload["principals"]) > 64
+        or len(identity_payload["revoked_key_ids"]) > 4096
+        or len(identity_payload["revoked_grant_ids"]) > 4096
+        or len(auth["known_lineage_ids"]) > 4096
+        or len(auth["lineage_capabilities"]) > 4096
+        or len(auth["verified_artifact_hashes"]) > 4096
+        or any(
+            len(item["keys"]) > 8 or len(item["roles"]) > 8
+            for item in identity_payload["principals"]
+        )
+        or any(len(capabilities) > 128 for capabilities in auth["lineage_capabilities"].values())
+    ):
+        reject(2, "input.limit_exceeded")
+    if [item["principal_id"] for item in identity_payload["principals"]] != sorted(
+        item["principal_id"] for item in identity_payload["principals"]
+    ):
+        reject(2, "input.schema_invalid")
+    sorted_collections = [
+        identity_payload["revoked_key_ids"],
+        identity_payload["revoked_grant_ids"],
+        auth["known_lineage_ids"],
+        auth["verified_artifact_hashes"],
+        *[item["roles"] for item in identity_payload["principals"]],
+        *[[key["key_id"] for key in item["keys"]] for item in identity_payload["principals"]],
+        *auth["lineage_capabilities"].values(),
+    ]
+    if any(collection != sorted(set(collection)) for collection in sorted_collections):
+        reject(2, "input.schema_invalid")
+    if auth["known_lineage_ids"] != sorted(auth["lineage_capabilities"]):
+        reject(2, "input.schema_invalid")
+
+
+def anchor_stage_two(anchor: dict[str, Any]) -> None:
+    if schema_errors(anchor, "v2/trusted-anchor.schema.json"):
+        reject(2, "input.schema_invalid")
+    if any(len(item.encode("utf-8")) > 256 for item in walk(anchor) if isinstance(item, str)):
+        reject(2, "input.limit_exceeded")
+    if (
+        len(anchor["key_ownership_registry"]) > 4096
+        or len(anchor["revoked_key_ids"]) > 4096
+        or len(anchor["revoked_grant_ids"]) > 4096
+    ):
+        reject(2, "input.limit_exceeded")
+    if anchor["revoked_key_ids"] != sorted(set(anchor["revoked_key_ids"])) or anchor[
+        "revoked_grant_ids"
+    ] != sorted(set(anchor["revoked_grant_ids"])):
+        reject(2, "input.schema_invalid")
+
+
+def context_maps(
+    identity: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]], bool]:
+    principals: dict[str, dict[str, Any]] = {}
+    keys: dict[str, tuple[str, dict[str, Any]]] = {}
+    public_keys: set[str] = set()
+    ambiguous = False
+    for principal in identity["payload"]["principals"]:
+        principal_id = principal["principal_id"]
+        ambiguous |= principal_id in principals
+        principals[principal_id] = principal
+        for binding in principal["keys"]:
+            ambiguous |= binding["key_id"] in keys or binding["public_key_base64url"] in public_keys
+            keys[binding["key_id"]] = (principal_id, binding)
+            public_keys.add(binding["public_key_base64url"])
+    return principals, keys, ambiguous
+
+
+def validate_context_bindings(
+    identity: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]]]:
+    principals, keys, ambiguous = context_maps(identity)
+    decoded: list[tuple[dict[str, Any], bytes | None]] = []
+    for descriptor in identity["payload"]["principals"]:
+        for binding in descriptor["keys"]:
+            try:
+                public = decode_unpadded(binding["public_key_base64url"], 32)
+            except Rejected:
+                public = None
+            decoded.append((binding, public))
+            if public is not None:
+                expected = (
+                    "key:sha256:"
+                    + hashlib.sha256(b"variaxiom-key/v1\0Ed25519\0" + public).hexdigest()
+                )
+                if binding["key_id"] != expected:
+                    reject(4, "signature.key_id_mismatch")
+    if ambiguous:
+        reject(5, "identity.key_ambiguous")
+    for binding, _ in decoded:
+        if binding["algorithm"] != "Ed25519":
+            reject(6, "signature.algorithm_unsupported")
+    for _, public in decoded:
+        if public is None or not bindings.crypto_core_ed25519_is_valid_point(public):
+            reject(6, "signature.encoding_invalid")
+    return principals, keys
+
+
 def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Result:
     try:
         anchor = history["initial_anchor"]
         previous_identity = history["initial_identity_context"]
         authorization = history["initial_authorization_context"]
+        anchor_stage_two(anchor)
+        context_version_kind_preflight(previous_identity, authorization)
+        context_stage_two(previous_identity, authorization)
+        previous_payload = previous_identity["payload"]
         if (
             digest(previous_identity) != anchor["current_identity_context_digest"]
             or digest(authorization) != anchor["current_authorization_context_digest"]
+            or previous_payload["trust_domain_id"] != anchor["trust_domain_id"]
+            or authorization["payload"]["trust_domain_id"] != anchor["trust_domain_id"]
+            or previous_payload["snapshot_sequence"] != anchor["current_snapshot_sequence"]
+            or previous_payload["evaluation_time_unix_s"] != anchor["trusted_now_unix_s"]
+            or not set(previous_payload["revoked_key_ids"]).issubset(anchor["revoked_key_ids"])
+            or not set(previous_payload["revoked_grant_ids"]).issubset(anchor["revoked_grant_ids"])
+        ):
+            reject(3, "identity.context_untrusted")
+        _, initial_keys = validate_context_bindings(previous_identity)
+        if any(
+            anchor["key_ownership_registry"].get(key_id) != principal_id
+            for key_id, (principal_id, _) in initial_keys.items()
         ):
             reject(3, "identity.context_untrusted")
         for step in history["steps"]:
             identity = step["next_identity_context"]
             next_authorization = step["next_authorization_context"]
             now = step["trusted_now_unix_s"]
+            context_version_kind_preflight(identity, next_authorization)
+            context_stage_two(identity, next_authorization)
             payload = identity["payload"]
             if (
                 now < anchor["trusted_now_unix_s"]
@@ -665,16 +837,10 @@ def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Re
                 or not set(anchor["revoked_grant_ids"]).issubset(payload["revoked_grant_ids"])
             ):
                 reject(3, "identity.context_untrusted")
-            seen_ids: set[str] = set()
-            seen_public: set[str] = set()
+            validate_context_bindings(identity)
             for descriptor in payload["principals"]:
                 for binding in descriptor["keys"]:
                     key_id = binding["key_id"]
-                    public = binding["public_key_base64url"]
-                    if key_id in seen_ids or public in seen_public:
-                        reject(5, "identity.key_ambiguous")
-                    seen_ids.add(key_id)
-                    seen_public.add(public)
                     prior_owner = anchor["key_ownership_registry"].get(key_id)
                     if prior_owner is not None and prior_owner != descriptor["principal_id"]:
                         reject(5, "identity.key_ambiguous")
@@ -714,11 +880,11 @@ def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Re
                 "trusted_anchor": anchor,
             }
             return evaluate_case(probe_case)
-        return "verified", None, None, "not-reached", False
+        return "verified", 6, None, "not-reached", False, anchor
     except (KeyError, TypeError):
-        return "rejected", 2, "input.schema_invalid", "not-reached", False
+        return "rejected", 2, "input.schema_invalid", "not-reached", False, None
     except Rejected as error:
-        return "rejected", error.stage, error.code, "not-reached", False
+        return "rejected", error.stage, error.code, "not-reached", False, None
 
 
 def evaluate_initialize_anchor(value: dict[str, Any]) -> Result:
@@ -727,28 +893,10 @@ def evaluate_initialize_anchor(value: dict[str, Any]) -> Result:
         authorization = value["initial_authorization_context"]
         identity_payload = identity["payload"]
         authorization_payload = authorization["payload"]
-        for item, _expected_kind, version_field, expected_version in (
-            (identity, "identity-context", "identity_context_version", "identity-context/v1"),
-            (
-                authorization,
-                "authorization-context",
-                "authorization_context_version",
-                "authorization-context/v1",
-            ),
-        ):
-            if (
-                item.get("envelope_version") != "variaxiom-envelope/v1"
-                or item["payload"].get(version_field) != expected_version
-            ):
-                reject(2, "input.version_unsupported")
-        for item, expected_kind in (
-            (identity, "identity-context"),
-            (authorization, "authorization-context"),
-        ):
-            if item.get("kind") != expected_kind:
-                reject(2, "input.kind_mismatch")
+        context_version_kind_preflight(identity, authorization)
         if schema_errors(value, "v2/anchor-initialization.schema.json"):
             reject(2, "input.schema_invalid")
+        context_stage_two(identity, authorization)
         if (
             identity_payload["snapshot_sequence"] != 0
             or identity_payload["previous_snapshot_digest"] is not None
@@ -756,27 +904,28 @@ def evaluate_initialize_anchor(value: dict[str, Any]) -> Result:
             or authorization_payload["trust_domain_id"] != identity_payload["trust_domain_id"]
         ):
             reject(3, "identity.context_untrusted")
-        if len(identity_payload["principals"]) > 64:
-            reject(2, "input.limit_exceeded")
-        seen_principals: set[str] = set()
-        seen_keys: set[str] = set()
-        seen_public: set[str] = set()
-        for principal in identity_payload["principals"]:
-            if principal["principal_id"] in seen_principals:
-                reject(5, "identity.key_ambiguous")
-            seen_principals.add(principal["principal_id"])
-            if len(principal["keys"]) > 8 or len(principal["roles"]) > 8:
-                reject(2, "input.limit_exceeded")
-            for binding in principal["keys"]:
-                if binding["key_id"] in seen_keys or binding["public_key_base64url"] in seen_public:
-                    reject(5, "identity.key_ambiguous")
-                seen_keys.add(binding["key_id"])
-                seen_public.add(binding["public_key_base64url"])
-        return "verified", None, None, "not-reached", False
+        validate_context_bindings(identity)
+        anchor = {
+            "trust_domain_id": identity_payload["trust_domain_id"],
+            "current_identity_context_digest": digest(identity),
+            "current_authorization_context_digest": digest(authorization),
+            "current_snapshot_sequence": identity_payload["snapshot_sequence"],
+            "trusted_now_unix_s": value["trusted_now_unix_s"],
+            "key_ownership_registry": dict(
+                sorted(
+                    (binding["key_id"], principal["principal_id"])
+                    for principal in identity_payload["principals"]
+                    for binding in principal["keys"]
+                )
+            ),
+            "revoked_key_ids": identity_payload["revoked_key_ids"],
+            "revoked_grant_ids": identity_payload["revoked_grant_ids"],
+        }
+        return "verified", 6, None, "not-reached", False, anchor
     except (KeyError, TypeError):
-        return "rejected", 2, "input.schema_invalid", "not-reached", False
+        return "rejected", 2, "input.schema_invalid", "not-reached", False, None
     except Rejected as error:
-        return "rejected", error.stage, error.code, "not-reached", False
+        return "rejected", error.stage, error.code, "not-reached", False, None
 
 
 def evaluate_case(case: dict[str, Any]) -> Result:
@@ -784,9 +933,9 @@ def evaluate_case(case: dict[str, Any]) -> Result:
         case["input_base64url"] + "=" * ((4 - len(case["input_base64url"]) % 4) % 4)
     )
     if hashlib.sha256(raw).hexdigest() != case["input_sha256"]:
-        return "rejected", 1, "input.encoding_invalid", "not-reached", False
+        return "rejected", 1, "input.encoding_invalid", "not-reached", False, None
     if len(raw) > 1_048_576:
-        return "rejected", 1, "input.limit_exceeded", "not-reached", False
+        return "rejected", 1, "input.limit_exceeded", "not-reached", False, None
     try:
         value = strict_json_loads(raw)
     except ValueError as error:
@@ -798,11 +947,11 @@ def evaluate_case(case: dict[str, Any]) -> Result:
         )
         if "nesting exceeds" in message:
             code = "input.limit_exceeded"
-        return "rejected", 1, code, "not-reached", False
+        return "rejected", 1, code, "not-reached", False, None
     if canonical_json(value) != raw:
-        return "rejected", 1, "input.encoding_invalid", "not-reached", False
+        return "rejected", 1, "input.encoding_invalid", "not-reached", False, None
     if not isinstance(value, dict):
-        return "rejected", 2, "input.schema_invalid", "not-reached", False
+        return "rejected", 2, "input.schema_invalid", "not-reached", False, None
     if case["entrypoint"] == "advance-anchor-history":
         return evaluate_anchor_history(case, value)
     if case["entrypoint"] == "initialize-anchor":
@@ -915,41 +1064,71 @@ def evaluate_case(case: dict[str, Any]) -> Result:
             raise Rejected(11, selector_error.code) from selector_error
         return (
             "verified",
-            None,
+            11,
             None,
             expected_decision["payload"]["status"],
             case["entrypoint"] == "verify-attested-proposal",
+            None,
         )
     except Rejected as error:
-        return "rejected", error.stage, error.code, "not-reached", False
+        return "rejected", error.stage, error.code, "not-reached", False, None
 
 
 def main() -> int:
     manifest = json.loads((FIXTURES / "manifest.json").read_text("utf-8"))
     failures: list[str] = []
     counts: dict[int, int] = {}
+    inventory_bytes = "".join(
+        f"{item['stage']}:{item['case_id']}:{item['fixture']}\n" for item in manifest["cases"]
+    ).encode()
+    inventory_digest = hashlib.sha256(inventory_bytes).hexdigest()
+    if len(manifest["cases"]) != EXPECTED_CASE_COUNT:
+        failures.append(f"manifest case count {len(manifest['cases'])} != {EXPECTED_CASE_COUNT}")
+    if inventory_digest != EXPECTED_MANIFEST_INVENTORY_SHA256:
+        failures.append(
+            "manifest ordered inventory digest "
+            f"{inventory_digest} != {EXPECTED_MANIFEST_INVENTORY_SHA256}"
+        )
     case_ids = {item["case_id"] for item in manifest["cases"]}
     missing_required = sorted(REQUIRED_CASE_IDS - case_ids)
     if missing_required:
         failures.append(f"manifest missing required adversarial cases: {missing_required}")
     for item in manifest["cases"]:
         case = json.loads((FIXTURES / item["fixture"]).read_text("utf-8"))
-        observed_status, observed_stage, observed_code, decision_status, authorizing = (
-            evaluate_case(case)
+        raw = base64.urlsafe_b64decode(
+            case["input_base64url"] + "=" * ((4 - len(case["input_base64url"]) % 4) % 4)
         )
+        if case["entrypoint"] == "advance-anchor-history":
+            try:
+                decoded_history = strict_json_loads(raw)
+            except ValueError:
+                decoded_history = None
+            if canonical_bytes(decoded_history) != canonical_bytes(case["anchor_history"]):
+                failures.append(
+                    f"{case['case_id']}: anchor_history differs from authoritative wire input"
+                )
+        (
+            observed_status,
+            observed_stage,
+            observed_code,
+            decision_status,
+            authorizing,
+            observed_anchor,
+        ) = evaluate_case(case)
         expected = case["expected"]
         if observed_stage is not None:
             counts[observed_stage] = counts.get(observed_stage, 0) + 1
         if (
             observed_status != expected["status"]
             or observed_code != expected["code"]
-            or (observed_stage or case["stage"]) != case["stage"]
+            or observed_stage != expected["reached_stage"]
             or decision_status != expected["decision_status"]
             or authorizing != expected["authorizing"]
+            or canonical_bytes(observed_anchor) != canonical_bytes(expected["expected_anchor"])
         ):
             failures.append(
-                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status, authorizing)} "
-                f"expected={(expected['status'], case['stage'], expected['code'], expected['decision_status'], expected['authorizing'])}"
+                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status, authorizing, observed_anchor)} "
+                f"expected={(expected['status'], expected['reached_stage'], expected['code'], expected['decision_status'], expected['authorizing'], expected['expected_anchor'])}"
             )
         for vector in case["signature_vectors"]:
             observed_vector_code = classify_signature_vector(vector)
@@ -990,7 +1169,7 @@ def main() -> int:
     stages = ", ".join(f"{stage}:{count}" for stage, count in sorted(counts.items()))
     print(
         f"M2.1 fixture execution passed ({len(manifest['cases'])} cases; "
-        f"{len(wycheproof['vectors'])} Wycheproof vectors; rejected stages {stages})."
+        f"{len(wycheproof['vectors'])} Wycheproof vectors; reached stages {stages})."
     )
     return 0
 

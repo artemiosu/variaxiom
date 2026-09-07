@@ -1,6 +1,6 @@
 # ADR 0010: Ed25519 detached signatures and explicit trust roots
 
-- **Status:** proposed; security review required before acceptance
+- **Status:** proposed revision 2; automated security-council re-review required before acceptance
 - **Date:** 2026-09-06
 - **Decision owner:** bootstrap maintainer under the founder review exception for proposal only
 - **Specification:** [`../../specs/m2.1-identity-grants-signatures.md`](../../specs/m2.1-identity-grants-signatures.md)
@@ -25,14 +25,29 @@ Represent public keys as raw 32-byte Ed25519 values and signatures as raw 64-byt
 canonical unpadded base64url. Derive `key_id` from SHA-256 of the raw public key. Bind keys to
 principals and roles only through an explicit trusted snapshot committed by `promotion-input/v2`.
 
+An embedded snapshot is not a trust root. Live verification additionally requires an
+operator-controlled anchor containing the exact current snapshot digest, trust domain, sequence,
+and trusted time. Historical replay is a separate non-authorizing API. One key is bound to exactly
+one principal per trust domain and cannot be reassigned in v1.
+
 Use the maintained [`cryptography`](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/)
 Ed25519 API in Python and [`ed25519-dalek`](https://docs.rs/ed25519-dalek/latest/ed25519_dalek/)
 in Rust. Use each library only for key decoding, signing in test/CLI boundaries, and verification;
 canonicalization, domain construction, trust policy, and grant policy remain project code with
 shared fixtures. Exact dependency versions are committed in the lock files during implementation.
 
+Rust uses only `VerifyingKey::verify_strict` with minimal default-free features; batch, hazmat,
+prehash/digest, context, PKCS#8/PEM, and serde features are disabled. Python performs equivalent
+canonical-point, low-order-point, and `S < L` prechecks before `cryptography` verification. The
+shared invalid corpus, not a permissive library default, defines protocol acceptance.
+
 The verifier accepts no caller-provided prebuilt signing message. It validates the target, computes
-its digest, constructs the normative domain-separated bytes, and then verifies.
+its digest, and constructs bytes containing domain version, algorithm, trust domain, principal,
+key ID, signed kind, and digest, with an explicit `0x0A` delimiter after every field.
+
+Signed evidence uses `evidence/v2.subject_candidate_digest`. Grants additionally bind the trust
+domain, capability vocabulary, constitution digest, and lineage ID. M2.1 produces signed proposals
+only; exact-head durable authorization and transactional compare-and-swap are deferred to M2.2.
 
 ## Consequences
 
@@ -40,6 +55,7 @@ its digest, constructs the normative domain-separated bytes, and then verifies.
 - raw keys avoid PEM/DER parser variability on the protocol wire;
 - detached signatures permit multiple attestations without changing target identity;
 - trusted snapshots make role, revocation, and historical replay explicit;
+- separately pinned anchors prevent self-minted or stale snapshots from authorizing new work;
 - application-level domain separation works in both chosen libraries without depending on
   Ed25519ctx or Ed25519ph support;
 - Python gains a compiled dependency, increasing bootstrap and supply-chain surface;
@@ -66,12 +82,15 @@ its digest, constructs the normative domain-separated bytes, and then verifies.
 
 Review must cover canonical base64url enforcement, small-order/non-canonical signature behavior,
 wrong-domain vectors, key/role aliasing, expiry boundaries, replay, revocation snapshots, error
-oracles, dependency features, and secret-free logs. Shared fixtures define the accepted behavior if
-library defaults differ.
+oracles, dependency features, resource bounds, and secret-free logs. Shared fixtures define the
+accepted behavior if library defaults differ.
+
+Future algorithms require new key-ID and signature versions plus a new domain prefix. There is no
+algorithm negotiation, downgrade, fallback, or reinterpretation of `Ed25519` in v1.
 
 ## Rollback
 
-Do not remove or reinterpret M1.1. Until M2.1 is released, the signature-aware v2 entry point can be
-removed while retaining fixtures and experimental events. After release, changes use a new signed
-protocol version.
-
+Do not remove or reinterpret M1.1. Until M2.1 is released, the signature-aware v2 verifier can be
+removed while retaining fixtures and experimental events. It has no durable append capability.
+After release, changes use a new signed protocol version; durable authorization remains unavailable
+until M2.2 supplies exact-head transactional semantics.

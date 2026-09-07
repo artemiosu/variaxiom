@@ -36,4 +36,5 @@ prose remains directional.
 - [`m1.1-cross-language-conformance.md`](m1.1-cross-language-conformance.md) — implemented and
   independently reproduced; external security review remains separate.
 - [`m2.1-identity-grants-signatures.md`](m2.1-identity-grants-signatures.md) — proposed; no
-  signature implementation is authorized until its security-review gate is recorded.
+  signature implementation is authorized until its three-role automated security-council gate is
+  recorded.

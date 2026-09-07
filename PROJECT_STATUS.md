@@ -14,9 +14,9 @@ the same pre-release intent; they do not indicate separately published releases.
 
 M1.1 is published; the required remote operating-system matrix, independent public clean-clone
 reproduction, and automated audit pass. M2.1 is now a specification proposal for explicit identity,
-authority grants, and detached signatures. External human security review remains tracked in
-[issue #5](https://github.com/artemiosu/variaxiom/issues/5) before signature implementation or
-release approval.
+authority grants, and detached signatures. Its independent automated security-council gate remains
+tracked in [issue #5](https://github.com/artemiosu/variaxiom/issues/5) before signature
+implementation. Passing that gate authorizes an experiment, not a production security claim.
 
 ## Implemented
 

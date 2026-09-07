@@ -24,6 +24,7 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../architecture/threat-model.md`](../architecture/threat-model.md)
 - [`../../constitution/constitution.toml`](../../constitution/constitution.toml)
 - `crates/protocol/`, `crates/kernel/`, `src/variaxiom/promotion.py`
+- [`../project/agent-review-council.md`](../project/agent-review-council.md)
 
 ## Schemas and protocol compatibility
 

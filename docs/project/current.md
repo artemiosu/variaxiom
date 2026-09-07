@@ -27,7 +27,7 @@ not claim that a release tag exists; `project.yaml` records the authoritative re
 M1.1 is published and independently reproduced from the public repository. The clean-clone report
 records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
 14-event ledger, and clean final worktree. The report is published in closed issue #3. Independent
-human security review remains open and is not replaced by automated reproduction.
+security-council review remains open and is not replaced by automated reproduction.
 
 M2.1 is now the active **specification proposal**. It defines principals, trusted key bindings,
 exact-candidate authority grants, explicit time/revocation snapshots, and detached Ed25519
@@ -54,15 +54,14 @@ recorded.
 
 - record the two-minute Authority Test demo;
 - publish a small curated issue set rather than copying the whole roadmap;
-- obtain the first independent human security review.
+- complete and publish the three-role independent automated security-council review.
 
 ## External blockers
 
 - SSH authentication is unavailable (`Permission denied (publickey)`); HTTPS is the verified Git
   transport and should remain configured unless an operator installs and tests an SSH key;
-- complete external human security review
-  [issue #5](https://github.com/artemiosu/variaxiom/issues/5) for the promotion-sensitive M1.1 and
-  proposed M2.1 contracts.
+- complete the automated security-council re-review in
+  [issue #5](https://github.com/artemiosu/variaxiom/issues/5) for the revised M2.1 contract.
 
 ## Context rule
 

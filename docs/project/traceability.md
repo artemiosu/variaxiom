@@ -15,6 +15,8 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
 | REQ-TRUST-001 | constitution v1 | proposer/verifier checks | self-verification tests | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
+| REQ-ID-001 | M2.1 spec and ADR 0010 | not implemented | future cross-language identity/alias fixtures | planned |
+| REQ-SIG-001 | M2.1 spec and ADR 0010 | not implemented | future RFC 8032/domain/mutation fixtures | planned |
 | REQ-EVID-001 | M1.1 conformance spec | Python/Rust gates | artifact-mismatch fixture | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | schema and demo inspection | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |
@@ -28,7 +30,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-OPS-002 | threat model | not implemented | future pause/revoke recovery tests | planned |
 | REQ-OPS-003 | security/non-goals | deny-by-default design | future sandbox and operator tests | partial |
 | REQ-OBS-001 | observatory architecture | not implemented | future OpenTelemetry contract tests | planned |
-| REQ-REP-001 | reproducibility guide | bootstrap/verify scripts | clean GitHub clone at `b062484`, CI run `34060093302` | verified |
+| REQ-REP-001 | reproducibility guide | bootstrap/verify scripts | independent public clean-clone report at `e2a6a0f`, CI run `34062266427` | verified |
 | REQ-REP-002 | architecture principles | deterministic demo inputs | demo reproducibility tests | partial |
 | REQ-CTX-001 | context index | repository context pack | repository verifier link checks | implemented |
 | REQ-CTX-002 | specification workflow | this table and specs | repository verification plus review | implemented |

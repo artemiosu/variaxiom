@@ -24,12 +24,22 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../architecture/threat-model.md`](../architecture/threat-model.md)
 - [`../../constitution/constitution.toml`](../../constitution/constitution.toml)
 - `crates/protocol/`, `crates/kernel/`, `src/variaxiom/promotion.py`
+- [`../project/agent-review-council.md`](../project/agent-review-council.md)
 
 ## Schemas and protocol compatibility
 
 - [`../specs/m1.1-cross-language-conformance.md`](../specs/m1.1-cross-language-conformance.md)
+- [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md)
 - [`../architecture/data-model.md`](../architecture/data-model.md)
 - `schemas/`, `fixtures/conformance/`, `src/variaxiom/canonical.py`, `crates/protocol/`
+
+## Identity, grants, and signatures
+
+- [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md)
+- [`../architecture/adr/0010-ed25519-detached-signatures.md`](../architecture/adr/0010-ed25519-detached-signatures.md)
+- [`../architecture/capability-security.md`](../architecture/capability-security.md)
+- [`../architecture/threat-model.md`](../architecture/threat-model.md)
+- [`../project/risk-register.md`](../project/risk-register.md)
 
 ## Evaluation and research
 
@@ -54,6 +64,7 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../architecture/deployment.md`](../architecture/deployment.md)
 - [`../../SECURITY.md`](../../SECURITY.md)
 - [`../../REPRODUCIBILITY.md`](../../REPRODUCIBILITY.md)
+- [`../reports/m1.1-independent-reproduction-2026-09-06.md`](../reports/m1.1-independent-reproduction-2026-09-06.md)
 - [`../project/github-setup.md`](../project/github-setup.md)
 
 ## Product and community

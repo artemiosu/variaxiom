@@ -30,3 +30,11 @@ An increment is done when:
 Use lowercase milestone identifiers in filenames, for example
 `m1.1-cross-language-conformance.md`. A specification is normative only after review; roadmap
 prose remains directional.
+
+## Increment registry
+
+- [`m1.1-cross-language-conformance.md`](m1.1-cross-language-conformance.md) — implemented and
+  independently reproduced; external security review remains separate.
+- [`m2.1-identity-grants-signatures.md`](m2.1-identity-grants-signatures.md) — accepted after a
+  unanimous three-role automated security-council review; schemas and shared fixtures precede the
+  disabled verifier implementation.

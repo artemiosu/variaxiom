@@ -74,12 +74,13 @@ The two hashes should match.
 
 ## Recorded clean-clone evidence
 
-Revision `b0624843a0c21566395828ac50ca9e7382473807` was cloned from GitHub into an empty
-temporary directory on 2026-09-06. Bootstrap, repository validation, 23 Python tests, the
-14-event ledger check, 17 Rust tests, Rust formatting, and Clippy all passed. The same revision's
-[Linux/macOS/Windows CI matrix](https://github.com/artemiosu/variaxiom/actions/runs/34060093302)
-also passed. This records automated reproducibility; an external human reproduction remains a
-separate release gate.
+Revision `e2a6a0f29bff9bd720433fefaebd4c4a26bbff2c` was independently cloned from the public
+GitHub repository into an empty temporary directory on 2026-09-06. Bootstrap, repository
+validation, 23 Python tests, the 14-event ledger check, 17 Rust tests, Rust formatting, and Clippy
+all passed. Its [Linux/macOS/Windows CI matrix](https://github.com/artemiosu/variaxiom/actions/runs/34062266427)
+also passed. See the complete
+[independent reproduction report](docs/reports/m1.1-independent-reproduction-2026-09-06.md).
+This records automated reproducibility; external human security review remains a separate gate.
 
 ## Reproducibility boundaries
 

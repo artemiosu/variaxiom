@@ -2,8 +2,8 @@
 
 - **Reviewed:** 2026-09-07
 - **Release:** 0.1.0-alpha seed (unreleased; no Git tag yet)
-- **Current product increment:** M1.1 — independently reproduced; human security review pending
-- **Active specification:** [`../specs/m1.1-cross-language-conformance.md`](../specs/m1.1-cross-language-conformance.md)
+- **Current product increment:** M2.1 — identity, authority grants, and detached signatures
+- **Active specification:** [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md) (accepted for disabled experimental implementation)
 
 ## Current verified baseline
 
@@ -26,22 +26,24 @@ not claim that a release tag exists; `project.yaml` records the authoritative re
 
 M1.1 is published and independently reproduced from the public repository. The clean-clone report
 records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
-14-event ledger, and clean final worktree. The evidence is published in closed issue #3. External
-human security review remains open, so do not begin signatures or persistence until that review is
-recorded.
+14-event ledger, and clean final worktree. The report is published in closed issue #3.
+
+M2.1 is now the active **accepted specification**. It defines principals, trusted key bindings,
+exact-candidate authority grants, explicit time/revocation snapshots, and detached Ed25519
+signatures. Three isolated automated reviewers reached unanimous PASS with no remaining P0/P1.
+This authorizes only schemas and shared adversarial fixtures first; the verifier remains disabled
+and cannot append durable lineage.
 
 ## Next
 
-1. Complete [independent security review issue #5](https://github.com/artemiosu/variaxiom/issues/5)
-   for the proposed M2.1 contract in
-   [PR #4](https://github.com/artemiosu/variaxiom/pull/4).
-2. Accept the M2.1 specification before implementing identity, grants, or signatures.
+1. Freeze M2.1 schemas and shared positive/adversarial vectors with no gate behavior change.
+2. Review that fixture contract, then add matching disabled Python/Rust verification.
 3. M2.2 — transactional SQLite lineage and projections.
 4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 
 ## Open decisions
 
-- select the Ed25519 library and key representation only after the signed bytes are stable;
+- production key custody and rotation remain unresolved beyond the M2.1 verifier contract;
 - decide whether a future envelope version adopts full RFC 8785/JCS;
 - appoint a second trusted maintainer before requiring one external approval on `main`;
 - choose the first external harness adapter no earlier than the adapter contract specification.
@@ -50,15 +52,13 @@ recorded.
 
 - record the two-minute Authority Test demo;
 - publish a small curated issue set rather than copying the whole roadmap;
-- obtain the first independent human security review.
+- publish implementation evidence after the schemas/fixture freeze and differential verification.
 
 ## External blockers
 
 - SSH authentication is unavailable (`Permission denied (publickey)`); HTTPS is the verified Git
   transport and should remain configured unless an operator installs and tests an SSH key;
-- complete external human security review
-  [issue #5](https://github.com/artemiosu/variaxiom/issues/5) for the promotion-sensitive M1.1 and
-  proposed M2.1 contracts.
+- no external blocker prevents the schemas/shared-fixtures phase.
 
 ## Context rule
 

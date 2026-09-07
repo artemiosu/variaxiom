@@ -12,7 +12,7 @@
           "evidence:unit"
         ],
         "gate_version": "proof-gate/v1",
-        "input_digest": "5046e75e26b45b761a814a29e47a4e2073bff84966668785983141c6e9f4e6de",
+        "input_digest": "efba06d3ae00ca2f8deaf85acbbd042b90c9e24c2ad7973ca828761b0719214a",
         "reasons": [
           "promotion.accepted"
         ],
@@ -49,9 +49,9 @@
             "kind": "detached-signature",
             "payload": {
               "algorithm": "Ed25519",
-              "key_id": "key:sha256:42192effec83331231d11e7460b0b5e1d700c4ec62db434028b0f834e5849142",
+              "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
               "principal_id": "principal:issuer",
-              "signature_base64url": "EdvnhWaiYhPvJpXHzC0OAzfwSa9sznEVSIqbhf1kEejcDn31Q4_O9ecJg8sCgzr0OY8j6GmQ67fOYu-uqph8CQ",
+              "signature_base64url": "_T9SubiP9NSljVfj1pYexVFSZckExJqXUlwjWd22GDL9Pgx9YTYO2TiwcxE2aM3kyRjNk4H8bXW0OpBKiKb3Bg",
               "signature_version": "detached-signature/v1",
               "signed_digest": "352d87e20238409d3726984c5176f524b5ccd775fb545d7e2a9728edef2d3c23",
               "signed_kind": "authority-grant",
@@ -104,9 +104,9 @@
             "kind": "detached-signature",
             "payload": {
               "algorithm": "Ed25519",
-              "key_id": "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a",
+              "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
               "principal_id": "principal:builder",
-              "signature_base64url": "tZeLwNZXvNFJNkqeJsv-jvn_Qk85EVYYD3KhDVTUCGatKMhhwsc64t5MP8VtHErICaFNdJhzwjSWKNFEIEHzDA",
+              "signature_base64url": "13T0Xi-XWOVnGjrrCIA5BO3BeI2cODLFt63ulxfOhkZhkixZY-16GTjBUYRpqfAQAsLith1cuwGDfJhAuAIZCw",
               "signature_version": "detached-signature/v1",
               "signed_digest": "0d6c1889fd6ef5d3cf4a24f5f0156e8380627a63a4fd9d49c21b544cd7c9aaad",
               "signed_kind": "candidate",
@@ -156,9 +156,9 @@
               "kind": "detached-signature",
               "payload": {
                 "algorithm": "Ed25519",
-                "key_id": "key:sha256:2d91a8fdb51ae7a99a5da1bf88770e5d5830dfcba7d6e8c060d6ad56fbcc17de",
+                "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
                 "principal_id": "principal:verifier",
-                "signature_base64url": "BvY1G9QHGdvmhs3wB7-065r-BmWjUqvwptawJQ9MqmRK5EBlBpwIg7kkbGRf__IrKZ1WLWAHLqHc5jUANX-fAg",
+                "signature_base64url": "DOrFhpmfRvly9xj-nSmx6aQQNI-6Sfpz8uLSnnwBrFKmTKYc8_Kj-hcxRhuTIXhNrXu_VSYn7IvhOyqacLXlDA",
                 "signature_version": "detached-signature/v1",
                 "signed_digest": "0bc200d35a2fac8fad61282aebfb018f328121e5c72b0f8e7c888b01dc75e1b7",
                 "signed_kind": "evidence",
@@ -180,8 +180,8 @@
                   {
                     "algorithm": "Ed25519",
                     "key_binding_version": "key-binding/v1",
-                    "key_id": "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a",
-                    "public_key_base64url": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik"
+                    "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
+                    "public_key_base64url": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
                   }
                 ],
                 "principal_id": "principal:builder",
@@ -195,8 +195,8 @@
                   {
                     "algorithm": "Ed25519",
                     "key_binding_version": "key-binding/v1",
-                    "key_id": "key:sha256:42192effec83331231d11e7460b0b5e1d700c4ec62db434028b0f834e5849142",
-                    "public_key_base64url": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q"
+                    "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
+                    "public_key_base64url": "PUAXw-hDiVqStwqnTRt-vJyYLM8uxJaMwM1V8Sr0Zgw"
                   }
                 ],
                 "principal_id": "principal:issuer",
@@ -210,8 +210,8 @@
                   {
                     "algorithm": "Ed25519",
                     "key_binding_version": "key-binding/v1",
-                    "key_id": "key:sha256:834e7202571554f42301cbafee31f38d7bdfd7232540dfc811902047b660d2d0",
-                    "public_key_base64url": "7UkoxijRwsbq6QM4kFmVYSlZJzpcY_k2NsFGFKyHN9E"
+                    "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
+                    "public_key_base64url": "_FHNjmIYoaONpH7QAjDwWAgW7RO6MwOsXeuRFUiQgCU"
                   }
                 ],
                 "principal_id": "principal:selector",
@@ -225,8 +225,8 @@
                   {
                     "algorithm": "Ed25519",
                     "key_binding_version": "key-binding/v1",
-                    "key_id": "key:sha256:2d91a8fdb51ae7a99a5da1bf88770e5d5830dfcba7d6e8c060d6ad56fbcc17de",
-                    "public_key_base64url": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w"
+                    "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
+                    "public_key_base64url": "J4EX_BRMcjQPZ9DyMW6Dhs7_vyskKMnFH-98WX8dQm4"
                   }
                 ],
                 "principal_id": "principal:verifier",
@@ -251,11 +251,11 @@
       "kind": "detached-signature",
       "payload": {
         "algorithm": "Ed25519",
-        "key_id": "key:sha256:834e7202571554f42301cbafee31f38d7bdfd7232540dfc811902047b660d2d0",
+        "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
         "principal_id": "principal:selector",
-        "signature_base64url": "zJvkFvYT9kNSDeZcLFrcQF6_UebCLxRgiDmL9JtxEZwNDJoeAPeTdymi4bKRInw-CQbWqk6BcQiSTtFvcsWtDQ",
+        "signature_base64url": "7ufVvvPCzYkEwvT3SycR60pK-sqxcI_0kzMNMBbJqPM5TDmCkrNsxqK0ZVOHZwulpHxR45w-6tEQhsjomqmqBQ",
         "signature_version": "detached-signature/v1",
-        "signed_digest": "ed55c51692cf8ee8875dad8589a72173157c42c17d4e496e3f6dcef45e9bc9d5",
+        "signed_digest": "21e2113480e4457975aa2a7aba2bb83058ff97d6d7c7a74a0d627a918f301c25",
         "signed_kind": "promotion-decision",
         "trust_domain_id": "trust-domain:example"
       }

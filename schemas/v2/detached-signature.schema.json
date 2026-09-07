@@ -10,7 +10,7 @@
   ],
   "properties": {
     "signature_version": {"const": "detached-signature/v1"},
-    "algorithm": {"const": "Ed25519"},
+    "algorithm": {"$ref": "common.schema.json#/$defs/token"},
     "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
     "principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
     "key_id": {"$ref": "common.schema.json#/$defs/keyId"},

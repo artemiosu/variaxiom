@@ -62,11 +62,14 @@ REQUIRED_FILES = (
     "schemas/v2/attested-proposal.schema.json",
     "schemas/v2/trusted-anchor.schema.json",
     "schemas/v2/signature-vector.schema.json",
+    "schemas/v2/conformance-case.schema.json",
     "fixtures/conformance/v2/base-attested-proposal.json",
     "fixtures/conformance/v2/golden-signature.json",
     "fixtures/conformance/v2/manifest.json",
     "fixtures/conformance/v2/manifest.schema.json",
+    "fixtures/conformance/v2/wycheproof-ed25519-subset.json",
     "scripts/regenerate_m2_fixtures.py",
+    "scripts/verify_m2_fixtures.py",
 )
 
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
@@ -701,6 +704,16 @@ def main() -> int:
         base = strict_json_loads((v2_root / "base-attested-proposal.json").read_bytes())
         manifest = strict_json_loads((v2_root / "manifest.json").read_bytes())
         golden = strict_json_loads((v2_root / "golden-signature.json").read_bytes())
+        published_registry = Registry().with_resources(
+            (str(item["$id"]), Resource.from_contents(item))
+            for item in schemas.values()
+            if isinstance(item.get("$id"), str)
+        )
+        published_validator = Draft202012Validator(
+            published_manifest_schema, registry=published_registry
+        )
+        for error in published_validator.iter_errors(manifest):
+            errors.append(f"M2.1 published manifest schema: {error.message}")
         errors.extend(
             _validate_instance(base, "v2/envelope.schema.json", schemas, "M2.1 base fixture")
         )
@@ -713,75 +726,30 @@ def main() -> int:
             )
         )
         errors.extend(_verify_m2_fixture(root, base, "M2.1 base fixture"))
-        if manifest["trusted_anchor"]["current_identity_context_digest"] != content_hash(
-            base["payload"]["promotion_input"]["payload"]["identity_context"]
-        ):
-            errors.append("M2.1 trusted anchor identity digest is stale")
-        if manifest["trusted_anchor"]["current_authorization_context_digest"] != content_hash(
-            base["payload"]["promotion_input"]["payload"]["authorization_context"]
-        ):
-            errors.append("M2.1 trusted anchor authorization digest is stale")
-        expected_registry = {
-            key["key_id"]: principal["principal_id"]
-            for principal in base["payload"]["promotion_input"]["payload"]["identity_context"][
-                "payload"
-            ]["principals"]
-            for key in principal["keys"]
-        }
-        if manifest["trusted_anchor"]["key_ownership_registry"] != dict(
-            sorted(expected_registry.items())
-        ):
-            errors.append("M2.1 trusted anchor key registry does not match genesis identities")
         cases = manifest["cases"]
         case_order = [(case["stage"], case["case_id"]) for case in cases]
         if case_order != sorted(case_order):
             errors.append("M2.1 manifest cases must be sorted by stage and case_id")
         if len({case["case_id"] for case in cases}) != len(cases):
             errors.append("M2.1 manifest case IDs must be unique")
-        for case in cases:
-            operation = case["operation"]
-            case_label = f"M2.1 case {case['case_id']}"
-            if operation == "base":
-                continue
-            if operation == "raw-base64url":
-                encoded = case["raw_base64url"]
-                raw = base64.urlsafe_b64decode(encoded + "=" * ((4 - len(encoded) % 4) % 4))
-                observed_code: str | None = None
-                try:
-                    parsed = strict_json_loads(raw)
-                    if canonical_json(parsed) != raw:
-                        observed_code = "input.encoding_invalid"
-                except (TypeError, ValueError) as error:
-                    message = str(error)
-                    if "duplicate JSON object key" in message:
-                        observed_code = "input.duplicate_member"
-                    elif "nesting exceeds" in message:
-                        observed_code = "input.limit_exceeded"
-                    else:
-                        observed_code = "input.encoding_invalid"
-                if observed_code != case["expected_code"]:
-                    errors.append(
-                        f"{case_label}: raw fixture yields {observed_code}, expected "
-                        f"{case['expected_code']}"
-                    )
-                continue
-
-            target = manifest["trusted_anchor"] if operation == "anchor-replace" else base
-            mutation = "replace" if operation == "anchor-replace" else operation
-            mutated = _mutate_fixture(target, case["json_pointer"], mutation, case.get("value"))
-            if operation == "anchor-replace":
-                mutation_errors = _validate_instance(
-                    mutated, "v2/trusted-anchor.schema.json", schemas, case_label
-                )
-            else:
-                mutation_errors = _validate_instance(
-                    mutated, "v2/envelope.schema.json", schemas, case_label
-                )
-            if case["stage"] >= 3 and mutation_errors:
-                errors.append(
-                    f"{case_label}: mutation must remain structurally valid before stage "
-                    f"{case['stage']}"
-                )
+        referenced_case_paths: set[Path] = set()
+        for item in cases:
+            case_label = f"M2.1 case {item['case_id']}"
+            case_path = v2_root / item["fixture"]
+            referenced_case_paths.add(case_path)
+            case = strict_json_loads(case_path.read_bytes())
+            errors.extend(
+                _validate_instance(case, "v2/conformance-case.schema.json", schemas, case_label)
+            )
+            if case["case_id"] != item["case_id"] or case["stage"] != item["stage"]:
+                errors.append(f"{case_label}: manifest metadata differs from case file")
+            encoded = case["input_base64url"]
+            raw = base64.urlsafe_b64decode(encoded + "=" * ((4 - len(encoded) % 4) % 4))
+            if hashlib.sha256(raw).hexdigest() != case["input_sha256"]:
+                errors.append(f"{case_label}: input_sha256 is stale")
+        existing_case_paths = set((v2_root / "cases").glob("*.json"))
+        for unreferenced in sorted(existing_case_paths - referenced_case_paths):
+            errors.append(f"unreferenced M2.1 case fixture: {unreferenced.relative_to(root)}")
         if isinstance(golden, dict):
             target = golden.get("target_envelope")
             target_digest = golden.get("target_digest")
@@ -869,8 +837,10 @@ def main() -> int:
         "scripts/bootstrap.sh",
         "scripts/demo.sh",
         "scripts/regenerate_conformance_fixtures.py",
+        "scripts/regenerate_m2_fixtures.py",
         "scripts/setup-github.sh",
         "scripts/verify.sh",
+        "scripts/verify_m2_fixtures.py",
     ):
         script = root / relative
         if script.is_file() and not os.access(script, os.X_OK):

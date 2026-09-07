@@ -1,17 +1,27 @@
 # M2.1 conformance fixtures
 
-This directory freezes the first implementation-independent M2.1 wire contract.
+This directory contains the implementation-independent M2.1 wire-contract candidate.
 
 - `base-attested-proposal.json` is a complete schema-valid proposal with four distinct test
   principals and deterministic signatures.
 - `golden-signature.json` freezes the selector target digest, exact signing-message bytes, public
   key, and detached signature.
-- `manifest.json` names the trusted anchor and shared positive/negative cases.
+- `manifest.json` points to self-contained positive, negative, boundary, replay, and transition
+  cases under `cases/`.
+- every case carries exact canonical input bytes, their digest, its trusted anchor or ordered
+  anchor history, expected stage/code, and the relevant complete signature vectors.
 
-The signing keys were deterministic test material used once to create public signatures. No private
-key or production credential is stored here. `scripts/regenerate_m2_fixtures.py` reconstructs the
-objects and checks their canonical digests without generating keys or signatures.
+The only signing seeds in the generator are the four published RFC 8032 section 7.1 test vectors,
+explicitly labelled non-secret interoperability material. No project-generated private key or
+production credential is stored here. `scripts/regenerate_m2_fixtures.py` deterministically
+rebuilds every object, digest, message, and test signature.
 
-These fixtures do not enable the M2.1 verifier. Later implementation commits must consume the same
-files in Python and Rust and must extend the manifest with every boundary and adversarial class
-required by the accepted specification before the disabled verifier can be considered complete.
+`scripts/verify_m2_fixtures.py` executes the normative stage order and checks every declared result.
+The Rust test independently verifies the same positive and invalid Ed25519 vectors with
+`curve25519-dalek` and `ed25519-dalek::verify_strict`. JSON files are formatted for review, but
+runners never treat those pretty-printed bytes as wire input; `input_base64url` is authoritative.
+`wycheproof-ed25519-subset.json` adds a provenance-pinned Apache-2.0 subset of C2SP Project
+Wycheproof; Python and Rust both execute every selected valid and invalid vector.
+
+These fixtures do not enable the M2.1 runtime verifier and cannot append lineage. Freeze status is
+granted only after the independent automated council reviews the exact commit and reports no P0/P1.

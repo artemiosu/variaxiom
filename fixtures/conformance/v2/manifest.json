@@ -3,204 +3,670 @@
   "cases": [
     {
       "case_id": "depth-limit-rejected",
-      "expected_code": "input.limit_exceeded",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "W1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1swXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV0",
+      "fixture": "cases/depth-limit-rejected.json",
       "stage": 1
     },
     {
       "case_id": "duplicate-member-rejected",
-      "expected_code": "input.duplicate_member",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "eyJ4IjoxLCJ4IjoyfQ",
+      "fixture": "cases/duplicate-member-rejected.json",
       "stage": 1
     },
     {
       "case_id": "lone-surrogate-rejected",
-      "expected_code": "input.encoding_invalid",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "eyJ4IjoiXHVkODAwIn0",
+      "fixture": "cases/lone-surrogate-rejected.json",
       "stage": 1
     },
     {
       "case_id": "noncanonical-wire-rejected",
-      "expected_code": "input.encoding_invalid",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "eyJ4IjogMX0",
+      "fixture": "cases/noncanonical-wire-rejected.json",
       "stage": 1
     },
     {
       "case_id": "unsafe-integer-rejected",
-      "expected_code": "input.encoding_invalid",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "eyJ4Ijo5MDA3MTk5MjU0NzQwOTkyfQ",
+      "fixture": "cases/unsafe-integer-rejected.json",
       "stage": 1
     },
     {
       "case_id": "utf16-rejected",
-      "expected_code": "input.encoding_invalid",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "__57AH0A",
+      "fixture": "cases/utf16-rejected.json",
       "stage": 1
     },
     {
       "case_id": "utf8-bom-rejected",
-      "expected_code": "input.encoding_invalid",
-      "expected_status": "rejected",
-      "operation": "raw-base64url",
-      "raw_base64url": "77u_e30",
+      "fixture": "cases/utf8-bom-rejected.json",
       "stage": 1
     },
     {
+      "case_id": "wire-size-plus-one-rejected",
+      "fixture": "cases/wire-size-plus-one-rejected.json",
+      "stage": 1
+    },
+    {
+      "case_id": "anchor-key-registry-limit-plus-one",
+      "fixture": "cases/anchor-key-registry-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "capabilities-limit-plus-one",
+      "fixture": "cases/capabilities-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "comma-token-rejected",
+      "fixture": "cases/comma-token-rejected.json",
+      "stage": 2
+    },
+    {
+      "case_id": "duplicate-capabilities-rejected",
+      "fixture": "cases/duplicate-capabilities-rejected.json",
+      "stage": 2
+    },
+    {
+      "case_id": "evidence-details-limit-plus-one",
+      "fixture": "cases/evidence-details-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "evidence-limit-plus-one",
+      "fixture": "cases/evidence-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "keys-per-principal-limit-plus-one",
+      "fixture": "cases/keys-per-principal-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "lineage-records-limit-plus-one",
+      "fixture": "cases/lineage-records-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "metadata-limit-plus-one",
+      "fixture": "cases/metadata-limit-plus-one.json",
+      "stage": 2
+    },
+    {
       "case_id": "missing-selector",
-      "expected_code": "input.schema_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/selector_signature",
-      "operation": "remove",
+      "fixture": "cases/missing-selector.json",
       "stage": 2
     },
     {
       "case_id": "nonascii-principal-rejected",
-      "expected_code": "input.schema_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/candidate/envelope/payload/proposer",
-      "operation": "replace",
-      "stage": 2,
-      "value": "principal:строитель"
+      "fixture": "cases/nonascii-principal-rejected.json",
+      "stage": 2
     },
     {
-      "case_id": "padded-base64-rejected",
-      "expected_code": "input.schema_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/identity_context/payload/principals/0/keys/0/public_key_base64url",
-      "operation": "replace",
-      "stage": 2,
-      "value": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik="
+      "case_id": "principals-limit-plus-one",
+      "fixture": "cases/principals-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "revoked-grants-limit-plus-one",
+      "fixture": "cases/revoked-grants-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "revoked-keys-limit-plus-one",
+      "fixture": "cases/revoked-keys-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "roles-per-principal-limit-plus-one",
+      "fixture": "cases/roles-per-principal-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "token-utf8-257-bytes-rejected",
+      "fixture": "cases/token-utf8-257-bytes-rejected.json",
+      "stage": 2
     },
     {
       "case_id": "unknown-field-rejected",
-      "expected_code": "input.schema_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/surprise",
-      "operation": "add",
-      "stage": 2,
-      "value": true
+      "fixture": "cases/unknown-field-rejected.json",
+      "stage": 2
     },
     {
       "case_id": "unsorted-capabilities-rejected",
-      "expected_code": "input.schema_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/candidate/envelope/payload/requested_capabilities",
-      "operation": "replace",
-      "stage": 2,
-      "value": [
-        "z.example",
-        "a.example"
-      ]
+      "fixture": "cases/unsorted-capabilities-rejected.json",
+      "stage": 2
+    },
+    {
+      "case_id": "verified-artifacts-limit-plus-one",
+      "fixture": "cases/verified-artifacts-limit-plus-one.json",
+      "stage": 2
     },
     {
       "case_id": "wrong-envelope-kind",
-      "expected_code": "input.kind_mismatch",
-      "expected_status": "rejected",
-      "json_pointer": "/kind",
-      "operation": "replace",
-      "stage": 2,
-      "value": "unknown-kind"
+      "fixture": "cases/wrong-envelope-kind.json",
+      "stage": 2
     },
     {
       "case_id": "wrong-envelope-version",
-      "expected_code": "input.version_unsupported",
-      "expected_status": "rejected",
-      "json_pointer": "/envelope_version",
-      "operation": "replace",
-      "stage": 2,
-      "value": "variaxiom-envelope/v9"
+      "fixture": "cases/wrong-envelope-version.json",
+      "stage": 2
     },
     {
-      "case_id": "stale-identity-context",
-      "expected_code": "identity.context_stale",
-      "expected_status": "rejected",
-      "json_pointer": "/current_snapshot_sequence",
-      "operation": "anchor-replace",
-      "stage": 3,
-      "value": 1
+      "case_id": "anchor-domain-untrusted",
+      "fixture": "cases/anchor-domain-untrusted.json",
+      "stage": 3
     },
     {
-      "case_id": "swapped-authorization-context",
-      "expected_code": "authorization.context_untrusted",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/authorization_context/payload/lineage_id",
-      "operation": "replace",
-      "stage": 3,
-      "value": "lineage:attacker"
+      "case_id": "anchor-sequence-skip",
+      "fixture": "cases/anchor-sequence-skip.json",
+      "stage": 3
     },
     {
-      "case_id": "wrong-signature-domain",
-      "expected_code": "signature.domain_mismatch",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/trust_domain_id",
-      "operation": "replace",
-      "stage": 3,
-      "value": "trust-domain:other"
+      "case_id": "anchor-time-rollback",
+      "fixture": "cases/anchor-time-rollback.json",
+      "stage": 3
     },
     {
-      "case_id": "actor-signature-mismatch",
-      "expected_code": "signature.principal_mismatch",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/principal_id",
-      "operation": "replace",
-      "stage": 5,
-      "value": "principal:verifier"
+      "case_id": "anchor-wrong-predecessor",
+      "fixture": "cases/anchor-wrong-predecessor.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authority-grant-signature-domain-mismatch",
+      "fixture": "cases/authority-grant-signature-domain-mismatch.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-capability-namespace-untrusted",
+      "fixture": "cases/authorization-capability-namespace-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-constitution-artifact-hash-untrusted",
+      "fixture": "cases/authorization-constitution-artifact-hash-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-constitution-envelope-digest-untrusted",
+      "fixture": "cases/authorization-constitution-envelope-digest-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-digest-untrusted",
+      "fixture": "cases/authorization-digest-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-lineage-capabilities-untrusted",
+      "fixture": "cases/authorization-lineage-capabilities-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-lineage-id-untrusted",
+      "fixture": "cases/authorization-lineage-id-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-lineage-set-untrusted",
+      "fixture": "cases/authorization-lineage-set-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-trust-domain-id-untrusted",
+      "fixture": "cases/authorization-trust-domain-id-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "authorization-verified-artifact-hashes-untrusted",
+      "fixture": "cases/authorization-verified-artifact-hashes-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "candidate-domain-mismatch",
+      "fixture": "cases/candidate-domain-mismatch.json",
+      "stage": 3
+    },
+    {
+      "case_id": "evidence-signature-domain-mismatch",
+      "fixture": "cases/evidence-signature-domain-mismatch.json",
+      "stage": 3
+    },
+    {
+      "case_id": "identity-digest-untrusted",
+      "fixture": "cases/identity-digest-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "identity-sequence-stale",
+      "fixture": "cases/identity-sequence-stale.json",
+      "stage": 3
+    },
+    {
+      "case_id": "trusted-time-untrusted",
+      "fixture": "cases/trusted-time-untrusted.json",
+      "stage": 3
+    },
+    {
+      "case_id": "candidate-digest-mismatch",
+      "fixture": "cases/candidate-digest-mismatch.json",
+      "stage": 4
+    },
+    {
+      "case_id": "candidate-key-id-mismatch",
+      "fixture": "cases/candidate-key-id-mismatch.json",
+      "stage": 4
+    },
+    {
+      "case_id": "candidate-kind-mismatch",
+      "fixture": "cases/candidate-kind-mismatch.json",
+      "stage": 4
+    },
+    {
+      "case_id": "evidence-digest-mismatch",
+      "fixture": "cases/evidence-digest-mismatch.json",
+      "stage": 4
+    },
+    {
+      "case_id": "grant-digest-mismatch",
+      "fixture": "cases/grant-digest-mismatch.json",
+      "stage": 4
+    },
+    {
+      "case_id": "precedence-digest-before-kind",
+      "fixture": "cases/precedence-digest-before-kind.json",
+      "stage": 4
+    },
+    {
+      "case_id": "anchor-three-step-advance",
+      "fixture": "cases/anchor-three-step-advance.json",
+      "stage": 5
+    },
+    {
+      "case_id": "authority-grant-principal-mismatch",
+      "fixture": "cases/authority-grant-principal-mismatch.json",
+      "stage": 5
+    },
+    {
+      "case_id": "candidate-key-unbound",
+      "fixture": "cases/candidate-key-unbound.json",
+      "stage": 5
+    },
+    {
+      "case_id": "candidate-principal-mismatch",
+      "fixture": "cases/candidate-principal-mismatch.json",
+      "stage": 5
+    },
+    {
+      "case_id": "candidate-principal-unknown",
+      "fixture": "cases/candidate-principal-unknown.json",
+      "stage": 5
+    },
+    {
+      "case_id": "candidate-role-missing",
+      "fixture": "cases/candidate-role-missing.json",
+      "stage": 5
+    },
+    {
+      "case_id": "cross-principal-key-alias",
+      "fixture": "cases/cross-principal-key-alias.json",
+      "stage": 5
+    },
+    {
+      "case_id": "evidence-principal-mismatch",
+      "fixture": "cases/evidence-principal-mismatch.json",
+      "stage": 5
+    },
+    {
+      "case_id": "historical-key-reassignment",
+      "fixture": "cases/historical-key-reassignment.json",
+      "stage": 5
+    },
+    {
+      "case_id": "proposer-verifier-role-conflict",
+      "fixture": "cases/proposer-verifier-role-conflict.json",
+      "stage": 5
+    },
+    {
+      "case_id": "revoked-authority-grant",
+      "fixture": "cases/revoked-authority-grant.json",
+      "stage": 5
+    },
+    {
+      "case_id": "revoked-grant-washout-replay",
+      "fixture": "cases/revoked-grant-washout-replay.json",
+      "stage": 5
+    },
+    {
+      "case_id": "revoked-key-washout-reintroduction",
+      "fixture": "cases/revoked-key-washout-reintroduction.json",
+      "stage": 5
     },
     {
       "case_id": "revoked-proposer-key",
-      "expected_code": "signature.key_revoked",
-      "expected_status": "rejected",
-      "json_pointer": "/revoked_key_ids",
-      "operation": "anchor-replace",
-      "stage": 5,
-      "value": [
-        "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a"
-      ]
+      "fixture": "cases/revoked-proposer-key.json",
+      "stage": 5
     },
     {
-      "case_id": "low-order-signature-point",
-      "expected_code": "signature.encoding_invalid",
-      "expected_status": "rejected",
-      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/signature_base64url",
-      "operation": "replace",
-      "stage": 6,
-      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "case_id": "invalid-signature-equation",
+      "fixture": "cases/invalid-signature-equation.json",
+      "stage": 6
+    },
+    {
+      "case_id": "low-order-r-rejected",
+      "fixture": "cases/low-order-r-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "mixed-order-public-key-rejected",
+      "fixture": "cases/mixed-order-public-key-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "mixed-order-r-rejected",
+      "fixture": "cases/mixed-order-r-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "noncanonical-pad-bits-rejected",
+      "fixture": "cases/noncanonical-pad-bits-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "noncanonical-public-key-pad-bits",
+      "fixture": "cases/noncanonical-public-key-pad-bits.json",
+      "stage": 6
+    },
+    {
+      "case_id": "noncanonical-public-key-rejected",
+      "fixture": "cases/noncanonical-public-key-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "noncanonical-r-rejected",
+      "fixture": "cases/noncanonical-r-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "padded-signature-rejected",
+      "fixture": "cases/padded-signature-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "precedence-algorithm-before-encoding",
+      "fixture": "cases/precedence-algorithm-before-encoding.json",
+      "stage": 6
+    },
+    {
+      "case_id": "signature-s-l",
+      "fixture": "cases/signature-s-l.json",
+      "stage": 6
+    },
+    {
+      "case_id": "signature-s-l-minus-one",
+      "fixture": "cases/signature-s-l-minus-one.json",
+      "stage": 6
+    },
+    {
+      "case_id": "signature-s-l-plus-one",
+      "fixture": "cases/signature-s-l-plus-one.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-0-rejected",
+      "fixture": "cases/torsion-r-0-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-1-rejected",
+      "fixture": "cases/torsion-r-1-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-2-rejected",
+      "fixture": "cases/torsion-r-2-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-3-rejected",
+      "fixture": "cases/torsion-r-3-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-4-rejected",
+      "fixture": "cases/torsion-r-4-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-5-rejected",
+      "fixture": "cases/torsion-r-5-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-6-rejected",
+      "fixture": "cases/torsion-r-6-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "torsion-r-7-rejected",
+      "fixture": "cases/torsion-r-7-rejected.json",
+      "stage": 6
+    },
+    {
+      "case_id": "unsupported-signature-algorithm",
+      "fixture": "cases/unsupported-signature-algorithm.json",
+      "stage": 6
+    },
+    {
+      "case_id": "evidence-adjacent-candidate",
+      "fixture": "cases/evidence-adjacent-candidate.json",
+      "stage": 7
+    },
+    {
+      "case_id": "grant-capability-partial",
+      "fixture": "cases/grant-capability-partial.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-capability-superset",
+      "fixture": "cases/grant-capability-superset.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-delegation-forbidden",
+      "fixture": "cases/grant-delegation-forbidden.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-expired",
+      "fixture": "cases/grant-expired.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-interval-invalid",
+      "fixture": "cases/grant-interval-invalid.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-not-yet-valid",
+      "fixture": "cases/grant-not-yet-valid.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-required-for-delta",
+      "fixture": "cases/grant-required-for-delta.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-audience",
+      "fixture": "cases/grant-wrong-audience.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-constitution",
+      "fixture": "cases/grant-wrong-constitution.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-domain",
+      "fixture": "cases/grant-wrong-domain.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-lineage",
+      "fixture": "cases/grant-wrong-lineage.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-namespace",
+      "fixture": "cases/grant-wrong-namespace.json",
+      "stage": 8
+    },
+    {
+      "case_id": "grant-wrong-subject",
+      "fixture": "cases/grant-wrong-subject.json",
+      "stage": 8
+    },
+    {
+      "case_id": "precedence-audience-before-context",
+      "fixture": "cases/precedence-audience-before-context.json",
+      "stage": 8
+    },
+    {
+      "case_id": "zero-delta-redundant-grant",
+      "fixture": "cases/zero-delta-redundant-grant.json",
+      "stage": 8
+    },
+    {
+      "case_id": "constitution-artifact-mismatch",
+      "fixture": "cases/constitution-artifact-mismatch.json",
+      "stage": 9
+    },
+    {
+      "case_id": "constitution-context-mismatch",
+      "fixture": "cases/constitution-context-mismatch.json",
+      "stage": 9
+    },
+    {
+      "case_id": "precedence-constitution-context-before-artifact",
+      "fixture": "cases/precedence-constitution-context-before-artifact.json",
+      "stage": 9
+    },
+    {
+      "case_id": "policy-baseline-mismatch",
+      "fixture": "cases/policy-baseline-mismatch.json",
+      "stage": 10
+    },
+    {
+      "case_id": "policy-cost-rejected",
+      "fixture": "cases/policy-cost-rejected.json",
+      "stage": 10
+    },
+    {
+      "case_id": "anchor-key-registry-exact-limit",
+      "fixture": "cases/anchor-key-registry-exact-limit.json",
+      "stage": 11
     },
     {
       "case_id": "bounded-signed-proposal",
-      "expected_code": null,
-      "expected_status": "verified",
-      "operation": "base",
+      "fixture": "cases/bounded-signed-proposal.json",
+      "stage": 11
+    },
+    {
+      "case_id": "capabilities-exact-limit",
+      "fixture": "cases/capabilities-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "decision-content-mismatch",
+      "fixture": "cases/decision-content-mismatch.json",
+      "stage": 11
+    },
+    {
+      "case_id": "evidence-and-crypto-ops-exact-limit",
+      "fixture": "cases/evidence-and-crypto-ops-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "evidence-details-exact-limit",
+      "fixture": "cases/evidence-details-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "historical-replay-nonauthorizing",
+      "fixture": "cases/historical-replay-nonauthorizing.json",
+      "stage": 11
+    },
+    {
+      "case_id": "keys-per-principal-exact-limit",
+      "fixture": "cases/keys-per-principal-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "lineage-records-exact-limit",
+      "fixture": "cases/lineage-records-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "metadata-exact-limit",
+      "fixture": "cases/metadata-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "precedence-decision-before-selector-signature",
+      "fixture": "cases/precedence-decision-before-selector-signature.json",
+      "stage": 11
+    },
+    {
+      "case_id": "principals-exact-limit",
+      "fixture": "cases/principals-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "revoked-grants-exact-limit",
+      "fixture": "cases/revoked-grants-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "revoked-keys-exact-limit",
+      "fixture": "cases/revoked-keys-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "roles-per-principal-exact-limit",
+      "fixture": "cases/roles-per-principal-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-domain-mismatch",
+      "fixture": "cases/selector-domain-mismatch.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-role-missing",
+      "fixture": "cases/selector-role-missing.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-signature-invalid",
+      "fixture": "cases/selector-signature-invalid.json",
+      "stage": 11
+    },
+    {
+      "case_id": "token-utf8-256-bytes",
+      "fixture": "cases/token-utf8-256-bytes.json",
+      "stage": 11
+    },
+    {
+      "case_id": "verified-artifacts-exact-limit",
+      "fixture": "cases/verified-artifacts-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "wire-size-exact-limit",
+      "fixture": "cases/wire-size-exact-limit.json",
+      "stage": 11
+    },
+    {
+      "case_id": "zero-delta-without-grant",
+      "fixture": "cases/zero-delta-without-grant.json",
       "stage": 11
     }
   ],
-  "manifest_version": "m2.1-conformance-manifest/v1",
-  "spec_revision": "fe839515148559aae4efa39f8e14324f65510c39b71c356e9421cafdd7530a46",
-  "trusted_anchor": {
-    "current_authorization_context_digest": "ee2beb3f71f0a1610321389a33f34223eddc215d3ea344ddca95099f9c31d5fc",
-    "current_identity_context_digest": "b47e4c04f6725e9e92477b3361051712642017d6c370c6899af195699cc50638",
-    "current_snapshot_sequence": 0,
-    "key_ownership_registry": {
-      "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a": "principal:builder",
-      "key:sha256:2d91a8fdb51ae7a99a5da1bf88770e5d5830dfcba7d6e8c060d6ad56fbcc17de": "principal:verifier",
-      "key:sha256:42192effec83331231d11e7460b0b5e1d700c4ec62db434028b0f834e5849142": "principal:issuer",
-      "key:sha256:834e7202571554f42301cbafee31f38d7bdfd7232540dfc811902047b660d2d0": "principal:selector"
-    },
-    "revoked_grant_ids": [],
-    "revoked_key_ids": [],
-    "trust_domain_id": "trust-domain:example",
-    "trusted_now_unix_s": 1788739200
-  }
+  "manifest_version": "m2.1-conformance-manifest/v2",
+  "spec_revision": "0e93545510aae6126c8caf5c78eacab0036f80339f2d177d1d8da7bca67433cb"
 }

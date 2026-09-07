@@ -17,16 +17,15 @@
     "trusted_now_unix_s": {"$ref": "common.schema.json#/$defs/safeUint"},
     "key_ownership_registry": {
       "type": "object",
-      "maxProperties": 4096,
       "propertyNames": {"$ref": "common.schema.json#/$defs/keyId"},
       "additionalProperties": {"$ref": "common.schema.json#/$defs/principalId"}
     },
     "revoked_key_ids": {
-      "type": "array", "maxItems": 4096, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/keyId"}
     },
     "revoked_grant_ids": {
-      "type": "array", "maxItems": 4096, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/grantId"}
     }
   }

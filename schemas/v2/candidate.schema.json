@@ -17,11 +17,11 @@
     "proposer": {"$ref": "common.schema.json#/$defs/principalId"},
     "rollback_target": {"$ref": "common.schema.json#/$defs/token"},
     "baseline_capabilities": {
-      "type": "array", "maxItems": 128, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/capability"}
     },
     "requested_capabilities": {
-      "type": "array", "maxItems": 128, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/capability"}
     },
     "estimated_cost_micro_usd": {"$ref": "common.schema.json#/$defs/safeUint"},

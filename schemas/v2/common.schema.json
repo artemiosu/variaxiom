@@ -9,17 +9,14 @@
     "token": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 256,
-      "not": {"pattern": "[\\u0000-\\u001f\\u007f]"}
+      "not": {"pattern": "[,\\u0000-\\u001f\\u007f]"}
     },
     "principalId": {
       "type": "string",
-      "maxLength": 256,
       "pattern": "^principal:[a-z0-9._:/-]+$"
     },
     "trustDomainId": {
       "type": "string",
-      "maxLength": 256,
       "pattern": "^trust-domain:[a-z0-9._:/-]+$"
     },
     "keyId": {"type": "string", "pattern": "^key:sha256:[a-f0-9]{64}$"},
@@ -27,16 +24,17 @@
     "capability": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 256,
       "pattern": "^[a-z0-9._:/-]+$"
     },
     "publicKeyBase64url": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]{43}$"
+      "minLength": 1,
+      "not": {"pattern": "[\\u0000-\\u001f\\u007f]"}
     },
     "signatureBase64url": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]{86}$"
+      "minLength": 1,
+      "not": {"pattern": "[\\u0000-\\u001f\\u007f]"}
     },
     "canonicalValue": {
       "oneOf": [

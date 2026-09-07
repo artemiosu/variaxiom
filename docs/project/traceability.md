@@ -16,7 +16,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-TRUST-001 | constitution and M2.1 identity context | proposer/verifier checks | v1 self-check plus v2 adversarial manifest | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
 | REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor schemas | not implemented | signed base identities; alias/runtime vectors pending | partial |
-| REQ-SIG-001 | M2.1 spec, ADR 0010, signature schema | not implemented | golden message/signature and early adversarial manifest | partial |
+| REQ-SIG-001 | M2.1 spec, ADR 0010, signature schema | test-only cross-runtime verifier; runtime gate disabled | golden message/signature and self-contained adversarial corpus | partial |
 | REQ-EVID-001 | M1.1 conformance spec | Python/Rust gates | artifact-mismatch fixture | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |

@@ -7,3 +7,8 @@ imply affiliation, sponsorship, or endorsement.
 
 The Variaxiom name and visual identity are not granted for confusingly similar
 products by the Apache License; see TRADEMARKS.md.
+
+The curated Ed25519 test-vector subset in
+fixtures/conformance/v2/wycheproof-ed25519-subset.json is derived from C2SP
+Project Wycheproof, commit 3fa63dd0344abb611f1fb1d77e119938603ea230,
+licensed under Apache-2.0. The fixture records its source file and digest.

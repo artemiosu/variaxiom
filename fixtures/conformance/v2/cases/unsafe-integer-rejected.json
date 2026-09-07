@@ -1,0 +1,31 @@
+{
+  "case_id": "unsafe-integer-rejected",
+  "case_version": "m2.1-conformance-case/v1",
+  "entrypoint": "verify-attested-proposal",
+  "expected": {
+    "authorizing": false,
+    "code": "input.encoding_invalid",
+    "decision_status": "not-reached",
+    "status": "rejected"
+  },
+  "input_base64url": "eyJ4Ijo5MDA3MTk5MjU0NzQwOTkyfQ",
+  "input_sha256": "9799d751f6b78d19d7d2dfe1b3889007eb2de56c34a92e998389795b26cb14d3",
+  "notes": "Frozen shared conformance vector.",
+  "signature_vectors": [],
+  "stage": 1,
+  "trusted_anchor": {
+    "current_authorization_context_digest": "ee2beb3f71f0a1610321389a33f34223eddc215d3ea344ddca95099f9c31d5fc",
+    "current_identity_context_digest": "64226b40329a521fd32ee482c10517e3eed8d0eab4cb459e52cdf4874d402b5a",
+    "current_snapshot_sequence": 0,
+    "key_ownership_registry": {
+      "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a": "principal:selector",
+      "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e": "principal:verifier",
+      "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609": "principal:builder",
+      "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e": "principal:issuer"
+    },
+    "revoked_grant_ids": [],
+    "revoked_key_ids": [],
+    "trust_domain_id": "trust-domain:example",
+    "trusted_now_unix_s": 1788739200
+  }
+}

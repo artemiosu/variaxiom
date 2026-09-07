@@ -12,24 +12,23 @@
   "properties": {
     "authorization_context_version": {"const": "authorization-context/v1"},
     "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
-    "capability_namespace": {"const": "variaxiom-capability/v1"},
+    "capability_namespace": {"$ref": "common.schema.json#/$defs/token"},
     "lineage_id": {"$ref": "common.schema.json#/$defs/token"},
     "constitution_envelope_digest": {"$ref": "common.schema.json#/$defs/sha256"},
     "constitution_artifact_hash": {"$ref": "common.schema.json#/$defs/sha256"},
     "known_lineage_ids": {
-      "type": "array", "maxItems": 4096, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/token"}
     },
     "lineage_capabilities": {
       "type": "object",
-      "maxProperties": 4096,
       "additionalProperties": {
-        "type": "array", "maxItems": 128, "uniqueItems": true,
+        "type": "array", "uniqueItems": true,
         "items": {"$ref": "common.schema.json#/$defs/capability"}
       }
     },
     "verified_artifact_hashes": {
-      "type": "array", "maxItems": 4096, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": {"$ref": "common.schema.json#/$defs/sha256"}
     }
   }

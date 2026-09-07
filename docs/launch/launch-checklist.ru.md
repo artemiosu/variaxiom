@@ -16,7 +16,7 @@
 - [ ] Discussions включены и seeded тремя темами.
 - [ ] Private vulnerability reporting включён.
 - [ ] Branch protection и required checks включены.
-- [ ] Social preview PNG загружен.
+- [x] Social preview PNG загружен.
 
 ## Proof
 

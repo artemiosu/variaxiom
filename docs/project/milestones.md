@@ -19,7 +19,8 @@
 
 ## M2 — Signed lineage
 
-- [ ] Review and accept the proposed M2.1 identity/grant/signature specification.
+- [ ] Complete [independent review #5](https://github.com/artemiosu/variaxiom/issues/5) and accept
+  the proposed M2.1 identity/grant/signature specification.
 - [ ] Define identity/grant schemas and shared adversarial fixtures.
 - [ ] Implement signing and verification.
 - [ ] Add transactional SQLite store.

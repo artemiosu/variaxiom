@@ -1,6 +1,6 @@
 # ADR 0010: Ed25519 detached signatures and explicit trust roots
 
-- **Status:** proposed revision 3; final automated security-council re-review required before acceptance
+- **Status:** proposed revision 4; final automated security-council re-review required before acceptance
 - **Date:** 2026-09-06
 - **Decision owner:** bootstrap maintainer under the founder review exception for proposal only
 - **Specification:** [`../../specs/m2.1-identity-grants-signatures.md`](../../specs/m2.1-identity-grants-signatures.md)
@@ -27,9 +27,10 @@ principals and roles only through an explicit trusted snapshot committed by `pro
 
 An embedded snapshot is not a trust root. Live verification additionally requires an operator-
 controlled anchor containing exact identity- and authorization-context digests, trust domain,
-sequence, trusted time, and a persistent key-ownership registry. The authorization context commits
-every policy/state fact used by the gate: constitution, lineage and parent authority, verified
-artifacts, budget, and verifier threshold. Historical replay is a separate non-authorizing API.
+sequence, trusted time, a persistent key-ownership registry, and monotonic key/grant revocation
+sets. The authorization context commits the constitution identity, lineage and parent authority,
+and verified artifacts; the pinned constitution is the sole source of budget and verifier policy.
+Historical replay is a separate non-authorizing API.
 One key is bound to exactly one principal per trust domain and cannot be reassigned in v1; an
 explicit anchor-transition function enforces that history.
 
@@ -39,11 +40,12 @@ in Rust. Use each library only for key decoding, signing in test/CLI boundaries,
 canonicalization, domain construction, trust policy, and grant policy remain project code with
 shared fixtures. Exact dependency versions are committed in the lock files during implementation.
 
-Rust uses only `VerifyingKey::verify_strict` with minimal default-free features; batch, hazmat,
-prehash/digest, context, PKCS#8/PEM, and serde features are disabled. Python uses PyNaCl
-`VerifyKey.verify`, backed by libsodium's strict detached verifier. Both must reject non-canonical
-points, low-order public keys and `R`, and `S >= L`; the locked shared boundary corpus prevents a
-permissive library default from widening protocol acceptance.
+Both runtimes first require canonical, decodable, non-identity prime-order-subgroup public keys and
+`R` points. Python uses PyNaCl's libsodium point validator (libsodium 1.0.21+) and `VerifyKey.verify`;
+Rust uses `curve25519-dalek` decompression/recompression plus `is_torsion_free`, followed by
+`VerifyingKey::verify_strict`. Both reject `S >= L`. Batch, hazmat, prehash/digest, context,
+PKCS#8/PEM, and serde features are disabled. The locked shared torsion, mixed-order, scalar, and
+Wycheproof corpus prevents permissive library defaults from widening protocol acceptance.
 
 The verifier accepts no caller-provided prebuilt signing message. It validates the target, computes
 its digest, and constructs bytes containing domain version, algorithm, trust domain, principal,

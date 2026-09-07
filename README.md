@@ -12,13 +12,17 @@ Most agents can already propose code changes. Mutation is easy. The hard part is
 
 Variaxiom makes that decision explicit, reproducible, and auditable.
 
-[Русская версия](README.ru.md) · [Architecture](docs/architecture/overview.md) · [Roadmap](docs/project/roadmap.md) · [Launch strategy](docs/launch/launch-strategy.ru.md)
+[Live demo](https://artemiosu.github.io/variaxiom/) · [Русская версия](README.ru.md) ·
+[Architecture](docs/architecture/overview.md) · [Roadmap](docs/project/roadmap.md) ·
+[Project status](PROJECT_STATUS.md)
 
 Contributors and coding agents should begin with the
 [current development context](docs/project/current.md) and
 [context index](docs/context/index.md).
 
-> **Status:** pre-alpha research seed. The repository contains a runnable reference slice, schemas, a Rust kernel scaffold, and the project design. It is not a production autonomy platform.
+> **Status:** pre-alpha research implementation. M1.1 has been independently reproduced; the
+> [M2.1 identity and signature contract](https://github.com/artemiosu/variaxiom/pull/4) is under
+> review. This is not a production autonomy platform.
 
 ## The one-minute idea
 
@@ -199,7 +203,8 @@ The highest-leverage early contributions are not “add another model provider.�
 - an experiment showing a real regression the current gate misses;
 - a clean benchmark for evolutionary productivity rather than one-shot task score.
 
-Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), the [`ROADMAP`](docs/project/roadmap.md), and issues labeled `good first issue`, `invariant`, `evaluator`, or `research replication`.
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), the [roadmap](docs/project/roadmap.md), and issues
+labeled `good first issue`, `invariant`, `evaluator`, `research`, or `replication`.
 
 ## Responsible scope
 

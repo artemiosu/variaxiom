@@ -63,6 +63,7 @@ IGNORED_PARTS = {".git", ".variaxiom", ".venv", "target"}
 REQUIREMENT_ID = re.compile(r"REQ-[A-Z]+-[0-9]{3}")
 REQUIREMENT_ROW = re.compile(r"^\|\s*(REQ-[A-Z]+-[0-9]{3})\s*\|", re.MULTILINE)
 MILESTONE_HEADING = re.compile(r"^##\s+(M[0-9]+)\s+(?:—|-)\s+", re.MULTILINE)
+CYRILLIC = re.compile(r"[\u0400-\u04ff]")
 
 
 def _local_target(root: Path, document: Path, raw_target: str) -> Path | None:
@@ -87,6 +88,46 @@ def _verify_links(root: Path, markdown: Path) -> list[str]:
             continue
         if not target.exists():
             errors.append(f"broken local link in {markdown.relative_to(root)}: {raw_target}")
+    return errors
+
+
+def _verify_pages_landing(root: Path) -> list[str]:
+    """Check constraints that differ between the checkout and the /docs Pages root."""
+    landing = root / "docs/index.html"
+    text = landing.read_text("utf-8")
+    errors: list[str] = []
+    if '<html lang="en">' not in text:
+        errors.append("docs/index.html must declare English as its document language")
+    if CYRILLIC.search(text):
+        errors.append("docs/index.html must contain English-only text and controls")
+
+    pages_root = (root / "docs").resolve()
+    for raw_target in HTML_SOURCE.findall(text):
+        target = raw_target.strip()
+        if (
+            not target
+            or target.startswith("#")
+            or target.startswith(IGNORED_SCHEMES)
+            or target.startswith("//")
+        ):
+            continue
+        target_path = unquote(target.split("#", 1)[0].split("?", 1)[0])
+        if not target_path:
+            continue
+        if target_path.startswith("/"):
+            errors.append(
+                f"Pages link must be repository-relative or absolute HTTPS in docs/index.html: "
+                f"{raw_target}"
+            )
+            continue
+        resolved = (landing.parent / target_path).resolve()
+        try:
+            resolved.relative_to(pages_root)
+        except ValueError:
+            errors.append(f"Pages link escapes the published /docs root: {raw_target}")
+            continue
+        if not resolved.exists():
+            errors.append(f"broken Pages link in docs/index.html: {raw_target}")
     return errors
 
 
@@ -490,6 +531,8 @@ def main() -> int:
             errors.append(f"unresolved launch blocker in {markdown.relative_to(root)}")
         errors.extend(_verify_links(root, markdown))
 
+    errors.extend(_verify_pages_landing(root))
+
     for relative in (
         ".githooks/pre-commit",
         "scripts/bootstrap.sh",
@@ -509,7 +552,7 @@ def main() -> int:
         return 1
 
     print(f"Repository structure verified ({len(REQUIRED_FILES)} required files).")
-    print("Local Markdown links and executable scripts verified.")
+    print("Local Markdown links, GitHub Pages landing, and executable scripts verified.")
     return 0
 
 

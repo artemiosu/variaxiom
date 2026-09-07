@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/envelope.schema.json",
+  "title": "Variaxiom M2.1 typed envelope",
+  "oneOf": [
+    {"$ref": "#/$defs/candidate"},
+    {"$ref": "#/$defs/evidence"},
+    {"$ref": "#/$defs/constitution"},
+    {"$ref": "#/$defs/identityContext"},
+    {"$ref": "#/$defs/authorizationContext"},
+    {"$ref": "#/$defs/authorityGrant"},
+    {"$ref": "#/$defs/detachedSignature"},
+    {"$ref": "#/$defs/promotionInput"},
+    {"$ref": "#/$defs/promotionDecision"},
+    {"$ref": "#/$defs/attestedProposal"}
+  ],
+  "$defs": {
+    "base": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope_version", "kind", "payload"],
+      "properties": {"envelope_version": {}, "kind": {}, "payload": {}}
+    },
+    "candidate": {"$ref": "#/$defs/candidateShape"},
+    "candidateShape": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "candidate"}, "payload": {"$ref": "candidate.schema.json"}}}]},
+    "evidence": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "evidence"}, "payload": {"$ref": "evidence.schema.json"}}}]},
+    "constitution": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "constitution"}, "payload": {"$ref": "../constitution.schema.json"}}}]},
+    "identityContext": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "identity-context"}, "payload": {"$ref": "identity-context.schema.json"}}}]},
+    "authorizationContext": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "authorization-context"}, "payload": {"$ref": "authorization-context.schema.json"}}}]},
+    "authorityGrant": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "authority-grant"}, "payload": {"$ref": "authority-grant.schema.json"}}}]},
+    "detachedSignature": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "detached-signature"}, "payload": {"$ref": "detached-signature.schema.json"}}}]},
+    "promotionInput": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "promotion-input"}, "payload": {"$ref": "promotion-input.schema.json"}}}]},
+    "promotionDecision": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "promotion-decision"}, "payload": {"$ref": "../promotion.schema.json"}}}]},
+    "attestedProposal": {"allOf": [{"$ref": "#/$defs/base"}, {"properties": {"envelope_version": {"const": "variaxiom-envelope/v1"}, "kind": {"const": "attested-proposal"}, "payload": {"$ref": "attested-proposal.schema.json"}}}]}
+  }
+}

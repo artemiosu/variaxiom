@@ -36,8 +36,9 @@ and cannot append durable lineage.
 
 ## Next
 
-1. Freeze M2.1 schemas and shared positive/adversarial vectors with no gate behavior change.
-2. Review that fixture contract, then add matching disabled Python/Rust verification.
+1. Review the M2.1 schema and shared-fixture freeze in its dedicated PR; no gate behavior changes.
+2. Complete every normative adversarial/boundary fixture group, then add matching disabled
+   Python/Rust verification.
 3. M2.2 — transactional SQLite lineage and projections.
 4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 

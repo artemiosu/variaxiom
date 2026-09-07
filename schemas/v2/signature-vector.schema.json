@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/signature-vector.schema.json",
+  "title": "Variaxiom M2.1 golden signature vector",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_version", "target_envelope", "target_digest", "trust_domain_id", "principal_id",
+    "key_id", "public_key_base64url", "signed_kind", "message_hex",
+    "signature_base64url", "expected"
+  ],
+  "properties": {
+    "vector_version": {"const": "m2.1-signature-vector/v1"},
+    "target_envelope": {"$ref": "envelope.schema.json"},
+    "target_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
+    "principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
+    "key_id": {"$ref": "common.schema.json#/$defs/keyId"},
+    "public_key_base64url": {"$ref": "common.schema.json#/$defs/publicKeyBase64url"},
+    "signed_kind": {"enum": ["candidate", "evidence", "authority-grant", "promotion-decision"]},
+    "message_hex": {"type": "string", "pattern": "^[a-f0-9]+$"},
+    "signature_base64url": {"$ref": "common.schema.json#/$defs/signatureBase64url"},
+    "expected": {"const": "verified"}
+  }
+}

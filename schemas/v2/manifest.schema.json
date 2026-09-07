@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/manifest.schema.json",
+  "title": "Variaxiom M2.1 shared conformance manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_version", "spec_revision", "base_fixture", "trusted_anchor", "cases"],
+  "properties": {
+    "manifest_version": {"const": "m2.1-conformance-manifest/v1"},
+    "spec_revision": {"$ref": "common.schema.json#/$defs/sha256"},
+    "base_fixture": {"type": "string", "const": "base-attested-proposal.json"},
+    "trusted_anchor": {"$ref": "trusted-anchor.schema.json"},
+    "cases": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "stage", "operation", "expected_status", "expected_code"],
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]+$"},
+        "stage": {"type": "integer", "minimum": 1, "maximum": 11},
+        "operation": {"enum": ["base", "add", "replace", "remove", "anchor-replace", "raw-base64url"]},
+        "json_pointer": {"type": "string", "pattern": "^(/([^~/]|~[01])*)*$"},
+        "value": {"$ref": "common.schema.json#/$defs/canonicalValue"},
+        "raw_base64url": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+        "expected_status": {"enum": ["verified", "rejected"]},
+        "expected_code": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": [
+              "input.encoding_invalid", "input.duplicate_member", "input.schema_invalid",
+              "input.version_unsupported", "input.kind_mismatch", "input.limit_exceeded",
+              "signature.algorithm_unsupported", "signature.encoding_invalid",
+              "signature.key_id_mismatch", "signature.key_revoked", "signature.domain_mismatch",
+              "signature.principal_mismatch", "signature.kind_mismatch",
+              "signature.digest_mismatch", "signature.invalid", "identity.principal_unknown",
+              "identity.context_untrusted", "identity.context_stale", "identity.key_ambiguous",
+              "identity.key_unbound", "identity.role_missing", "identity.role_conflict",
+              "identity.not_independent", "authorization.context_untrusted",
+              "evidence.subject_digest_mismatch", "grant.audience_mismatch",
+              "grant.context_mismatch", "grant.subject_mismatch", "grant.capability_mismatch",
+              "grant.interval_invalid", "grant.not_yet_valid", "grant.expired", "grant.revoked",
+              "grant.delegation_forbidden", "constitution.context_mismatch",
+              "constitution.artifact_mismatch", "decision.content_mismatch",
+              "lineage.head_mismatch"
+            ]}
+          ]
+        },
+        "notes": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"operation": {"enum": ["add", "replace", "remove", "anchor-replace"]}}}, "then": {"required": ["json_pointer"]}},
+        {"if": {"properties": {"operation": {"enum": ["add", "replace", "anchor-replace"]}}}, "then": {"required": ["value"]}},
+        {"if": {"properties": {"operation": {"const": "raw-base64url"}}}, "then": {"required": ["raw_base64url"]}},
+        {"if": {"properties": {"expected_status": {"const": "verified"}}}, "then": {"properties": {"expected_code": {"type": "null"}}}},
+        {"if": {"properties": {"expected_status": {"const": "rejected"}}}, "then": {"properties": {"expected_code": {"type": "string"}}}}
+      ]
+    }
+  }
+}

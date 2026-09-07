@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/promotion-input.schema.json",
+  "title": "Variaxiom promotion-input/v2 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version", "candidate", "evidence", "constitution", "identity_context",
+    "authorization_context"
+  ],
+  "properties": {
+    "protocol_version": {"const": "promotion-input/v2"},
+    "candidate": {"$ref": "#/$defs/candidatePair"},
+    "evidence": {
+      "type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/evidencePair"}
+    },
+    "constitution": {"$ref": "#/$defs/constitutionPair"},
+    "identity_context": {"$ref": "#/$defs/identityEnvelope"},
+    "authorization_context": {"$ref": "#/$defs/authorizationEnvelope"},
+    "authority_grant": {"$ref": "#/$defs/grantPair"}
+  },
+  "$defs": {
+    "baseEnvelope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope_version", "kind", "payload"],
+      "properties": {"envelope_version": {}, "kind": {}, "payload": {}}
+    },
+    "candidateEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "candidate"},
+          "payload": {"$ref": "candidate.schema.json"}
+        }}
+      ]
+    },
+    "evidenceEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "evidence"},
+          "payload": {"$ref": "evidence.schema.json"}
+        }}
+      ]
+    },
+    "constitutionEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "constitution"},
+          "payload": {"$ref": "../constitution.schema.json"}
+        }}
+      ]
+    },
+    "identityEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "identity-context"},
+          "payload": {"$ref": "identity-context.schema.json"}
+        }}
+      ]
+    },
+    "authorizationEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "authorization-context"},
+          "payload": {"$ref": "authorization-context.schema.json"}
+        }}
+      ]
+    },
+    "grantEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "authority-grant"},
+          "payload": {"$ref": "authority-grant.schema.json"}
+        }}
+      ]
+    },
+    "signatureEnvelope": {
+      "allOf": [
+        {"$ref": "#/$defs/baseEnvelope"},
+        {"properties": {
+          "envelope_version": {"const": "variaxiom-envelope/v1"},
+          "kind": {"const": "detached-signature"},
+          "payload": {"$ref": "detached-signature.schema.json"}
+        }}
+      ]
+    },
+    "candidatePair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope", "signature"],
+      "properties": {
+        "envelope": {"$ref": "#/$defs/candidateEnvelope"},
+        "signature": {"$ref": "#/$defs/signatureEnvelope"}
+      }
+    },
+    "evidencePair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope", "signature"],
+      "properties": {
+        "envelope": {"$ref": "#/$defs/evidenceEnvelope"},
+        "signature": {"$ref": "#/$defs/signatureEnvelope"}
+      }
+    },
+    "constitutionPair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope", "artifact_hash"],
+      "properties": {
+        "envelope": {"$ref": "#/$defs/constitutionEnvelope"},
+        "artifact_hash": {"$ref": "common.schema.json#/$defs/sha256"}
+      }
+    },
+    "grantPair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["envelope", "signature"],
+      "properties": {
+        "envelope": {"$ref": "#/$defs/grantEnvelope"},
+        "signature": {"$ref": "#/$defs/signatureEnvelope"}
+      }
+    }
+  }
+}

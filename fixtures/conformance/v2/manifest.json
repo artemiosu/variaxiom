@@ -1,0 +1,206 @@
+{
+  "base_fixture": "base-attested-proposal.json",
+  "cases": [
+    {
+      "case_id": "depth-limit-rejected",
+      "expected_code": "input.limit_exceeded",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "W1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1swXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV0",
+      "stage": 1
+    },
+    {
+      "case_id": "duplicate-member-rejected",
+      "expected_code": "input.duplicate_member",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "eyJ4IjoxLCJ4IjoyfQ",
+      "stage": 1
+    },
+    {
+      "case_id": "lone-surrogate-rejected",
+      "expected_code": "input.encoding_invalid",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "eyJ4IjoiXHVkODAwIn0",
+      "stage": 1
+    },
+    {
+      "case_id": "noncanonical-wire-rejected",
+      "expected_code": "input.encoding_invalid",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "eyJ4IjogMX0",
+      "stage": 1
+    },
+    {
+      "case_id": "unsafe-integer-rejected",
+      "expected_code": "input.encoding_invalid",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "eyJ4Ijo5MDA3MTk5MjU0NzQwOTkyfQ",
+      "stage": 1
+    },
+    {
+      "case_id": "utf16-rejected",
+      "expected_code": "input.encoding_invalid",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "__57AH0A",
+      "stage": 1
+    },
+    {
+      "case_id": "utf8-bom-rejected",
+      "expected_code": "input.encoding_invalid",
+      "expected_status": "rejected",
+      "operation": "raw-base64url",
+      "raw_base64url": "77u_e30",
+      "stage": 1
+    },
+    {
+      "case_id": "missing-selector",
+      "expected_code": "input.schema_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/selector_signature",
+      "operation": "remove",
+      "stage": 2
+    },
+    {
+      "case_id": "nonascii-principal-rejected",
+      "expected_code": "input.schema_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/candidate/envelope/payload/proposer",
+      "operation": "replace",
+      "stage": 2,
+      "value": "principal:строитель"
+    },
+    {
+      "case_id": "padded-base64-rejected",
+      "expected_code": "input.schema_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/identity_context/payload/principals/0/keys/0/public_key_base64url",
+      "operation": "replace",
+      "stage": 2,
+      "value": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik="
+    },
+    {
+      "case_id": "unknown-field-rejected",
+      "expected_code": "input.schema_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/surprise",
+      "operation": "add",
+      "stage": 2,
+      "value": true
+    },
+    {
+      "case_id": "unsorted-capabilities-rejected",
+      "expected_code": "input.schema_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/candidate/envelope/payload/requested_capabilities",
+      "operation": "replace",
+      "stage": 2,
+      "value": [
+        "z.example",
+        "a.example"
+      ]
+    },
+    {
+      "case_id": "wrong-envelope-kind",
+      "expected_code": "input.kind_mismatch",
+      "expected_status": "rejected",
+      "json_pointer": "/kind",
+      "operation": "replace",
+      "stage": 2,
+      "value": "unknown-kind"
+    },
+    {
+      "case_id": "wrong-envelope-version",
+      "expected_code": "input.version_unsupported",
+      "expected_status": "rejected",
+      "json_pointer": "/envelope_version",
+      "operation": "replace",
+      "stage": 2,
+      "value": "variaxiom-envelope/v9"
+    },
+    {
+      "case_id": "stale-identity-context",
+      "expected_code": "identity.context_stale",
+      "expected_status": "rejected",
+      "json_pointer": "/current_snapshot_sequence",
+      "operation": "anchor-replace",
+      "stage": 3,
+      "value": 1
+    },
+    {
+      "case_id": "swapped-authorization-context",
+      "expected_code": "authorization.context_untrusted",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/authorization_context/payload/lineage_id",
+      "operation": "replace",
+      "stage": 3,
+      "value": "lineage:attacker"
+    },
+    {
+      "case_id": "wrong-signature-domain",
+      "expected_code": "signature.domain_mismatch",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/trust_domain_id",
+      "operation": "replace",
+      "stage": 3,
+      "value": "trust-domain:other"
+    },
+    {
+      "case_id": "actor-signature-mismatch",
+      "expected_code": "signature.principal_mismatch",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/principal_id",
+      "operation": "replace",
+      "stage": 5,
+      "value": "principal:verifier"
+    },
+    {
+      "case_id": "revoked-proposer-key",
+      "expected_code": "signature.key_revoked",
+      "expected_status": "rejected",
+      "json_pointer": "/revoked_key_ids",
+      "operation": "anchor-replace",
+      "stage": 5,
+      "value": [
+        "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a"
+      ]
+    },
+    {
+      "case_id": "low-order-signature-point",
+      "expected_code": "signature.encoding_invalid",
+      "expected_status": "rejected",
+      "json_pointer": "/payload/promotion_input/payload/candidate/signature/payload/signature_base64url",
+      "operation": "replace",
+      "stage": 6,
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "case_id": "bounded-signed-proposal",
+      "expected_code": null,
+      "expected_status": "verified",
+      "operation": "base",
+      "stage": 11
+    }
+  ],
+  "manifest_version": "m2.1-conformance-manifest/v1",
+  "spec_revision": "fe839515148559aae4efa39f8e14324f65510c39b71c356e9421cafdd7530a46",
+  "trusted_anchor": {
+    "current_authorization_context_digest": "ee2beb3f71f0a1610321389a33f34223eddc215d3ea344ddca95099f9c31d5fc",
+    "current_identity_context_digest": "b47e4c04f6725e9e92477b3361051712642017d6c370c6899af195699cc50638",
+    "current_snapshot_sequence": 0,
+    "key_ownership_registry": {
+      "key:sha256:123a695f5133c0017e23ec2445f26a338fd42fdef1e7d4e4e2648e6f9ceb9e4a": "principal:builder",
+      "key:sha256:2d91a8fdb51ae7a99a5da1bf88770e5d5830dfcba7d6e8c060d6ad56fbcc17de": "principal:verifier",
+      "key:sha256:42192effec83331231d11e7460b0b5e1d700c4ec62db434028b0f834e5849142": "principal:issuer",
+      "key:sha256:834e7202571554f42301cbafee31f38d7bdfd7232540dfc811902047b660d2d0": "principal:selector"
+    },
+    "revoked_grant_ids": [],
+    "revoked_key_ids": [],
+    "trust_domain_id": "trust-domain:example",
+    "trusted_now_unix_s": 1788739200
+  }
+}

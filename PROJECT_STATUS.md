@@ -3,7 +3,7 @@
 **Version:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 **Maturity:** pre-alpha research implementation
 **Primary public proof:** The Authority Test
-**Last status review:** 2026-09-06
+**Last status review:** 2026-09-07
 
 The concise source of truth for active development is
 [`docs/project/current.md`](docs/project/current.md); machine-readable status is in
@@ -12,9 +12,10 @@ The concise source of truth for active development is
 The Python spelling `0.1.0a0` and Rust spelling `0.1.0-alpha.0` are ecosystem-specific forms of
 the same pre-release intent; they do not indicate separately published releases.
 
-M1.1 is published; the required remote operating-system matrix, clean-clone reproduction, and
-independent automated audit pass. External human review is still required before the increment is
-treated as release-approved.
+M1.1 is published; the required remote operating-system matrix, independent public clean-clone
+reproduction, and automated audit pass. External human security review remains tracked in
+[issue #5](https://github.com/artemiosu/variaxiom/issues/5) before the contract is treated as
+release-approved.
 
 ## Implemented
 

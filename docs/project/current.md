@@ -1,18 +1,20 @@
 # Current development context
 
-- **Reviewed:** 2026-09-06
+- **Reviewed:** 2026-09-07
 - **Release:** 0.1.0-alpha seed (unreleased; no Git tag yet)
-- **Current product increment:** M1.1 — cross-language canonical decision envelope
+- **Current product increment:** M1.1 — independently reproduced; human security review pending
 - **Active specification:** [`../specs/m1.1-cross-language-conformance.md`](../specs/m1.1-cross-language-conformance.md)
 
 ## Current verified baseline
 
-- baseline revision: `b0624843a0c21566395828ac50ca9e7382473807`;
+- independently reproduced revision: `e2a6a0f29bff9bd720433fefaebd4c4a26bbff2c`;
+- M1.1 implementation revision: `b0624843a0c21566395828ac50ca9e7382473807`;
 - the public repository, Discussions, Pages, branch protection, security settings, and private
   vulnerability reporting were authenticated and checked on 2026-09-06;
 - Python Authority Test is deterministic and its 14-event ledger verifies;
 - Python unit suite and Rust kernel tests pass locally and in the Linux/macOS/Windows matrix;
 - CI, CodeQL, dependency review, Dependabot, and OpenSSF workflows are configured;
+- the GitHub social preview is uploaded and the English-only Pages landing is published;
 - Rust 1.98.1 and Python 3.13/3.14 are the supported development baseline;
 - the trusted implementation remains a local modular monolith.
 
@@ -22,18 +24,20 @@ not claim that a release tag exists; `project.yaml` records the authoritative re
 
 ## Now
 
-M1.1 is published and its automated evidence passes: Python and Rust share a versioned decision
-envelope, canonical bytes, digest rules, reason codes, and conformance fixtures; the required
-GitHub matrix is green and a fresh clone reproduced the complete bootstrap and verification at
-`b062484`. An independent automated conformance audit found no remaining P0/P1 blocker. External
-human review remains open, so do not begin signatures or persistence until that review is recorded.
+M1.1 is published and independently reproduced from the public repository. The clean-clone report
+records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
+14-event ledger, and clean final worktree. The evidence is published in closed issue #3. External
+human security review remains open, so do not begin signatures or persistence until that review is
+recorded.
 
 ## Next
 
-1. M2.1 — identity, authority grants, and signature envelopes.
-2. M2.2 — transactional SQLite lineage and projections.
-3. M2.3 — tamper/replay/fault-injection suite and rollback drill.
-4. M2.4 — static lineage report backed by the transactional store.
+1. Complete [independent security review issue #5](https://github.com/artemiosu/variaxiom/issues/5)
+   for the proposed M2.1 contract in
+   [PR #4](https://github.com/artemiosu/variaxiom/pull/4).
+2. Accept the M2.1 specification before implementing identity, grants, or signatures.
+3. M2.2 — transactional SQLite lineage and projections.
+4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 
 ## Open decisions
 
@@ -44,17 +48,17 @@ human review remains open, so do not begin signatures or persistence until that 
 
 ## Parallel launch work
 
-- upload the checked-in social preview in GitHub's repository UI;
 - record the two-minute Authority Test demo;
 - publish a small curated issue set rather than copying the whole roadmap;
-- obtain the first independent clean-machine reproduction.
+- obtain the first independent human security review.
 
 ## External blockers
 
 - SSH authentication is unavailable (`Permission denied (publickey)`); HTTPS is the verified Git
   transport and should remain configured unless an operator installs and tests an SSH key;
-- obtain an external human review of the promotion-sensitive M1.1 contract;
-- upload the checked-in social preview through the GitHub repository UI.
+- complete external human security review
+  [issue #5](https://github.com/artemiosu/variaxiom/issues/5) for the promotion-sensitive M1.1 and
+  proposed M2.1 contracts.
 
 ## Context rule
 

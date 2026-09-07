@@ -5,7 +5,7 @@
 - [x] Create public GitHub repository and push seed commit.
 - [x] Enable Discussions and founder-compatible branch protection.
 - [x] Confirm private vulnerability reporting after authenticated GitHub access.
-- [ ] Upload the checked-in social preview through GitHub repository settings.
+- [x] Upload the checked-in social preview through GitHub repository settings.
 - [x] Add repository description, topics, and Pages website.
 - [ ] Record a two-minute demo GIF/video.
 - [ ] Open five curated `good first issue` tasks.

@@ -1,7 +1,7 @@
 {
   "schema_version": "variaxiom-project/v1",
   "project": "Variaxiom",
-  "reviewed": "2026-09-06",
+  "reviewed": "2026-09-07",
   "repository": {
     "url": "https://github.com/artemiosu/variaxiom",
     "default_branch": "main",
@@ -27,7 +27,7 @@
     "id": "M1.1",
     "title": "Cross-language canonical decision envelope",
     "status": "implemented",
-    "verification": "ci_clean_clone_and_agent_audit_passed_external_review_pending",
+    "verification": "independent_public_reproduction_passed_external_human_security_review_pending",
     "specification": "docs/specs/m1.1-cross-language-conformance.md",
     "requirements": [
       "REQ-CORE-003",
@@ -96,6 +96,15 @@
       "result": "passed",
       "artifact": "REPRODUCIBILITY.md",
       "url": "https://github.com/artemiosu/variaxiom/actions/runs/34060093302"
+    },
+    {
+      "id": "m1.1-independent-public-clean-clone",
+      "revision": "e2a6a0f29bff9bd720433fefaebd4c4a26bbff2c",
+      "observed_on": "2026-09-06",
+      "check": "independent public clone, bootstrap, repository verification, Python and Rust conformance, deterministic Authority Test, ledger verification, clean worktree",
+      "result": "passed",
+      "artifact": "REPRODUCIBILITY.md",
+      "url": "https://github.com/artemiosu/variaxiom/issues/3#issuecomment-5572672996"
     }
   ],
   "open_decisions": [
@@ -110,9 +119,9 @@
     {"id": "R10", "status": "active", "document": "docs/project/risk-register.md"}
   ],
   "blockers": [
-    {"id": "independent-reviewer", "status": "open", "scope": "promotion-sensitive release approval"},
+    {"id": "independent-security-reviewer", "status": "open", "scope": "human review tracked by GitHub issue 5 for promotion-sensitive M1.1 and proposed M2.1 contract"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
-    {"id": "social-preview-upload", "status": "manual", "scope": "GitHub repository social preview"}
+    {"id": "social-preview-upload", "status": "resolved", "scope": "GitHub repository social preview"}
   ],
   "deferred": [
     "BMAD Method installation",
@@ -133,7 +142,7 @@
     "github": ["Required checks", "dependency-review"]
   },
   "external_state": {
-    "observed_on": "2026-09-06",
+    "observed_on": "2026-09-07",
     "repository": "confirmed",
     "pages": "confirmed",
     "discussions": "confirmed",

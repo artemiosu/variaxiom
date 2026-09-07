@@ -13,10 +13,10 @@ The Python spelling `0.1.0a0` and Rust spelling `0.1.0-alpha.0` are ecosystem-sp
 the same pre-release intent; they do not indicate separately published releases.
 
 M1.1 is published; the required remote operating-system matrix, independent public clean-clone
-reproduction, and automated audit pass. M2.1 is now a specification proposal for explicit identity,
-authority grants, and detached signatures. Its independent automated security-council gate remains
-tracked in [issue #5](https://github.com/artemiosu/variaxiom/issues/5) before signature
-implementation. Passing that gate authorizes an experiment, not a production security claim.
+reproduction, and automated audit pass. The M2.1 specification for explicit identity, authority
+grants, and detached signatures passed its three-role automated security-council gate with no
+remaining P0/P1. This authorizes schemas and shared fixtures for a disabled experiment, not a
+production security claim.
 
 ## Implemented
 

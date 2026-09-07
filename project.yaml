@@ -27,7 +27,7 @@
     "id": "M2.1",
     "title": "Identity, authority grants, and detached signatures",
     "status": "in_progress",
-    "verification": "specification_proposed_security_review_and_implementation_pending",
+    "verification": "specification_accepted_schemas_fixtures_and_implementation_pending",
     "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",
@@ -110,10 +110,19 @@
       "result": "passed",
       "artifact": "docs/reports/m1.1-independent-reproduction-2026-09-06.md",
       "url": "https://github.com/artemiosu/variaxiom/issues/3#issuecomment-5572672996"
+    },
+    {
+      "id": "m2.1-automated-security-council",
+      "revision": "081e670a45df7be5d2bc9a7a18c55f0fb342e43e",
+      "observed_on": "2026-09-07",
+      "check": "three isolated automated reviews covering cryptographic protocol, authority threat model, and cross-language implementability",
+      "result": "passed",
+      "artifact": "docs/reports/m2.1-agent-review-council-2026-09-07.md",
+      "url": "https://github.com/artemiosu/variaxiom/issues/5"
     }
   ],
   "open_decisions": [
-    {"id": "DEC-001", "status": "in_progress", "target": "M2.1", "question": "Review proposed Ed25519 libraries, detached signature domain, and raw public-key representation in ADR 0010"},
+    {"id": "DEC-001", "status": "accepted", "target": "M2.1", "question": "Use prime-subgroup-validated Ed25519 with detached domain-separated signatures as specified by ADR 0010"},
     {"id": "DEC-002", "status": "deferred", "target": "future-envelope", "question": "Adopt full RFC 8785/JCS in a new envelope version"},
     {"id": "DEC-003", "status": "planned", "target": "governance", "question": "Appoint a second trusted maintainer"},
     {"id": "DEC-004", "status": "deferred", "target": "M4", "question": "Select the first external harness adapter"}
@@ -126,7 +135,7 @@
     {"id": "R20", "status": "active", "document": "docs/project/risk-register.md"}
   ],
   "blockers": [
-    {"id": "independent-security-council", "status": "open", "scope": "three-role automated review tracked by GitHub issue 5; initial findings remediated, re-review pending"},
+    {"id": "independent-security-council", "status": "resolved", "scope": "three-role automated review tracked by GitHub issue 5; unanimous PASS at 081e670 with no remaining P0/P1"},
     {"id": "reproduction-report-publication", "status": "resolved", "scope": "published M1.1 evidence in closed issue 3"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
     {"id": "social-preview-upload", "status": "resolved", "scope": "GitHub repository social preview"}

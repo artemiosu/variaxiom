@@ -1,6 +1,6 @@
 # ADR 0010: Ed25519 detached signatures and explicit trust roots
 
-- **Status:** proposed revision 4; final automated security-council re-review required before acceptance
+- **Status:** accepted for disabled experimental implementation after unanimous automated council review
 - **Date:** 2026-09-06
 - **Decision owner:** bootstrap maintainer under the founder review exception for proposal only
 - **Specification:** [`../../specs/m2.1-identity-grants-signatures.md`](../../specs/m2.1-identity-grants-signatures.md)

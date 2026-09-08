@@ -15,8 +15,8 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
 | REQ-TRUST-001 | constitution and M2.1 identity context | proposer/verifier checks | v1 self-check plus v2 adversarial manifest | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
-| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor schemas | not implemented | signed base identities; alias/runtime vectors pending | partial |
-| REQ-SIG-001 | M2.1 spec, ADR 0010, signature schema | test-only cross-runtime verifier; runtime gate disabled | golden message/signature and self-contained adversarial corpus | partial |
+| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor schemas | runtime not implemented | frozen identity, alias, role, genesis, transition, and revocation vectors; schema/fixture council report | partial |
+| REQ-SIG-001 | M2.1 spec, ADR 0010, signature schema | test-only cross-runtime verifier; runtime gate disabled | golden message/signature, 237-case corpus, 19 Wycheproof vectors, and schema/fixture council report | partial |
 | REQ-EVID-001 | M1.1 conformance spec | Python/Rust gates | artifact-mismatch fixture | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |
@@ -26,7 +26,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-LINE-002 | event-sourced lineage ADR | Python hash-chain ledger | tamper and JSONL-framing tests | partial |
 | REQ-ROLL-001 | constitution v1 | Python/Rust gate checks | missing-target tests | partial |
 | REQ-ROLL-002 | roadmap M2 | not implemented | future rollback drill | planned |
-| REQ-OPS-001 | constitution/M2.1 resource limits | candidate cost gate only | v1 budget plus v2 bounded schema/parser cases | partial |
+| REQ-OPS-001 | constitution/M2.1 resource limits | candidate cost gate only | v1 budget plus frozen v2 exact-limit/+1 cases through cumulative anchor state | partial |
 | REQ-OPS-002 | threat model | not implemented | future pause/revoke recovery tests | planned |
 | REQ-OPS-003 | security/non-goals | deny-by-default design | future sandbox and operator tests | partial |
 | REQ-OBS-001 | observatory architecture | not implemented | future OpenTelemetry contract tests | planned |

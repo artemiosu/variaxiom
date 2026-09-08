@@ -14,9 +14,10 @@ the same pre-release intent; they do not indicate separately published releases.
 
 M1.1 is published; the required remote operating-system matrix, independent public clean-clone
 reproduction, and automated audit pass. The M2.1 specification for explicit identity, authority
-grants, and detached signatures passed its three-role automated security-council gate with no
-remaining P0/P1. This authorizes schemas and shared fixtures for a disabled experiment, not a
-production security claim.
+grants, and detached signatures passed its three-role automated specification council. The 237-case
+schema/fixture freeze plus 19 curated Wycheproof vectors also passed three isolated automated
+reviews with no remaining P0/P1. This authorizes a disabled implementation, not a production
+security claim or a substitute for human review.
 
 ## Implemented
 
@@ -34,12 +35,13 @@ production security claim.
 - architecture, research, governance, launch, and security documentation;
 - pinned GitHub Actions CI, dependency review, and OpenSSF Scorecard workflows.
 - cross-language canonical promotion envelopes and shared Python/Rust fixtures;
+- frozen M2.1 schemas and a 237-case adversarial corpus with a non-authorizing fixture oracle;
 - CodeQL, project context routing, requirement traceability, and spec-driven increment gates.
 
 ## Not implemented yet
 
 - production WASM component runner;
-- cryptographic signatures or transparency-log anchoring;
+- production M2.1 signature verifier, signing API, or transparency-log anchoring;
 - remote/object-store artifact backend;
 - protected hidden-evaluation service;
 - provider-neutral adapters for external harnesses;

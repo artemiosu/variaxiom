@@ -27,7 +27,7 @@
     "id": "M2.1",
     "title": "Identity, authority grants, and detached signatures",
     "status": "in_progress",
-    "verification": "specification_accepted_schemas_fixtures_and_implementation_pending",
+    "verification": "specification_and_schema_fixture_contract_accepted_runtime_pending",
     "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",
@@ -119,6 +119,15 @@
       "result": "passed",
       "artifact": "docs/reports/m2.1-agent-review-council-2026-09-07.md",
       "url": "https://github.com/artemiosu/variaxiom/issues/5"
+    },
+    {
+      "id": "m2.1-schema-fixture-council",
+      "revision": "84467c08d3867a807b3328cb1410ba91b2852654",
+      "observed_on": "2026-09-07",
+      "check": "237 shared cases, 19 Wycheproof vectors, clean-clone verification, and three isolated automated reviews",
+      "result": "passed",
+      "artifact": "docs/reports/m2.1-schema-fixture-council-2026-09-07.md",
+      "url": "https://github.com/artemiosu/variaxiom/pull/10"
     }
   ],
   "open_decisions": [

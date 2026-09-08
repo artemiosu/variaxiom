@@ -48,6 +48,10 @@ passed. The public report is
 [`../reports/m2.1-result-contract-council-2026-09-11.md`](../reports/m2.1-result-contract-council-2026-09-11.md).
 This is not a human security audit and does not enable an authorizing runtime.
 
+Disabled runtime implementation is tracked in [issue #11](https://github.com/artemiosu/variaxiom/issues/11)
+and follows the bounded [implementation plan](m2.1-runtime-implementation.md). The frozen corpus is
+an input to that work and cannot be silently changed by the implementation PR.
+
 ## Next
 
 1. Rebase draft PR #12, implement the distinct two-phase APIs, and rerun the full corpus and

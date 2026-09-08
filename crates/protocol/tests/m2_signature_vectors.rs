@@ -112,15 +112,15 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
     if vector.signed_digest != vector.target_digest {
         return Err("signature.digest_mismatch");
     }
-    let public = URL_SAFE_NO_PAD
-        .decode(&vector.public_key_base64url)
-        .map_err(|_| "signature.encoding_invalid")?;
-    let computed_key_id = format!(
-        "key:sha256:{:x}",
-        Sha256::digest([b"variaxiom-key/v1\0Ed25519\0".as_slice(), &public].concat())
-    );
-    if computed_key_id != vector.key_id {
-        return Err("signature.key_id_mismatch");
+    let public = URL_SAFE_NO_PAD.decode(&vector.public_key_base64url).ok();
+    if let Some(public) = public.as_ref() {
+        let computed_key_id = format!(
+            "key:sha256:{:x}",
+            Sha256::digest([b"variaxiom-key/v1\0Ed25519\0".as_slice(), public].concat())
+        );
+        if computed_key_id != vector.key_id {
+            return Err("signature.key_id_mismatch");
+        }
     }
     if vector.target_envelope.get("kind").and_then(Value::as_str)
         != Some(vector.signed_kind.as_str())
@@ -130,6 +130,7 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
     if vector.algorithm != "Ed25519" || vector.key_binding_algorithm != "Ed25519" {
         return Err("signature.algorithm_unsupported");
     }
+    let public = public.ok_or("signature.encoding_invalid")?;
     let signature = URL_SAFE_NO_PAD
         .decode(&vector.signature_base64url)
         .map_err(|_| "signature.encoding_invalid")?;

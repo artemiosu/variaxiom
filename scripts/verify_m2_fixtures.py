@@ -33,9 +33,9 @@ ROLE_FOR_KIND = {
     "authority-grant": "authority-issuer",
     "promotion-decision": "promotion-selector",
 }
-EXPECTED_CASE_COUNT = 213
+EXPECTED_CASE_COUNT = 232
 EXPECTED_MANIFEST_INVENTORY_SHA256 = (
-    "14967e4d946bb64bbcc4c4c76dfb2099a2e68d81fa5affd0a0244fa991c8d76f"
+    "879edaf3a061749e38c51de606cd35c9291316a80d69d6cbdfc9b3da619ffb58"
 )
 
 REQUIRED_CASE_IDS = {
@@ -43,10 +43,27 @@ REQUIRED_CASE_IDS = {
     "anchor-advance-nested-version",
     "anchor-advance-revocation-limit-plus-one",
     "anchor-advance-unsorted-roles",
+    "anchor-advance-malformed-payload",
+    "anchor-advance-missing-kind",
+    "anchor-advance-missing-version",
+    "anchor-advance-ownership-exact-limit",
+    "anchor-advance-ownership-limit-plus-one",
+    "anchor-advance-revoked-grant-union-limit-plus-one",
+    "anchor-advance-revoked-key-union-limit-plus-one",
+    "anchor-history-empty-steps",
+    "anchor-history-unknown-step-field",
+    "anchor-history-unknown-wrapper-field",
+    "anchor-new-key-add",
+    "anchor-new-key-add-omit",
+    "anchor-new-key-rebind-rejected",
+    "anchor-successful-probe-nonauthorizing",
     "initialize-anchor-genesis",
     "initialize-anchor-domain-mismatch",
     "initialize-anchor-key-id-mismatch",
     "initialize-anchor-lineage-map-mismatch",
+    "initialize-anchor-malformed-payload",
+    "initialize-anchor-missing-kind",
+    "initialize-anchor-missing-version",
     "initialize-anchor-nested-version",
     "initialize-anchor-revocation-limit-plus-one",
     "initialize-anchor-token-limit-plus-one",
@@ -84,6 +101,8 @@ REQUIRED_CASE_IDS = {
     "signing-message-extra-final-lf",
     "signing-message-missing-final-lf",
     "standard-base64-signature-rejected",
+    "vector-precedence-algorithm-before-public-encoding",
+    "vector-precedence-kind-before-public-encoding",
     "unsupported-key-binding-algorithm",
 }
 
@@ -603,19 +622,22 @@ def classify_signature_vector(vector: dict[str, Any]) -> str | None:
             reject(4, "signature.digest_mismatch")
         if vector["signed_digest"] != vector["target_digest"]:
             reject(4, "signature.digest_mismatch")
+        public: bytes | None = None
         try:
             public = decode_unpadded(vector["public_key_base64url"], 32)
             computed_key_id = (
                 "key:sha256:" + hashlib.sha256(b"variaxiom-key/v1\0Ed25519\0" + public).hexdigest()
             )
         except Rejected:
-            reject(6, "signature.encoding_invalid")
-        if vector["key_id"] != computed_key_id:
+            computed_key_id = None
+        if computed_key_id is not None and vector["key_id"] != computed_key_id:
             reject(4, "signature.key_id_mismatch")
         if vector["signed_kind"] != vector["target_envelope"]["kind"]:
             reject(4, "signature.kind_mismatch")
         if vector["algorithm"] != "Ed25519" or vector["key_binding_algorithm"] != "Ed25519":
             reject(6, "signature.algorithm_unsupported")
+        if public is None:
+            reject(6, "signature.encoding_invalid")
         raw_signature = decode_unpadded(vector["signature_base64url"], 64)
         r_value, s_value = raw_signature[:32], raw_signature[32:]
         if (
@@ -654,12 +676,18 @@ def context_version_kind_preflight(identity: dict[str, Any], authorization: dict
         (identity, "identity_context_version", "identity-context/v1"),
         (authorization, "authorization_context_version", "authorization-context/v1"),
     ):
+        if not isinstance(item, dict):
+            continue
+        if "envelope_version" in item and item["envelope_version"] != "variaxiom-envelope/v1":
+            reject(2, "input.version_unsupported")
+        payload = item.get("payload")
         if (
-            item.get("envelope_version") != "variaxiom-envelope/v1"
-            or item.get("payload", {}).get(version_field) != expected_version
+            isinstance(payload, dict)
+            and version_field in payload
+            and payload[version_field] != expected_version
         ):
             reject(2, "input.version_unsupported")
-    identity_payload = identity.get("payload", {})
+    identity_payload = identity.get("payload", {}) if isinstance(identity, dict) else {}
     if isinstance(identity_payload, dict):
         for principal in identity_payload.get("principals", []):
             if isinstance(principal, dict) and principal.get("principal_version") not in {
@@ -674,11 +702,12 @@ def context_version_kind_preflight(identity: dict[str, Any], authorization: dict
                         "key-binding/v1",
                     }:
                         reject(2, "input.version_unsupported")
-    if (
-        identity.get("kind") != "identity-context"
-        or authorization.get("kind") != "authorization-context"
+    for item, expected_kind in (
+        (identity, "identity-context"),
+        (authorization, "authorization-context"),
     ):
-        reject(2, "input.kind_mismatch")
+        if isinstance(item, dict) and "kind" in item and item["kind"] != expected_kind:
+            reject(2, "input.kind_mismatch")
 
 
 def context_stage_two(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
@@ -741,6 +770,19 @@ def anchor_stage_two(anchor: dict[str, Any]) -> None:
         reject(2, "input.schema_invalid")
 
 
+def transition_resource_stage_two(anchor: dict[str, Any], identity: dict[str, Any]) -> None:
+    payload = identity["payload"]
+    next_key_ids = {
+        binding["key_id"] for principal in payload["principals"] for binding in principal["keys"]
+    }
+    if (
+        len(set(anchor["key_ownership_registry"]) | next_key_ids) > 4096
+        or len(set(anchor["revoked_key_ids"]) | set(payload["revoked_key_ids"])) > 4096
+        or len(set(anchor["revoked_grant_ids"]) | set(payload["revoked_grant_ids"])) > 4096
+    ):
+        reject(2, "input.limit_exceeded")
+
+
 def context_maps(
     identity: dict[str, Any],
 ) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]], bool]:
@@ -791,11 +833,21 @@ def validate_context_bindings(
 
 def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Result:
     try:
-        anchor = history["initial_anchor"]
-        previous_identity = history["initial_identity_context"]
-        authorization = history["initial_authorization_context"]
-        anchor_stage_two(anchor)
+        anchor = history.get("initial_anchor")
+        previous_identity = history.get("initial_identity_context")
+        authorization = history.get("initial_authorization_context")
         context_version_kind_preflight(previous_identity, authorization)
+        steps = history.get("steps")
+        if isinstance(steps, list):
+            for step in steps:
+                if isinstance(step, dict):
+                    context_version_kind_preflight(
+                        step.get("next_identity_context"),
+                        step.get("next_authorization_context"),
+                    )
+        if schema_errors(history, "v2/anchor-history.schema.json"):
+            reject(2, "input.schema_invalid")
+        anchor_stage_two(anchor)
         context_stage_two(previous_identity, authorization)
         previous_payload = previous_identity["payload"]
         if (
@@ -821,6 +873,7 @@ def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Re
             now = step["trusted_now_unix_s"]
             context_version_kind_preflight(identity, next_authorization)
             context_stage_two(identity, next_authorization)
+            transition_resource_stage_two(anchor, identity)
             payload = identity["payload"]
             if (
                 now < anchor["trusted_now_unix_s"]
@@ -879,7 +932,22 @@ def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Re
                 "input_sha256": hashlib.sha256(probe_wire).hexdigest(),
                 "trusted_anchor": anchor,
             }
-            return evaluate_case(probe_case)
+            (
+                probe_status,
+                probe_stage,
+                probe_code,
+                probe_decision_status,
+                _,
+                _,
+            ) = evaluate_case(probe_case)
+            return (
+                probe_status,
+                probe_stage,
+                probe_code,
+                probe_decision_status,
+                False,
+                anchor if probe_status == "verified" else None,
+            )
         return "verified", 6, None, "not-reached", False, anchor
     except (KeyError, TypeError):
         return "rejected", 2, "input.schema_invalid", "not-reached", False, None

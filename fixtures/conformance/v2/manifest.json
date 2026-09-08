@@ -42,8 +42,28 @@
       "stage": 1
     },
     {
+      "case_id": "anchor-advance-malformed-payload",
+      "fixture": "cases/anchor-advance-malformed-payload.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-missing-kind",
+      "fixture": "cases/anchor-advance-missing-kind.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-missing-version",
+      "fixture": "cases/anchor-advance-missing-version.json",
+      "stage": 2
+    },
+    {
       "case_id": "anchor-advance-nested-version",
       "fixture": "cases/anchor-advance-nested-version.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-ownership-limit-plus-one",
+      "fixture": "cases/anchor-advance-ownership-limit-plus-one.json",
       "stage": 2
     },
     {
@@ -52,8 +72,33 @@
       "stage": 2
     },
     {
+      "case_id": "anchor-advance-revoked-grant-union-limit-plus-one",
+      "fixture": "cases/anchor-advance-revoked-grant-union-limit-plus-one.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-advance-revoked-key-union-limit-plus-one",
+      "fixture": "cases/anchor-advance-revoked-key-union-limit-plus-one.json",
+      "stage": 2
+    },
+    {
       "case_id": "anchor-advance-unsorted-roles",
       "fixture": "cases/anchor-advance-unsorted-roles.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-history-empty-steps",
+      "fixture": "cases/anchor-history-empty-steps.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-history-unknown-step-field",
+      "fixture": "cases/anchor-history-unknown-step-field.json",
+      "stage": 2
+    },
+    {
+      "case_id": "anchor-history-unknown-wrapper-field",
+      "fixture": "cases/anchor-history-unknown-wrapper-field.json",
       "stage": 2
     },
     {
@@ -89,6 +134,21 @@
     {
       "case_id": "initialize-anchor-lineage-map-mismatch",
       "fixture": "cases/initialize-anchor-lineage-map-mismatch.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-malformed-payload",
+      "fixture": "cases/initialize-anchor-malformed-payload.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-missing-kind",
+      "fixture": "cases/initialize-anchor-missing-kind.json",
+      "stage": 2
+    },
+    {
+      "case_id": "initialize-anchor-missing-version",
+      "fixture": "cases/initialize-anchor-missing-version.json",
       "stage": 2
     },
     {
@@ -537,6 +597,26 @@
       "stage": 4
     },
     {
+      "case_id": "anchor-advance-ownership-exact-limit",
+      "fixture": "cases/anchor-advance-ownership-exact-limit.json",
+      "stage": 5
+    },
+    {
+      "case_id": "anchor-new-key-add",
+      "fixture": "cases/anchor-new-key-add.json",
+      "stage": 5
+    },
+    {
+      "case_id": "anchor-new-key-add-omit",
+      "fixture": "cases/anchor-new-key-add-omit.json",
+      "stage": 5
+    },
+    {
+      "case_id": "anchor-new-key-rebind-rejected",
+      "fixture": "cases/anchor-new-key-rebind-rejected.json",
+      "stage": 5
+    },
+    {
       "case_id": "anchor-three-step-advance",
       "fixture": "cases/anchor-three-step-advance.json",
       "stage": 5
@@ -922,6 +1002,11 @@
       "stage": 11
     },
     {
+      "case_id": "anchor-successful-probe-nonauthorizing",
+      "fixture": "cases/anchor-successful-probe-nonauthorizing.json",
+      "stage": 11
+    },
+    {
       "case_id": "bounded-signed-proposal",
       "fixture": "cases/bounded-signed-proposal.json",
       "stage": 11
@@ -1052,6 +1137,16 @@
       "stage": 11
     },
     {
+      "case_id": "vector-precedence-algorithm-before-public-encoding",
+      "fixture": "cases/vector-precedence-algorithm-before-public-encoding.json",
+      "stage": 11
+    },
+    {
+      "case_id": "vector-precedence-kind-before-public-encoding",
+      "fixture": "cases/vector-precedence-kind-before-public-encoding.json",
+      "stage": 11
+    },
+    {
       "case_id": "verified-artifacts-exact-limit",
       "fixture": "cases/verified-artifacts-exact-limit.json",
       "stage": 11
@@ -1068,5 +1163,5 @@
     }
   ],
   "manifest_version": "m2.1-conformance-manifest/v2",
-  "spec_revision": "a28cee963f0c403fa372172f9ddccb12c9ed320f08ea6d196493be26312e24d9"
+  "spec_revision": "be3b36518521023d24cbe1e9b67aa50d3c7ff225e28883a32d5c7a295b7d86ba"
 }

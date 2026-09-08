@@ -62,6 +62,7 @@ REQUIRED_FILES = (
     "schemas/v2/attested-proposal.schema.json",
     "schemas/v2/trusted-anchor.schema.json",
     "schemas/v2/anchor-initialization.schema.json",
+    "schemas/v2/anchor-history.schema.json",
     "schemas/v2/signature-vector.schema.json",
     "schemas/v2/conformance-case.schema.json",
     "fixtures/conformance/v2/base-attested-proposal.json",

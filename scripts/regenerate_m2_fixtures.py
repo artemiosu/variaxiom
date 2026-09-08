@@ -610,13 +610,13 @@ def history_case(
 ) -> dict[str, Any]:
     body = promotion(base)
     history: dict[str, Any] = {
-        "initial_anchor": initial_anchor,
-        "initial_identity_context": body["identity_context"],
-        "initial_authorization_context": body["authorization_context"],
-        "steps": steps,
+        "initial_anchor": copy.deepcopy(initial_anchor),
+        "initial_identity_context": copy.deepcopy(body["identity_context"]),
+        "initial_authorization_context": copy.deepcopy(body["authorization_context"]),
+        "steps": copy.deepcopy(steps),
     }
     if probe is not None:
-        history["probe_attested_proposal"] = probe
+        history["probe_attested_proposal"] = copy.deepcopy(probe)
     wire = canonical_bytes(history)
     expected_anchor: dict[str, Any] | None = None
     if code is None:
@@ -638,15 +638,25 @@ def history_case(
         "expected": {
             "status": "verified" if code is None else "rejected",
             "code": code,
-            "decision_status": "not-reached",
+            "decision_status": (
+                policy_decision(probe["payload"]["promotion_input"])["payload"]["status"]
+                if code is None and probe is not None
+                else "not-reached"
+            ),
             "authorizing": False,
             "expected_anchor": expected_anchor,
-            "reached_stage": stage if code is not None else 6,
+            "reached_stage": stage if code is not None else (11 if probe is not None else 6),
         },
         "signature_vectors": vectors(probe) if probe is not None else [],
         "anchor_history": history,
         "notes": "Self-contained ordered anchor transition history.",
     }
+
+
+def reseal_history_case(case: dict[str, Any]) -> None:
+    wire = canonical_bytes(case["anchor_history"])
+    case["input_base64url"] = raw_base64url(wire)
+    case["input_sha256"] = hashlib.sha256(wire).hexdigest()
 
 
 def initialization_case(
@@ -779,6 +789,43 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             5,
         ),
     ]
+
+    missing_genesis_version = copy.deepcopy(identity0)
+    del missing_genesis_version["envelope_version"]
+    cases.append(
+        initialization_case(
+            "initialize-anchor-missing-version",
+            missing_genesis_version,
+            authorization0,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    missing_genesis_kind = copy.deepcopy(authorization0)
+    del missing_genesis_kind["kind"]
+    cases.append(
+        initialization_case(
+            "initialize-anchor-missing-kind",
+            identity0,
+            missing_genesis_kind,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
+    malformed_genesis_payload = copy.deepcopy(identity0)
+    malformed_genesis_payload["payload"] = []
+    cases.append(
+        initialization_case(
+            "initialize-anchor-malformed-payload",
+            malformed_genesis_payload,
+            authorization0,
+            EVALUATION_TIME,
+            "input.schema_invalid",
+            2,
+        )
+    )
 
     nonzero_identity = copy.deepcopy(identity0)
     nonzero_identity["payload"]["snapshot_sequence"] = 1
@@ -2186,6 +2233,30 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
 
     cases.append(vector_only_case("standard-base64-signature-rejected", standard_base64_signature))
 
+    def invalid_public_and_kind(item: dict[str, Any]) -> None:
+        item["public_key_base64url"] = "*" * 43
+        item["signed_kind"] = "evidence"
+
+    cases.append(
+        vector_only_case(
+            "vector-precedence-kind-before-public-encoding",
+            invalid_public_and_kind,
+            "signature.kind_mismatch",
+        )
+    )
+
+    def invalid_public_and_algorithm(item: dict[str, Any]) -> None:
+        item["public_key_base64url"] = "*" * 43
+        item["algorithm"] = "Ed448"
+
+    cases.append(
+        vector_only_case(
+            "vector-precedence-algorithm-before-public-encoding",
+            invalid_public_and_algorithm,
+            "signature.algorithm_unsupported",
+        )
+    )
+
     def short_public_key(item: dict[str, Any]) -> None:
         encoded = raw_base64url(b"\x01" * 31)
         item["public_key_base64url"] = encoded
@@ -2881,6 +2952,249 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
     ]
     cases.append(
         history_case("anchor-three-step-advance", base, base_anchor, positive_steps, None, 5)
+    )
+
+    added_key = synthetic_binding(4000)
+    added_key_principals = copy.deepcopy(identity0["payload"]["principals"])
+    added_key_owner = next(
+        item for item in added_key_principals if item["principal_id"] == "principal:builder"
+    )
+    added_key_owner["keys"].append(added_key)
+    added_key_owner["keys"].sort(key=lambda item: item["key_id"])
+    add_key_identity = next_identity(identity0, 1, principals=added_key_principals)
+    add_key_step = {
+        "next_identity_context": add_key_identity,
+        "next_authorization_context": authorization0,
+        "trusted_now_unix_s": EVALUATION_TIME + 1,
+    }
+    cases.append(history_case("anchor-new-key-add", base, base_anchor, [add_key_step], None, 5))
+
+    omit_added_key_identity = next_identity(
+        add_key_identity,
+        2,
+        principals=copy.deepcopy(identity0["payload"]["principals"]),
+    )
+    omit_added_key_step = {
+        "next_identity_context": omit_added_key_identity,
+        "next_authorization_context": authorization0,
+        "trusted_now_unix_s": EVALUATION_TIME + 2,
+    }
+    cases.append(
+        history_case(
+            "anchor-new-key-add-omit",
+            base,
+            base_anchor,
+            [add_key_step, omit_added_key_step],
+            None,
+            5,
+        )
+    )
+
+    rebound_principals = copy.deepcopy(identity0["payload"]["principals"])
+    rebound_owner = next(
+        item for item in rebound_principals if item["principal_id"] == "principal:verifier"
+    )
+    rebound_owner["keys"].append(added_key)
+    rebound_owner["keys"].sort(key=lambda item: item["key_id"])
+    rebound_identity = next_identity(
+        omit_added_key_identity,
+        3,
+        principals=rebound_principals,
+    )
+    cases.append(
+        history_case(
+            "anchor-new-key-rebind-rejected",
+            base,
+            base_anchor,
+            [
+                add_key_step,
+                omit_added_key_step,
+                {
+                    "next_identity_context": rebound_identity,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 3,
+                },
+            ],
+            "identity.key_ambiguous",
+            5,
+        )
+    )
+
+    successful_probe = copy.deepcopy(base)
+    promotion(successful_probe)["identity_context"] = identity1
+    resign_all(successful_probe)
+    cases.append(
+        history_case(
+            "anchor-successful-probe-nonauthorizing",
+            base,
+            base_anchor,
+            [positive_steps[0]],
+            None,
+            11,
+            probe=successful_probe,
+        )
+    )
+
+    def expanded_registry_anchor(size: int) -> dict[str, Any]:
+        result = copy.deepcopy(base_anchor)
+        index = 0
+        while len(result["key_ownership_registry"]) < size:
+            result["key_ownership_registry"].setdefault(
+                "key:sha256:" + f"{index:064x}", "principal:historical"
+            )
+            index += 1
+        result["key_ownership_registry"] = dict(sorted(result["key_ownership_registry"].items()))
+        return result
+
+    cases.append(
+        history_case(
+            "anchor-advance-ownership-exact-limit",
+            base,
+            expanded_registry_anchor(4095),
+            [add_key_step],
+            None,
+            5,
+        )
+    )
+    cases.append(
+        history_case(
+            "anchor-advance-ownership-limit-plus-one",
+            base,
+            expanded_registry_anchor(4096),
+            [add_key_step],
+            "input.limit_exceeded",
+            2,
+        )
+    )
+
+    historical_revoked_keys = copy.deepcopy(base_anchor)
+    historical_revoked_keys["revoked_key_ids"] = [
+        "key:sha256:" + f"{index:064x}" for index in range(4096)
+    ]
+    union_key_identity = next_identity(identity0, 1, revoked_key_ids=["key:sha256:" + "d" * 64])
+    cases.append(
+        history_case(
+            "anchor-advance-revoked-key-union-limit-plus-one",
+            base,
+            historical_revoked_keys,
+            [
+                {
+                    "next_identity_context": union_key_identity,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.limit_exceeded",
+            2,
+        )
+    )
+    historical_revoked_grants = copy.deepcopy(base_anchor)
+    historical_revoked_grants["revoked_grant_ids"] = [
+        "grant:sha256:" + f"{index:064x}" for index in range(4096)
+    ]
+    union_grant_identity = next_identity(
+        identity0, 1, revoked_grant_ids=["grant:sha256:" + "d" * 64]
+    )
+    cases.append(
+        history_case(
+            "anchor-advance-revoked-grant-union-limit-plus-one",
+            base,
+            historical_revoked_grants,
+            [
+                {
+                    "next_identity_context": union_grant_identity,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.limit_exceeded",
+            2,
+        )
+    )
+
+    missing_advance_version = copy.deepcopy(identity1)
+    del missing_advance_version["envelope_version"]
+    cases.append(
+        history_case(
+            "anchor-advance-missing-version",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": missing_advance_version,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.schema_invalid",
+            2,
+        )
+    )
+    missing_advance_kind = copy.deepcopy(authorization0)
+    del missing_advance_kind["kind"]
+    cases.append(
+        history_case(
+            "anchor-advance-missing-kind",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": identity1,
+                    "next_authorization_context": missing_advance_kind,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.schema_invalid",
+            2,
+        )
+    )
+    malformed_advance_payload = copy.deepcopy(identity1)
+    malformed_advance_payload["payload"] = []
+    cases.append(
+        history_case(
+            "anchor-advance-malformed-payload",
+            base,
+            base_anchor,
+            [
+                {
+                    "next_identity_context": malformed_advance_payload,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            "input.schema_invalid",
+            2,
+        )
+    )
+
+    def invalid_history_shape(case_id: str, mutate_history: Any) -> dict[str, Any]:
+        result = history_case(
+            case_id,
+            base,
+            base_anchor,
+            [positive_steps[0]],
+            "input.schema_invalid",
+            2,
+        )
+        mutate_history(result["anchor_history"])
+        reseal_history_case(result)
+        return result
+
+    cases.extend(
+        [
+            invalid_history_shape(
+                "anchor-history-unknown-wrapper-field",
+                lambda history: history.__setitem__("unexpected", True),
+            ),
+            invalid_history_shape(
+                "anchor-history-unknown-step-field",
+                lambda history: history["steps"][0].__setitem__("unexpected", True),
+            ),
+            invalid_history_shape(
+                "anchor-history-empty-steps",
+                lambda history: history.__setitem__("steps", []),
+            ),
+        ]
     )
 
     advance_nested_version = copy.deepcopy(identity1)

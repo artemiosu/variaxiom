@@ -102,9 +102,10 @@ Run all repository checks:
 bash scripts/verify.sh
 ```
 
-For a development checkout, `bash scripts/bootstrap.sh` creates the Python environment, runs
-the demo and tests, and activates the repository-owned pre-commit hook. The reference code uses
-only the Python standard library at runtime; Python 3.13 or 3.14 is supported.
+For a development checkout, install [`uv` 0.12.5](https://docs.astral.sh/uv/getting-started/installation/)
+and run `bash scripts/bootstrap.sh`. The script creates the locked Python environment, runs the demo
+and tests, and activates the repository-owned pre-commit hook. The reference code uses only the
+Python standard library at runtime; Python 3.13 or 3.14 is supported.
 
 ## Architecture at a glance
 

@@ -112,7 +112,12 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
     if vector.signed_digest != vector.target_digest {
         return Err("signature.digest_mismatch");
     }
-    let public = URL_SAFE_NO_PAD.decode(&vector.public_key_base64url).ok();
+    let public = URL_SAFE_NO_PAD
+        .decode(&vector.public_key_base64url)
+        .ok()
+        .filter(|decoded| {
+            decoded.len() == 32 && URL_SAFE_NO_PAD.encode(decoded) == vector.public_key_base64url
+        });
     if let Some(public) = public.as_ref() {
         let computed_key_id = format!(
             "key:sha256:{:x}",
@@ -134,9 +139,7 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
     let signature = URL_SAFE_NO_PAD
         .decode(&vector.signature_base64url)
         .map_err(|_| "signature.encoding_invalid")?;
-    if URL_SAFE_NO_PAD.encode(&public) != vector.public_key_base64url
-        || URL_SAFE_NO_PAD.encode(&signature) != vector.signature_base64url
-    {
+    if URL_SAFE_NO_PAD.encode(&signature) != vector.signature_base64url {
         return Err("signature.encoding_invalid");
     }
     let public: [u8; 32] = public

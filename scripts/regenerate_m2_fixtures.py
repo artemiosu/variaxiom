@@ -2273,6 +2273,32 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         ).hex()
 
     cases.append(vector_only_case("public-key-wrong-length", short_public_key))
+
+    def short_public_key_with_kind_precedence(item: dict[str, Any]) -> None:
+        short_public_key(item)
+        item["key_id"] = "key:sha256:" + "a" * 64
+        item["signed_kind"] = "evidence"
+
+    cases.append(
+        vector_only_case(
+            "vector-precedence-wrong-length-before-kind",
+            short_public_key_with_kind_precedence,
+            "signature.kind_mismatch",
+        )
+    )
+
+    def short_public_key_with_algorithm_precedence(item: dict[str, Any]) -> None:
+        short_public_key(item)
+        item["key_id"] = "key:sha256:" + "a" * 64
+        item["algorithm"] = "Ed448"
+
+    cases.append(
+        vector_only_case(
+            "vector-precedence-wrong-length-before-algorithm",
+            short_public_key_with_algorithm_precedence,
+            "signature.algorithm_unsupported",
+        )
+    )
     cases.append(
         vector_only_case(
             "signature-wrong-length",
@@ -3067,6 +3093,30 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
         )
     )
 
+    historical_revoked_keys_exact = copy.deepcopy(base_anchor)
+    historical_revoked_keys_exact["revoked_key_ids"] = [
+        "key:sha256:" + f"{index:064x}" for index in range(4095)
+    ]
+    exact_revoked_key_ids = sorted(
+        historical_revoked_keys_exact["revoked_key_ids"] + ["key:sha256:" + "d" * 64]
+    )
+    exact_union_key_identity = next_identity(identity0, 1, revoked_key_ids=exact_revoked_key_ids)
+    cases.append(
+        history_case(
+            "anchor-advance-revoked-key-union-exact-limit",
+            base,
+            historical_revoked_keys_exact,
+            [
+                {
+                    "next_identity_context": exact_union_key_identity,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            None,
+            6,
+        )
+    )
     historical_revoked_keys = copy.deepcopy(base_anchor)
     historical_revoked_keys["revoked_key_ids"] = [
         "key:sha256:" + f"{index:064x}" for index in range(4096)
@@ -3086,6 +3136,32 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             ],
             "input.limit_exceeded",
             2,
+        )
+    )
+    historical_revoked_grants_exact = copy.deepcopy(base_anchor)
+    historical_revoked_grants_exact["revoked_grant_ids"] = [
+        "grant:sha256:" + f"{index:064x}" for index in range(4095)
+    ]
+    exact_revoked_grant_ids = sorted(
+        historical_revoked_grants_exact["revoked_grant_ids"] + ["grant:sha256:" + "d" * 64]
+    )
+    exact_union_grant_identity = next_identity(
+        identity0, 1, revoked_grant_ids=exact_revoked_grant_ids
+    )
+    cases.append(
+        history_case(
+            "anchor-advance-revoked-grant-union-exact-limit",
+            base,
+            historical_revoked_grants_exact,
+            [
+                {
+                    "next_identity_context": exact_union_grant_identity,
+                    "next_authorization_context": authorization0,
+                    "trusted_now_unix_s": EVALUATION_TIME + 1,
+                }
+            ],
+            None,
+            6,
         )
     )
     historical_revoked_grants = copy.deepcopy(base_anchor)
@@ -3196,6 +3272,21 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             ),
         ]
     )
+
+    version_before_kind = history_case(
+        "anchor-history-version-before-kind",
+        base,
+        base_anchor,
+        [positive_steps[0]],
+        "input.version_unsupported",
+        2,
+    )
+    version_before_kind["anchor_history"]["initial_identity_context"]["kind"] = "candidate"
+    version_before_kind["anchor_history"]["steps"][0]["next_identity_context"][
+        "envelope_version"
+    ] = "variaxiom-envelope/v9"
+    reseal_history_case(version_before_kind)
+    cases.append(version_before_kind)
 
     advance_nested_version = copy.deepcopy(identity1)
     advance_nested_version["payload"]["principals"][0]["principal_version"] = "principal/v9"

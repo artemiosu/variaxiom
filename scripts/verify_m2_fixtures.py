@@ -33,9 +33,9 @@ ROLE_FOR_KIND = {
     "authority-grant": "authority-issuer",
     "promotion-decision": "promotion-selector",
 }
-EXPECTED_CASE_COUNT = 232
+EXPECTED_CASE_COUNT = 237
 EXPECTED_MANIFEST_INVENTORY_SHA256 = (
-    "879edaf3a061749e38c51de606cd35c9291316a80d69d6cbdfc9b3da619ffb58"
+    "2cf14b99c2f22cbe1b56588d9ae8901fc79ab22f57328bf6c9dd8432101212d4"
 )
 
 REQUIRED_CASE_IDS = {
@@ -48,11 +48,14 @@ REQUIRED_CASE_IDS = {
     "anchor-advance-missing-version",
     "anchor-advance-ownership-exact-limit",
     "anchor-advance-ownership-limit-plus-one",
+    "anchor-advance-revoked-grant-union-exact-limit",
     "anchor-advance-revoked-grant-union-limit-plus-one",
+    "anchor-advance-revoked-key-union-exact-limit",
     "anchor-advance-revoked-key-union-limit-plus-one",
     "anchor-history-empty-steps",
     "anchor-history-unknown-step-field",
     "anchor-history-unknown-wrapper-field",
+    "anchor-history-version-before-kind",
     "anchor-new-key-add",
     "anchor-new-key-add-omit",
     "anchor-new-key-rebind-rejected",
@@ -103,6 +106,8 @@ REQUIRED_CASE_IDS = {
     "standard-base64-signature-rejected",
     "vector-precedence-algorithm-before-public-encoding",
     "vector-precedence-kind-before-public-encoding",
+    "vector-precedence-wrong-length-before-algorithm",
+    "vector-precedence-wrong-length-before-kind",
     "unsupported-key-binding-algorithm",
 }
 
@@ -671,7 +676,7 @@ def classify_signature_vector(vector: dict[str, Any]) -> str | None:
         return error.code
 
 
-def context_version_kind_preflight(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
+def context_version_preflight(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
     for item, version_field, expected_version in (
         (identity, "identity_context_version", "identity-context/v1"),
         (authorization, "authorization_context_version", "authorization-context/v1"),
@@ -702,12 +707,20 @@ def context_version_kind_preflight(identity: dict[str, Any], authorization: dict
                         "key-binding/v1",
                     }:
                         reject(2, "input.version_unsupported")
+
+
+def context_kind_preflight(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
     for item, expected_kind in (
         (identity, "identity-context"),
         (authorization, "authorization-context"),
     ):
         if isinstance(item, dict) and "kind" in item and item["kind"] != expected_kind:
             reject(2, "input.kind_mismatch")
+
+
+def context_version_kind_preflight(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
+    context_version_preflight(identity, authorization)
+    context_kind_preflight(identity, authorization)
 
 
 def context_stage_two(identity: dict[str, Any], authorization: dict[str, Any]) -> None:
@@ -836,15 +849,21 @@ def evaluate_anchor_history(case: dict[str, Any], history: dict[str, Any]) -> Re
         anchor = history.get("initial_anchor")
         previous_identity = history.get("initial_identity_context")
         authorization = history.get("initial_authorization_context")
-        context_version_kind_preflight(previous_identity, authorization)
         steps = history.get("steps")
+        context_pairs = [(previous_identity, authorization)]
         if isinstance(steps, list):
             for step in steps:
                 if isinstance(step, dict):
-                    context_version_kind_preflight(
-                        step.get("next_identity_context"),
-                        step.get("next_authorization_context"),
+                    context_pairs.append(
+                        (
+                            step.get("next_identity_context"),
+                            step.get("next_authorization_context"),
+                        )
                     )
+        for identity, authorization_context in context_pairs:
+            context_version_preflight(identity, authorization_context)
+        for identity, authorization_context in context_pairs:
+            context_kind_preflight(identity, authorization_context)
         if schema_errors(history, "v2/anchor-history.schema.json"):
             reject(2, "input.schema_invalid")
         anchor_stage_two(anchor)

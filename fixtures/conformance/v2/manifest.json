@@ -102,6 +102,11 @@
       "stage": 2
     },
     {
+      "case_id": "anchor-history-version-before-kind",
+      "fixture": "cases/anchor-history-version-before-kind.json",
+      "stage": 2
+    },
+    {
       "case_id": "anchor-key-registry-limit-plus-one",
       "fixture": "cases/anchor-key-registry-limit-plus-one.json",
       "stage": 2
@@ -737,6 +742,16 @@
       "stage": 5
     },
     {
+      "case_id": "anchor-advance-revoked-grant-union-exact-limit",
+      "fixture": "cases/anchor-advance-revoked-grant-union-exact-limit.json",
+      "stage": 6
+    },
+    {
+      "case_id": "anchor-advance-revoked-key-union-exact-limit",
+      "fixture": "cases/anchor-advance-revoked-key-union-exact-limit.json",
+      "stage": 6
+    },
+    {
       "case_id": "initialize-anchor-unsupported-algorithm",
       "fixture": "cases/initialize-anchor-unsupported-algorithm.json",
       "stage": 6
@@ -1144,6 +1159,16 @@
     {
       "case_id": "vector-precedence-kind-before-public-encoding",
       "fixture": "cases/vector-precedence-kind-before-public-encoding.json",
+      "stage": 11
+    },
+    {
+      "case_id": "vector-precedence-wrong-length-before-algorithm",
+      "fixture": "cases/vector-precedence-wrong-length-before-algorithm.json",
+      "stage": 11
+    },
+    {
+      "case_id": "vector-precedence-wrong-length-before-kind",
+      "fixture": "cases/vector-precedence-wrong-length-before-kind.json",
       "stage": 11
     },
     {

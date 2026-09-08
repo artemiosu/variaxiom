@@ -7,8 +7,8 @@ use base64::Engine as _;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde::Deserialize;
 use variaxiom_protocol::{
-    M2Entrypoint, MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_stage_two, inspect_m2_wire,
-    parse_json_strict,
+    M2Entrypoint, MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_stage_three, inspect_m2_stage_two,
+    inspect_m2_wire, parse_json_strict,
 };
 
 #[derive(Deserialize)]
@@ -241,4 +241,79 @@ fn malformed_nested_shape_fails_closed_and_anchor_is_owned() {
             .and_then(|anchor| anchor["trust_domain_id"].as_str()),
         Some("trust-domain:example")
     );
+}
+
+#[test]
+fn frozen_stage_three_rejections_match() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let stage_three = manifest
+        .cases
+        .iter()
+        .filter(|entry| entry.stage == 3)
+        .collect::<Vec<_>>();
+    assert_eq!(stage_three.len(), 23);
+
+    for entry in stage_three {
+        let case = load_case(
+            &repository
+                .join("fixtures/conformance/v2")
+                .join(&entry.fixture),
+        );
+        let rejection = inspect_m2_stage_three(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .expect_err("case must fail stage three");
+        assert_eq!(
+            rejection.stage, case.expected.reached_stage,
+            "{}",
+            case.case_id
+        );
+        assert_eq!(
+            Some(rejection.code),
+            case.expected.code.as_deref(),
+            "{}",
+            case.case_id
+        );
+        assert!(!rejection.authorizing);
+    }
+}
+
+#[test]
+fn every_later_stage_case_passes_the_context_boundary() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let later = manifest
+        .cases
+        .iter()
+        .filter(|entry| entry.stage > 3)
+        .collect::<Vec<_>>();
+    assert_eq!(later.len(), 128);
+    for entry in later {
+        let case = load_case(
+            &repository
+                .join("fixtures/conformance/v2")
+                .join(&entry.fixture),
+        );
+        let result = inspect_m2_stage_three(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .unwrap_or_else(|error| {
+            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+        });
+        assert!(!result.authorizing());
+        assert_eq!(result.entrypoint(), entrypoint(&case));
+    }
 }

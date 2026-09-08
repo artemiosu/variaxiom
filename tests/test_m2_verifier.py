@@ -8,8 +8,10 @@ from typing import Any, cast
 from variaxiom.canonical import canonical_json, strict_json_loads
 from variaxiom.m2_verifier import (
     CanonicalM2Wire,
+    ContextBoundM2Input,
     M2WireRejection,
     StructurallyValidM2Input,
+    inspect_m2_stage_three,
     inspect_m2_stage_two,
     inspect_m2_wire,
 )
@@ -125,6 +127,38 @@ class M2WireInspectionTests(unittest.TestCase):
             trusted_anchor=case["trusted_anchor"],
         )
         self.assertEqual(result, M2WireRejection(stage=2, code="input.schema_invalid"))
+
+    def test_all_frozen_stage_three_rejections_match(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 3]
+        self.assertEqual(len(cases), 23)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_three(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, M2WireRejection)
+                rejection = cast(M2WireRejection, result)
+                expected = cast(dict[str, Any], case["expected"])
+                self.assertEqual(rejection.stage, expected["reached_stage"])
+                self.assertEqual(rejection.code, expected["code"])
+                self.assertFalse(rejection.authorizing)
+
+    def test_every_later_stage_case_passes_the_context_boundary(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 3]
+        self.assertEqual(len(cases), 128)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_three(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, ContextBoundM2Input)
+                accepted = cast(ContextBoundM2Input, result)
+                self.assertFalse(accepted.authorizing)
+                self.assertEqual(accepted.entrypoint, case["entrypoint"])
 
 
 if __name__ == "__main__":

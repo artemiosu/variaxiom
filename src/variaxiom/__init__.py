@@ -7,7 +7,13 @@ untrusted-code isolation belongs outside the Python process.
 
 from .domain import Candidate, Evidence, PromotionDecision
 from .ledger import HashChainLedger, LedgerVerification
-from .m2_verifier import CanonicalM2Wire, M2WireRejection, inspect_m2_wire
+from .m2_verifier import (
+    CanonicalM2Wire,
+    M2WireRejection,
+    StructurallyValidM2Input,
+    inspect_m2_stage_two,
+    inspect_m2_wire,
+)
 from .promotion import PromotionContext, PromotionGate
 
 __all__ = [
@@ -20,6 +26,8 @@ __all__ = [
     "PromotionContext",
     "PromotionDecision",
     "PromotionGate",
+    "StructurallyValidM2Input",
+    "inspect_m2_stage_two",
     "inspect_m2_wire",
 ]
 

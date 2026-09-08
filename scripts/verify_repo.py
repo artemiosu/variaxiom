@@ -81,6 +81,9 @@ REQUIRED_FILES = (
     "fixtures/conformance/v2/wycheproof-ed25519-subset.json",
     "scripts/regenerate_m2_fixtures.py",
     "scripts/verify_m2_fixtures.py",
+    "src/variaxiom/m2_verifier.py",
+    "tests/test_m2_verifier.py",
+    "crates/protocol/tests/m2_wire.rs",
 )
 
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")

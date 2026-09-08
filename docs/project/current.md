@@ -50,7 +50,9 @@ This is not a human security audit and does not enable an authorizing runtime.
 
 Disabled runtime implementation is tracked in [issue #11](https://github.com/artemiosu/variaxiom/issues/11)
 and follows the bounded [implementation plan](m2.1-runtime-implementation.md). The frozen corpus is
-an input to that work and cannot be silently changed by the implementation PR.
+an input to that work and cannot be silently changed by the implementation PR. Its first draft
+slice implements the non-authorizing stage-one canonical-wire boundary in both Python and Rust;
+identity, signature, policy, and anchor verification remain unimplemented.
 
 ## Next
 

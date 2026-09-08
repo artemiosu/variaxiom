@@ -50,7 +50,7 @@
   "requirements": [
     {"id": "REQ-CORE-001", "status": "partial", "evidence": ["tests/test_promotion.py"]},
     {"id": "REQ-CORE-002", "status": "partial", "evidence": ["docs/architecture/overview.md"]},
-    {"id": "REQ-CORE-003", "status": "implemented", "evidence": ["tests/test_conformance.py", "crates/kernel/tests/promotion_conformance.rs"]},
+    {"id": "REQ-CORE-003", "status": "implemented", "evidence": ["tests/test_conformance.py", "crates/kernel/tests/promotion_conformance.rs", "tests/test_m2_verifier.py", "crates/protocol/tests/m2_wire.rs"]},
     {"id": "REQ-AUTH-001", "status": "implemented", "evidence": ["fixtures/conformance/v1/promotion/authority-drift-rejected.json"]},
     {"id": "REQ-AUTH-002", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/exact-authority-grant-accepted.json", "fixtures/conformance/v1/promotion/partial-authority-grant-rejected.json", "schemas/v2/authority-grant.schema.json", "fixtures/conformance/v2/base-attested-proposal.json"]},
     {"id": "REQ-AUTH-003", "status": "planned", "evidence": []},
@@ -67,7 +67,7 @@
     {"id": "REQ-LINE-002", "status": "partial", "evidence": ["tests/test_ledger.py"]},
     {"id": "REQ-ROLL-001", "status": "partial", "evidence": ["tests/test_promotion.py"]},
     {"id": "REQ-ROLL-002", "status": "planned", "evidence": []},
-    {"id": "REQ-OPS-001", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/cost-limit-rejected.json", "schemas/v2/common.schema.json", "fixtures/conformance/v2/manifest.json"]},
+    {"id": "REQ-OPS-001", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/cost-limit-rejected.json", "schemas/v2/common.schema.json", "fixtures/conformance/v2/manifest.json", "tests/test_m2_verifier.py", "crates/protocol/tests/m2_wire.rs"]},
     {"id": "REQ-OPS-002", "status": "planned", "evidence": []},
     {"id": "REQ-OPS-003", "status": "partial", "evidence": ["AGENTS.md", "docs/architecture/threat-model.md"]},
     {"id": "REQ-OBS-001", "status": "planned", "evidence": []},

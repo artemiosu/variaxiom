@@ -21,6 +21,8 @@ pub const MAX_SAFE_INTEGER: i64 = (1_i64 << 53) - 1;
 pub const MIN_SAFE_INTEGER: i64 = -MAX_SAFE_INTEGER;
 /// Maximum object/array nesting below a canonical root value.
 pub const MAX_CANONICAL_DEPTH: usize = 64;
+/// Maximum accepted M2.1 wire input size in bytes.
+pub const MAX_M2_WIRE_BYTES: usize = 1_048_576;
 
 mod private {
     use super::CanonicalError;
@@ -140,10 +142,14 @@ pub fn canonical_json<T: CanonicalSource>(value: &T) -> Result<Vec<u8>, Canonica
 /// Return a lowercase SHA-256 digest over canonical JSON bytes.
 pub fn canonical_digest<T: CanonicalSource>(value: &T) -> Result<String, CanonicalError> {
     let bytes = canonical_json(value)?;
-    Ok(Sha256::digest(bytes)
+    Ok(sha256_hex(&bytes))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
         .iter()
         .map(|byte| format!("{byte:02x}"))
-        .collect())
+        .collect()
 }
 
 struct StrictValue(Value);
@@ -238,6 +244,91 @@ pub fn parse_json_strict<T: DeserializeOwned>(source: &[u8]) -> Result<T, Canoni
     let value: StrictValue = serde_json::from_slice(source)?;
     validate_value(&value.0, "$")?;
     Ok(serde_json::from_value(value.0)?)
+}
+
+/// Stable stage-one rejection returned for untrusted M2.1 wire bytes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct M2WireRejection {
+    /// Normative validation stage. This type currently represents stage one only.
+    pub stage: u8,
+    /// Stable M2.1 failure code.
+    pub code: &'static str,
+    /// Wire inspection never authorizes a side effect.
+    pub authorizing: bool,
+}
+
+/// Immutable canonical bytes accepted at the M2.1 stage-one boundary.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CanonicalM2Wire {
+    bytes: Vec<u8>,
+    digest: String,
+    value: Value,
+}
+
+impl CanonicalM2Wire {
+    /// Return the exact canonical bytes accepted by the boundary.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Return the lowercase SHA-256 digest of the exact wire bytes.
+    #[must_use]
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+
+    /// Return the decoded immutable view of the canonical value.
+    #[must_use]
+    pub const fn value(&self) -> &Value {
+        &self.value
+    }
+}
+
+fn m2_wire_rejection(code: &'static str) -> M2WireRejection {
+    M2WireRejection {
+        stage: 1,
+        code,
+        authorizing: false,
+    }
+}
+
+/// Apply only the normative M2.1 stage-one wire checks.
+///
+/// Success authenticates nothing and grants no authority. Later stages must
+/// consume this owned snapshot rather than a caller-controlled mutable value.
+pub fn inspect_m2_wire(source: &[u8]) -> Result<CanonicalM2Wire, M2WireRejection> {
+    if source.len() > MAX_M2_WIRE_BYTES {
+        return Err(m2_wire_rejection("input.limit_exceeded"));
+    }
+
+    let value = match parse_json_strict::<Value>(source) {
+        Ok(value) => value,
+        Err(error) => {
+            let message = error.to_string();
+            let code = if message.contains("duplicate JSON object key") {
+                "input.duplicate_member"
+            } else if message.contains("nesting exceeds")
+                || message.contains("recursion limit exceeded")
+            {
+                "input.limit_exceeded"
+            } else {
+                "input.encoding_invalid"
+            };
+            return Err(m2_wire_rejection(code));
+        }
+    };
+    let encoded =
+        canonical_json(&value).map_err(|_| m2_wire_rejection("input.encoding_invalid"))?;
+    if encoded != source {
+        return Err(m2_wire_rejection("input.encoding_invalid"));
+    }
+
+    Ok(CanonicalM2Wire {
+        bytes: source.to_vec(),
+        digest: sha256_hex(source),
+        value,
+    })
 }
 
 fn valid_token(value: &str) -> bool {

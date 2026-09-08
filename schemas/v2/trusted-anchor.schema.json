@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/trusted-anchor.schema.json",
+  "title": "Variaxiom out-of-band trusted anchor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trust_domain_id", "current_identity_context_digest", "current_authorization_context_digest",
+    "current_snapshot_sequence", "trusted_now_unix_s", "key_ownership_registry",
+    "revoked_key_ids", "revoked_grant_ids"
+  ],
+  "properties": {
+    "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
+    "current_identity_context_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "current_authorization_context_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "current_snapshot_sequence": {"$ref": "common.schema.json#/$defs/safeUint"},
+    "trusted_now_unix_s": {"$ref": "common.schema.json#/$defs/safeUint"},
+    "key_ownership_registry": {
+      "type": "object",
+      "propertyNames": {"$ref": "common.schema.json#/$defs/keyId"},
+      "additionalProperties": {"$ref": "common.schema.json#/$defs/principalId"}
+    },
+    "revoked_key_ids": {
+      "type": "array", "uniqueItems": true,
+      "items": {"$ref": "common.schema.json#/$defs/keyId"}
+    },
+    "revoked_grant_ids": {
+      "type": "array", "uniqueItems": true,
+      "items": {"$ref": "common.schema.json#/$defs/grantId"}
+    }
+  }
+}

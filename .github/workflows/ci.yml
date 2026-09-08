@@ -50,6 +50,8 @@ jobs:
         run: |
           uv run --locked --extra dev python scripts/verify_repo.py
           uv run --locked --extra dev python scripts/regenerate_conformance_fixtures.py --check
+          uv run --locked --extra dev python scripts/regenerate_m2_fixtures.py --check
+          uv run --locked --extra dev python scripts/verify_m2_fixtures.py
           uv run --locked --extra dev python scripts/regenerate_demo_docs.py --check
           uv run --locked --extra dev python -m ruff check src tests scripts
           uv run --locked --extra dev python -m ruff format --check src tests scripts

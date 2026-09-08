@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/evidence.schema.json",
+  "title": "Variaxiom evidence/v2 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_version", "evidence_id", "subject_candidate_digest", "artifact_hash",
+    "check", "status", "verifier", "independent", "details"
+  ],
+  "properties": {
+    "evidence_version": {"const": "evidence/v2"},
+    "evidence_id": {"$ref": "common.schema.json#/$defs/token"},
+    "subject_candidate_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "artifact_hash": {"$ref": "common.schema.json#/$defs/sha256"},
+    "check": {"$ref": "common.schema.json#/$defs/token"},
+    "status": {"enum": ["pass", "fail", "error"]},
+    "verifier": {"$ref": "common.schema.json#/$defs/principalId"},
+    "independent": {"type": "boolean"},
+    "details": {
+      "type": "object",
+      "additionalProperties": {"$ref": "common.schema.json#/$defs/canonicalValue"}
+    }
+  }
+}

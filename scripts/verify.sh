@@ -16,6 +16,8 @@ fi
 "${PYTHON[@]}" -m compileall -q src tests
 "${PYTHON[@]}" scripts/verify_repo.py
 "${PYTHON[@]}" scripts/regenerate_conformance_fixtures.py --check
+"${PYTHON[@]}" scripts/regenerate_m2_fixtures.py --check
+"${PYTHON[@]}" scripts/verify_m2_fixtures.py
 "${PYTHON[@]}" -m ruff check src tests scripts
 "${PYTHON[@]}" -m ruff format --check src tests scripts
 "${PYTHON[@]}" -m pyright

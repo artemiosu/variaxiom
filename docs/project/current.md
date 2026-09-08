@@ -28,16 +28,17 @@ M1.1 is published and independently reproduced from the public repository. The c
 records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
 14-event ledger, and clean final worktree. The report is published in closed issue #3.
 
-M2.1 is now the active **accepted specification**. It defines principals, trusted key bindings,
-exact-candidate authority grants, explicit time/revocation snapshots, and detached Ed25519
-signatures. Three isolated automated reviewers reached unanimous PASS with no remaining P0/P1.
-This authorizes only schemas and shared adversarial fixtures first; the verifier remains disabled
-and cannot append durable lineage.
+M2.1 now has an accepted specification and a frozen schema/shared-fixture contract. The final
+corpus contains 237 cases plus 19 curated Wycheproof vectors. Three isolated automated reviewers
+reached unanimous PASS on revision `84467c08d3867a807b3328cb1410ba91b2852654` with no remaining
+P0/P1. This is not a human security audit. It authorizes only a disabled verifier implementation;
+no M2.1 runtime may yet authorize or append durable lineage.
 
 ## Next
 
-1. Freeze M2.1 schemas and shared positive/adversarial vectors with no gate behavior change.
-2. Review that fixture contract, then add matching disabled Python/Rust verification.
+1. Implement the frozen M2.1 contract in disabled Python and Rust verifier APIs without changing
+   fixture semantics.
+2. Run the full corpus through both implementations and repeat the automated three-role review.
 3. M2.2 — transactional SQLite lineage and projections.
 4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 

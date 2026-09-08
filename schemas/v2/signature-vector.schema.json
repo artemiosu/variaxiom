@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/signature-vector.schema.json",
+  "title": "Variaxiom M2.1 golden signature vector",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vector_version", "vector_id", "target_envelope", "target_digest", "algorithm", "trust_domain_id", "principal_id",
+    "key_id", "key_binding_algorithm", "public_key_base64url", "signed_kind", "signed_digest", "message_hex",
+    "signature_base64url", "expected", "expected_code"
+  ],
+  "properties": {
+    "vector_version": {"const": "m2.1-signature-vector/v1"},
+    "vector_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9:-]+$"},
+    "target_envelope": {"$ref": "envelope.schema.json"},
+    "target_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "algorithm": {"type": "string", "minLength": 1, "maxLength": 32},
+    "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
+    "principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
+    "key_id": {"$ref": "common.schema.json#/$defs/keyId"},
+    "key_binding_algorithm": {"type": "string", "minLength": 1, "maxLength": 32},
+    "public_key_base64url": {"type": "string", "minLength": 1, "maxLength": 128},
+    "signed_kind": {"enum": ["candidate", "evidence", "authority-grant", "promotion-decision"]},
+    "signed_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "message_hex": {"type": "string", "pattern": "^(?:[a-f0-9]{2})+$"},
+    "signature_base64url": {"type": "string", "minLength": 1, "maxLength": 256},
+    "expected": {"enum": ["verified", "rejected"]},
+    "expected_code": {
+      "oneOf": [
+        {"type": "null"},
+        {"enum": [
+          "signature.algorithm_unsupported", "signature.encoding_invalid",
+          "signature.key_id_mismatch", "signature.domain_mismatch",
+          "signature.principal_mismatch", "signature.kind_mismatch",
+          "signature.digest_mismatch", "signature.invalid"
+        ]}
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"expected": {"const": "verified"}}},
+      "then": {"properties": {"expected_code": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"expected": {"const": "rejected"}}},
+      "then": {"properties": {"expected_code": {"type": "string"}}}
+    }
+  ]
+}

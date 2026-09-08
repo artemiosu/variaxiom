@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/fixtures/conformance/v2/manifest.schema.json",
+  "title": "Published M2.1 conformance manifest schema",
+  "$ref": "https://variaxiom.dev/schemas/v2/manifest.schema.json"
+}

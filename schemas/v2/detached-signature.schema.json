@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/detached-signature.schema.json",
+  "title": "Variaxiom detached-signature/v1 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "signature_version", "algorithm", "trust_domain_id", "principal_id", "key_id",
+    "signed_kind", "signed_digest", "signature_base64url"
+  ],
+  "properties": {
+    "signature_version": {"const": "detached-signature/v1"},
+    "algorithm": {"$ref": "common.schema.json#/$defs/token"},
+    "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
+    "principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
+    "key_id": {"$ref": "common.schema.json#/$defs/keyId"},
+    "signed_kind": {"enum": ["candidate", "evidence", "authority-grant", "promotion-decision"]},
+    "signed_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "signature_base64url": {"$ref": "common.schema.json#/$defs/signatureBase64url"}
+  }
+}

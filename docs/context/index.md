@@ -65,6 +65,7 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../../SECURITY.md`](../../SECURITY.md)
 - [`../../REPRODUCIBILITY.md`](../../REPRODUCIBILITY.md)
 - [`../reports/m1.1-independent-reproduction-2026-09-06.md`](../reports/m1.1-independent-reproduction-2026-09-06.md)
+- [`../reports/m2.1-schema-fixture-council-2026-09-07.md`](../reports/m2.1-schema-fixture-council-2026-09-07.md)
 - [`../project/github-setup.md`](../project/github-setup.md)
 
 ## Product and community

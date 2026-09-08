@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import base64
+import copy
+import hashlib
 import os
 import re
 import sys
@@ -14,7 +17,7 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
-from variaxiom.canonical import strict_json_loads
+from variaxiom.canonical import canonical_json, content_hash, strict_json_loads
 
 REQUIRED_FILES = (
     "README.md",
@@ -54,6 +57,21 @@ REQUIRED_FILES = (
     "docs/project/traceability.md",
     "docs/specs/m1.1-cross-language-conformance.md",
     "fixtures/conformance/v1/promotion/bounded-accepted.json",
+    "schemas/v2/envelope.schema.json",
+    "schemas/v2/promotion-input.schema.json",
+    "schemas/v2/attested-proposal.schema.json",
+    "schemas/v2/trusted-anchor.schema.json",
+    "schemas/v2/anchor-initialization.schema.json",
+    "schemas/v2/anchor-history.schema.json",
+    "schemas/v2/signature-vector.schema.json",
+    "schemas/v2/conformance-case.schema.json",
+    "fixtures/conformance/v2/base-attested-proposal.json",
+    "fixtures/conformance/v2/golden-signature.json",
+    "fixtures/conformance/v2/manifest.json",
+    "fixtures/conformance/v2/manifest.schema.json",
+    "fixtures/conformance/v2/wycheproof-ed25519-subset.json",
+    "scripts/regenerate_m2_fixtures.py",
+    "scripts/verify_m2_fixtures.py",
 )
 
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
@@ -162,6 +180,210 @@ def _duplicates(values: list[str]) -> list[str]:
             duplicates.add(value)
         seen.add(value)
     return sorted(duplicates)
+
+
+def _verify_sorted_unique(values: object, label: str) -> list[str]:
+    if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+        return []  # JSON Schema reports shape/type errors.
+    if values != sorted(set(values)):
+        return [f"{label} must be lexically sorted and unique"]
+    return []
+
+
+def _mutate_fixture(source: object, pointer: str, operation: str, value: object = None) -> object:
+    result = copy.deepcopy(source)
+    if not pointer.startswith("/"):
+        raise ValueError(f"mutation pointer must be non-root: {pointer}")
+    parts = [part.replace("~1", "/").replace("~0", "~") for part in pointer[1:].split("/")]
+    parent = result
+    for part in parts[:-1]:
+        if isinstance(parent, list):
+            parent = parent[int(part)]
+        elif isinstance(parent, dict):
+            parent = parent[part]
+        else:
+            raise ValueError(f"mutation pointer crosses a scalar: {pointer}")
+    final = parts[-1]
+    if isinstance(parent, list):
+        index = int(final)
+        if operation == "remove":
+            del parent[index]
+        elif operation == "add":
+            parent.insert(index, value)
+        else:
+            parent[index] = value
+    elif isinstance(parent, dict):
+        if operation == "add" and final in parent:
+            raise ValueError(f"add mutation target already exists: {pointer}")
+        if operation in {"replace", "remove"} and final not in parent:
+            raise ValueError(f"mutation target does not exist: {pointer}")
+        if operation == "remove":
+            del parent[final]
+        else:
+            parent[final] = value
+    else:
+        raise ValueError(f"mutation pointer parent is scalar: {pointer}")
+    return result
+
+
+def _verify_m2_fixture(root: Path, value: object, label: str) -> list[str]:
+    if not isinstance(value, dict):
+        return []
+    errors: list[str] = []
+    try:
+        payload = value["payload"]
+        promotion = payload["promotion_input"]["payload"]
+        identity = promotion["identity_context"]["payload"]
+        authorization = promotion["authorization_context"]["payload"]
+        evidence = promotion["evidence"]
+        principals = identity["principals"]
+        candidate_envelope = promotion["candidate"]["envelope"]
+        candidate_digest = content_hash(candidate_envelope)
+        constitution_envelope = promotion["constitution"]["envelope"]
+        constitution_digest = content_hash(constitution_envelope)
+        constitution_artifact = content_hash(constitution_envelope["payload"])
+        grant_pair = promotion.get("authority_grant")
+
+        expected_bindings = [
+            (promotion["candidate"], "candidate", candidate_envelope["payload"]["proposer"]),
+            *[(item, "evidence", item["envelope"]["payload"]["verifier"]) for item in evidence],
+        ]
+        if isinstance(grant_pair, dict):
+            expected_bindings.append(
+                (
+                    grant_pair,
+                    "authority-grant",
+                    grant_pair["envelope"]["payload"]["issuer_principal_id"],
+                )
+            )
+        for pair, expected_kind, expected_principal in expected_bindings:
+            signature = pair["signature"]["payload"]
+            if signature["signed_digest"] != content_hash(pair["envelope"]):
+                errors.append(f"{label} {expected_kind} signature digest is stale")
+            if signature["signed_kind"] != expected_kind:
+                errors.append(f"{label} {expected_kind} signature kind mismatch")
+            if signature["principal_id"] != expected_principal:
+                errors.append(f"{label} {expected_kind} signature principal mismatch")
+
+        selector = payload["selector_signature"]["payload"]
+        if selector["signed_digest"] != content_hash(payload["decision"]):
+            errors.append(f"{label} selector signature digest is stale")
+        if payload["decision"]["payload"]["input_digest"] != content_hash(
+            payload["promotion_input"]
+        ):
+            errors.append(f"{label} decision input digest is stale")
+        if promotion["constitution"]["artifact_hash"] != constitution_artifact:
+            errors.append(f"{label} constitution artifact hash is stale")
+        if authorization["constitution_artifact_hash"] != constitution_artifact:
+            errors.append(f"{label} authorization constitution artifact hash is stale")
+        if authorization["constitution_envelope_digest"] != constitution_digest:
+            errors.append(f"{label} authorization constitution digest is stale")
+        for item in evidence:
+            if item["envelope"]["payload"]["subject_candidate_digest"] != candidate_digest:
+                errors.append(f"{label} evidence candidate digest is stale")
+        if isinstance(grant_pair, dict) and (
+            grant_pair["envelope"]["payload"]["subject_candidate_digest"] != candidate_digest
+        ):
+            errors.append(f"{label} grant candidate digest is stale")
+
+        for principal in principals:
+            for key in principal["keys"]:
+                padded = key["public_key_base64url"] + "="
+                public_key = base64.urlsafe_b64decode(padded)
+                expected_key_id = (
+                    "key:sha256:"
+                    + hashlib.sha256(b"variaxiom-key/v1\0Ed25519\0" + public_key).hexdigest()
+                )
+                if key["key_id"] != expected_key_id:
+                    errors.append(f"{label} key_id does not match public key")
+        errors.extend(
+            _verify_sorted_unique(identity["revoked_key_ids"], f"{label} revoked_key_ids")
+        )
+        errors.extend(
+            _verify_sorted_unique(identity["revoked_grant_ids"], f"{label} revoked_grant_ids")
+        )
+        errors.extend(
+            _verify_sorted_unique(authorization["known_lineage_ids"], f"{label} known_lineage_ids")
+        )
+        errors.extend(
+            _verify_sorted_unique(
+                authorization["verified_artifact_hashes"],
+                f"{label} verified_artifact_hashes",
+            )
+        )
+        if authorization["known_lineage_ids"] != sorted(authorization["lineage_capabilities"]):
+            errors.append(f"{label} known_lineage_ids must equal lineage_capabilities keys")
+        if [item["principal_id"] for item in principals] != sorted(
+            item["principal_id"] for item in principals
+        ):
+            errors.append(f"{label} principals must be sorted by principal_id")
+        principal_ids = [item["principal_id"] for item in principals]
+        if len(principal_ids) != len(set(principal_ids)):
+            errors.append(f"{label} principal IDs must be globally unique")
+        all_key_ids: list[str] = []
+        all_public_keys: list[str] = []
+        for index, principal in enumerate(principals):
+            errors.extend(
+                _verify_sorted_unique(principal["roles"], f"{label} principals[{index}].roles")
+            )
+            key_ids = [key["key_id"] for key in principal["keys"]]
+            if key_ids != sorted(set(key_ids)):
+                errors.append(f"{label} principals[{index}].keys must be sorted by key_id")
+            all_key_ids.extend(key_ids)
+            all_public_keys.extend(key["public_key_base64url"] for key in principal["keys"])
+        if len(all_key_ids) != len(set(all_key_ids)):
+            errors.append(f"{label} key IDs must be globally unique")
+        if len(all_public_keys) != len(set(all_public_keys)):
+            errors.append(f"{label} public keys must be globally unique")
+        evidence_ids = [item["envelope"]["payload"]["evidence_id"] for item in evidence]
+        if evidence_ids != sorted(set(evidence_ids)):
+            errors.append(f"{label} evidence must be sorted by evidence_id")
+        for collection_name in ("baseline_capabilities", "requested_capabilities"):
+            errors.extend(
+                _verify_sorted_unique(
+                    promotion["candidate"]["envelope"]["payload"][collection_name],
+                    f"{label} candidate.{collection_name}",
+                )
+            )
+        for lineage_id, capabilities in authorization["lineage_capabilities"].items():
+            errors.extend(
+                _verify_sorted_unique(capabilities, f"{label} lineage_capabilities.{lineage_id}")
+            )
+        domains = {
+            identity["trust_domain_id"],
+            authorization["trust_domain_id"],
+            *[pair["signature"]["payload"]["trust_domain_id"] for pair, _, _ in expected_bindings],
+            selector["trust_domain_id"],
+        }
+        if len(domains) != 1:
+            errors.append(f"{label} trust domains must match")
+        actors = [expected_principal for _, _, expected_principal in expected_bindings]
+        actors.append(selector["principal_id"])
+        if len(actors) != len(set(actors)):
+            errors.append(
+                f"{label} proposer/verifier/issuer/selector roles must be pairwise distinct"
+            )
+        if isinstance(grant_pair, dict):
+            candidate_payload = candidate_envelope["payload"]
+            grant_payload = grant_pair["envelope"]["payload"]
+            parent_capabilities = authorization["lineage_capabilities"].get(
+                candidate_payload["parent_id"], []
+            )
+            expected_delta = sorted(
+                set(candidate_payload["requested_capabilities"]) - set(parent_capabilities)
+            )
+            if grant_payload["capabilities"] != expected_delta:
+                errors.append(f"{label} grant capabilities do not equal the exact authority delta")
+            evaluation_time = identity["evaluation_time_unix_s"]
+            if not (
+                grant_payload["not_before_unix_s"]
+                <= evaluation_time
+                < grant_payload["expires_at_unix_s"]
+            ):
+                errors.append(f"{label} grant interval does not contain evaluation time")
+    except (KeyError, TypeError):
+        pass  # JSON Schema reports the precise structural error.
+    return errors
 
 
 def _traceability_statuses(text: str) -> tuple[list[str], dict[str, str]]:
@@ -397,7 +619,7 @@ def main() -> int:
             errors.append(f"missing required file: {relative}")
 
     schemas: dict[str, dict[str, object]] = {}
-    for schema in sorted((root / "schemas").glob("*.json")):
+    for schema in sorted((root / "schemas").rglob("*.json")):
         try:
             value = strict_json_loads(schema.read_bytes())
         except (TypeError, ValueError) as error:
@@ -409,7 +631,7 @@ def main() -> int:
             Draft202012Validator.check_schema(value)
         except Exception as error:  # jsonschema exposes several schema-error subclasses
             errors.append(f"invalid JSON Schema in {schema.relative_to(root)}: {error}")
-        schemas[schema.name] = value
+        schemas[str(schema.relative_to(root / "schemas"))] = value
 
     project_file = root / "project.yaml"
     try:
@@ -475,6 +697,91 @@ def main() -> int:
         except (KeyError, TypeError, ValueError, OSError) as error:
             errors.append(f"invalid conformance fixture {fixture_path.relative_to(root)}: {error}")
 
+    v2_root = root / "fixtures/conformance/v2"
+    try:
+        published_manifest_schema = strict_json_loads(
+            (v2_root / "manifest.schema.json").read_bytes()
+        )
+        Draft202012Validator.check_schema(published_manifest_schema)
+        base = strict_json_loads((v2_root / "base-attested-proposal.json").read_bytes())
+        manifest = strict_json_loads((v2_root / "manifest.json").read_bytes())
+        golden = strict_json_loads((v2_root / "golden-signature.json").read_bytes())
+        published_registry = Registry().with_resources(
+            (str(item["$id"]), Resource.from_contents(item))
+            for item in schemas.values()
+            if isinstance(item.get("$id"), str)
+        )
+        published_validator = Draft202012Validator(
+            published_manifest_schema, registry=published_registry
+        )
+        for error in published_validator.iter_errors(manifest):
+            errors.append(f"M2.1 published manifest schema: {error.message}")
+        errors.extend(
+            _validate_instance(base, "v2/envelope.schema.json", schemas, "M2.1 base fixture")
+        )
+        errors.extend(
+            _validate_instance(manifest, "v2/manifest.schema.json", schemas, "M2.1 manifest")
+        )
+        errors.extend(
+            _validate_instance(
+                golden, "v2/signature-vector.schema.json", schemas, "M2.1 golden signature"
+            )
+        )
+        errors.extend(_verify_m2_fixture(root, base, "M2.1 base fixture"))
+        cases = manifest["cases"]
+        case_order = [(case["stage"], case["case_id"]) for case in cases]
+        if case_order != sorted(case_order):
+            errors.append("M2.1 manifest cases must be sorted by stage and case_id")
+        if len({case["case_id"] for case in cases}) != len(cases):
+            errors.append("M2.1 manifest case IDs must be unique")
+        referenced_case_paths: set[Path] = set()
+        for item in cases:
+            case_label = f"M2.1 case {item['case_id']}"
+            case_path = v2_root / item["fixture"]
+            referenced_case_paths.add(case_path)
+            case = strict_json_loads(case_path.read_bytes())
+            errors.extend(
+                _validate_instance(case, "v2/conformance-case.schema.json", schemas, case_label)
+            )
+            if case["case_id"] != item["case_id"] or case["stage"] != item["stage"]:
+                errors.append(f"{case_label}: manifest metadata differs from case file")
+            encoded = case["input_base64url"]
+            raw = base64.urlsafe_b64decode(encoded + "=" * ((4 - len(encoded) % 4) % 4))
+            if hashlib.sha256(raw).hexdigest() != case["input_sha256"]:
+                errors.append(f"{case_label}: input_sha256 is stale")
+            if case["entrypoint"] == "advance-anchor-history":
+                decoded_history = strict_json_loads(raw)
+                if canonical_json(decoded_history) != canonical_json(case["anchor_history"]):
+                    errors.append(
+                        f"{case_label}: anchor_history differs from authoritative wire input"
+                    )
+        existing_case_paths = set((v2_root / "cases").glob("*.json"))
+        for unreferenced in sorted(existing_case_paths - referenced_case_paths):
+            errors.append(f"unreferenced M2.1 case fixture: {unreferenced.relative_to(root)}")
+        if isinstance(golden, dict):
+            target = golden.get("target_envelope")
+            target_digest = golden.get("target_digest")
+            if target_digest != content_hash(target):
+                errors.append("M2.1 golden signature target_digest does not match target envelope")
+            fields = [
+                "variaxiom-signature/v1",
+                golden.get("algorithm"),
+                golden.get("trust_domain_id"),
+                golden.get("principal_id"),
+                golden.get("key_id"),
+                golden.get("signed_kind"),
+                target_digest,
+                "",
+            ]
+            if all(isinstance(field, str) for field in fields):
+                expected_message = "\n".join(fields).encode("ascii").hex()
+                if golden.get("message_hex") != expected_message:
+                    errors.append("M2.1 golden signature message_hex is stale")
+            if canonical_json(target) != canonical_json(base["payload"]["decision"]):
+                errors.append("M2.1 golden signature target is not the base decision")
+    except (KeyError, TypeError, ValueError, OSError, UnicodeEncodeError) as error:
+        errors.append(f"invalid M2.1 conformance fixture set: {error}")
+
     demo_ledger = root / "docs/demo/lineage.jsonl"
     try:
         for index, line in enumerate(demo_ledger.read_text("utf-8").splitlines(), start=1):
@@ -538,8 +845,10 @@ def main() -> int:
         "scripts/bootstrap.sh",
         "scripts/demo.sh",
         "scripts/regenerate_conformance_fixtures.py",
+        "scripts/regenerate_m2_fixtures.py",
         "scripts/setup-github.sh",
         "scripts/verify.sh",
+        "scripts/verify_m2_fixtures.py",
     ):
         script = root / relative
         if script.is_file() and not os.access(script, os.X_OK):

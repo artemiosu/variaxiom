@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/anchor-initialization.schema.json",
+  "title": "Variaxiom trusted-anchor initialization input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "initial_identity_context",
+    "initial_authorization_context",
+    "trusted_now_unix_s"
+  ],
+  "properties": {
+    "initial_identity_context": {"$ref": "envelope.schema.json#/$defs/identityContext"},
+    "initial_authorization_context": {"$ref": "envelope.schema.json#/$defs/authorizationContext"},
+    "trusted_now_unix_s": {"$ref": "common.schema.json#/$defs/safeUint"}
+  }
+}

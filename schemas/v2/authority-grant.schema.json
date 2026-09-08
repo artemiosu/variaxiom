@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/authority-grant.schema.json",
+  "title": "Variaxiom authority-grant/v1 payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "grant_version", "audience", "trust_domain_id", "capability_namespace",
+    "constitution_digest", "lineage_id", "issuer_principal_id", "subject_candidate_digest",
+    "capabilities", "not_before_unix_s", "expires_at_unix_s", "delegable"
+  ],
+  "properties": {
+    "grant_version": {"const": "authority-grant/v1"},
+    "audience": {"$ref": "common.schema.json#/$defs/token"},
+    "trust_domain_id": {"$ref": "common.schema.json#/$defs/trustDomainId"},
+    "capability_namespace": {"$ref": "common.schema.json#/$defs/token"},
+    "constitution_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "lineage_id": {"$ref": "common.schema.json#/$defs/token"},
+    "issuer_principal_id": {"$ref": "common.schema.json#/$defs/principalId"},
+    "subject_candidate_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "capabilities": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "common.schema.json#/$defs/capability"}
+    },
+    "not_before_unix_s": {"$ref": "common.schema.json#/$defs/safeUint"},
+    "expires_at_unix_s": {"$ref": "common.schema.json#/$defs/positiveSafeInt"},
+    "delegable": {"type": "boolean"}
+  }
+}

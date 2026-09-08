@@ -38,7 +38,10 @@ Use PyNaCl's maintained libsodium-backed Ed25519 verification API in Python and
 [`ed25519-dalek`](https://docs.rs/ed25519-dalek/latest/ed25519_dalek/)
 in Rust. Use each library only for key decoding, signing in test/CLI boundaries, and verification;
 canonicalization, domain construction, trust policy, and grant policy remain project code with
-shared fixtures. Exact dependency versions are committed in the lock files during implementation.
+shared fixtures. The fixture gate locks PyNaCl 1.6.2, libsodium 1.0.21+,
+`curve25519-dalek` 5.0.0, and `ed25519-dalek` 3.0.0 as test-only dependencies. Rust enables only
+`fast` and `zeroize`; batch, hazmat, digest/prehash, context, PKCS#8/PEM, rand, and serde remain
+disabled. Runtime verifier integration remains a later, disabled-by-default step.
 
 Both runtimes first require canonical, decodable, non-identity prime-order-subgroup public keys and
 `R` points. Python uses PyNaCl's libsodium point validator (libsodium 1.0.21+) and `VerifyKey.verify`;

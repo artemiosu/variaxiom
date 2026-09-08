@@ -27,7 +27,7 @@
     "id": "M2.1",
     "title": "Identity, authority grants, and detached signatures",
     "status": "in_progress",
-    "verification": "accepted_252_case_nonauthorizing_contract_runtime_pending",
+    "verification": "accepted_252_case_nonauthorizing_contract_runtime_stages_1_3_complete",
     "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",

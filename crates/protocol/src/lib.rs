@@ -1,7 +1,9 @@
 //! Versioned protocol types and canonical serialization shared by the trusted kernel.
 
+mod m2_stage_three;
 mod m2_stage_two;
 
+pub use m2_stage_three::{ContextBoundM2Input, inspect_m2_stage_three};
 pub use m2_stage_two::{M2Entrypoint, StructurallyValidM2Input, inspect_m2_stage_two};
 
 use std::collections::{BTreeMap, BTreeSet};

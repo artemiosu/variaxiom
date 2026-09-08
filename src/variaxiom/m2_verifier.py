@@ -73,6 +73,33 @@ class StructurallyValidM2Input:
 
 M2StageTwoInspection = StructurallyValidM2Input | M2WireRejection
 
+
+@dataclass(frozen=True, slots=True)
+class ContextBoundM2Input:
+    """Owned input that passed stages one through three, but grants no authority."""
+
+    structural: StructurallyValidM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        """Return the operation whose contexts were checked."""
+
+        return self.structural.entrypoint
+
+    def decode(self) -> JSONValue:
+        """Return a fresh copy of the context-bound input."""
+
+        return self.structural.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        """Return a fresh copy of the external anchor used for the check."""
+
+        return self.structural.decode_trusted_anchor()
+
+
+M2StageThreeInspection = ContextBoundM2Input | M2WireRejection
+
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _PRINCIPAL_ID = re.compile(r"principal:[a-z0-9._:/-]+\Z")
 _TRUST_DOMAIN_ID = re.compile(r"trust-domain:[a-z0-9._:/-]+\Z")
@@ -89,6 +116,15 @@ class _StageTwoError(Exception):
 
 def _reject(code: str = "input.schema_invalid") -> NoReturn:
     raise _StageTwoError(code)
+
+
+class _StageThreeError(Exception):
+    def __init__(self, code: str) -> None:
+        self.code = code
+
+
+def _reject_stage_three(code: str) -> NoReturn:
+    raise _StageThreeError(code)
 
 
 def _object(value: Any, fields: set[str], required: set[str] | None = None) -> dict[str, Any]:
@@ -818,6 +854,195 @@ def inspect_m2_stage_two(
     return StructurallyValidM2Input(
         entrypoint=entrypoint, wire=wire, trusted_anchor_data=anchor_data
     )
+
+
+def _canonical_digest(value: JSONValue) -> str:
+    return sha256_bytes(canonical_json(value))
+
+
+def _attested_contexts(value: JSONValue) -> tuple[dict[str, Any], dict[str, Any]]:
+    root = cast(dict[str, Any], value)
+    body = cast(dict[str, Any], root["payload"])["promotion_input"]["payload"]
+    return cast(dict[str, Any], body["identity_context"]), cast(
+        dict[str, Any], body["authorization_context"]
+    )
+
+
+def _attested_signatures(value: JSONValue) -> list[dict[str, Any]]:
+    root = cast(dict[str, Any], value)
+    payload = cast(dict[str, Any], root["payload"])
+    body = cast(dict[str, Any], payload["promotion_input"])["payload"]
+    signatures = [cast(dict[str, Any], body["candidate"])["signature"]]
+    signatures.extend(item["signature"] for item in cast(list[dict[str, Any]], body["evidence"]))
+    grant = body.get("authority_grant")
+    if grant is not None:
+        signatures.append(cast(dict[str, Any], grant)["signature"])
+    return signatures
+
+
+def _stage_three_attested(value: JSONValue, anchor: dict[str, Any]) -> None:
+    identity, authorization = _attested_contexts(value)
+    identity_payload = cast(dict[str, Any], identity["payload"])
+    sequence = cast(int, identity_payload["snapshot_sequence"])
+    anchor_sequence = cast(int, anchor["current_snapshot_sequence"])
+    if sequence < anchor_sequence:
+        _reject_stage_three("identity.context_stale")
+    if (
+        identity_payload["trust_domain_id"] != anchor["trust_domain_id"]
+        or _canonical_digest(cast(JSONValue, identity)) != anchor["current_identity_context_digest"]
+        or sequence != anchor_sequence
+        or identity_payload["evaluation_time_unix_s"] != anchor["trusted_now_unix_s"]
+    ):
+        _reject_stage_three("identity.context_untrusted")
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    if (
+        authorization_payload["trust_domain_id"] != anchor["trust_domain_id"]
+        or _canonical_digest(cast(JSONValue, authorization))
+        != anchor["current_authorization_context_digest"]
+    ):
+        _reject_stage_three("authorization.context_untrusted")
+    if any(
+        cast(dict[str, Any], signature["payload"])["trust_domain_id"] != anchor["trust_domain_id"]
+        for signature in _attested_signatures(value)
+    ):
+        _reject_stage_three("signature.domain_mismatch")
+
+
+def _stage_three_initialize(value: JSONValue) -> None:
+    request = cast(dict[str, Any], value)
+    identity = cast(dict[str, Any], request["initial_identity_context"])
+    authorization = cast(dict[str, Any], request["initial_authorization_context"])
+    identity_payload = cast(dict[str, Any], identity["payload"])
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    if (
+        identity_payload["snapshot_sequence"] != 0
+        or identity_payload["previous_snapshot_digest"] is not None
+        or identity_payload["evaluation_time_unix_s"] != request["trusted_now_unix_s"]
+        or authorization_payload["trust_domain_id"] != identity_payload["trust_domain_id"]
+    ):
+        _reject_stage_three("identity.context_untrusted")
+
+
+def _identity_key_owners(identity: dict[str, Any]) -> dict[str, str]:
+    payload = cast(dict[str, Any], identity["payload"])
+    return {
+        cast(str, key["key_id"]): cast(str, principal["principal_id"])
+        for principal in cast(list[dict[str, Any]], payload["principals"])
+        for key in cast(list[dict[str, Any]], principal["keys"])
+    }
+
+
+def _stage_three_history(value: JSONValue) -> None:
+    history = cast(dict[str, Any], value)
+    anchor = cast(dict[str, Any], history["initial_anchor"])
+    previous_identity = cast(dict[str, Any], history["initial_identity_context"])
+    authorization = cast(dict[str, Any], history["initial_authorization_context"])
+    previous_payload = cast(dict[str, Any], previous_identity["payload"])
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    if (
+        _canonical_digest(cast(JSONValue, previous_identity))
+        != anchor["current_identity_context_digest"]
+        or _canonical_digest(cast(JSONValue, authorization))
+        != anchor["current_authorization_context_digest"]
+        or previous_payload["trust_domain_id"] != anchor["trust_domain_id"]
+        or authorization_payload["trust_domain_id"] != anchor["trust_domain_id"]
+        or previous_payload["snapshot_sequence"] != anchor["current_snapshot_sequence"]
+        or previous_payload["evaluation_time_unix_s"] != anchor["trusted_now_unix_s"]
+        or not set(cast(list[str], previous_payload["revoked_key_ids"])).issubset(
+            cast(list[str], anchor["revoked_key_ids"])
+        )
+        or not set(cast(list[str], previous_payload["revoked_grant_ids"])).issubset(
+            cast(list[str], anchor["revoked_grant_ids"])
+        )
+        or any(
+            cast(dict[str, Any], anchor["key_ownership_registry"]).get(key_id) != principal_id
+            for key_id, principal_id in _identity_key_owners(previous_identity).items()
+        )
+    ):
+        _reject_stage_three("identity.context_untrusted")
+
+    current_anchor = strict_json_loads(canonical_json(cast(JSONValue, anchor)))
+    current = cast(dict[str, Any], current_anchor)
+    for raw_step in cast(list[dict[str, Any]], history["steps"]):
+        identity = cast(dict[str, Any], raw_step["next_identity_context"])
+        next_authorization = cast(dict[str, Any], raw_step["next_authorization_context"])
+        payload = cast(dict[str, Any], identity["payload"])
+        next_authorization_payload = cast(dict[str, Any], next_authorization["payload"])
+        now = cast(int, raw_step["trusted_now_unix_s"])
+        if now < cast(int, current["trusted_now_unix_s"]) or cast(
+            int, payload["evaluation_time_unix_s"]
+        ) < cast(int, current["trusted_now_unix_s"]):
+            _reject_stage_three("identity.context_stale")
+        if (
+            payload["trust_domain_id"] != current["trust_domain_id"]
+            or cast(int, payload["snapshot_sequence"])
+            != cast(int, current["current_snapshot_sequence"]) + 1
+            or payload["previous_snapshot_digest"]
+            != _canonical_digest(cast(JSONValue, previous_identity))
+            or payload["evaluation_time_unix_s"] != now
+            or next_authorization_payload["trust_domain_id"] != current["trust_domain_id"]
+            or not set(cast(list[str], current["revoked_key_ids"])).issubset(
+                cast(list[str], payload["revoked_key_ids"])
+            )
+            or not set(cast(list[str], current["revoked_grant_ids"])).issubset(
+                cast(list[str], payload["revoked_grant_ids"])
+            )
+        ):
+            _reject_stage_three("identity.context_untrusted")
+        registry = cast(dict[str, str], current["key_ownership_registry"])
+        for key_id, principal_id in _identity_key_owners(identity).items():
+            registry.setdefault(key_id, principal_id)
+        current = {
+            "trust_domain_id": current["trust_domain_id"],
+            "current_identity_context_digest": _canonical_digest(cast(JSONValue, identity)),
+            "current_authorization_context_digest": _canonical_digest(
+                cast(JSONValue, next_authorization)
+            ),
+            "current_snapshot_sequence": payload["snapshot_sequence"],
+            "trusted_now_unix_s": now,
+            "key_ownership_registry": dict(sorted(registry.items())),
+            "revoked_key_ids": sorted(
+                set(cast(list[str], current["revoked_key_ids"]))
+                | set(cast(list[str], payload["revoked_key_ids"]))
+            ),
+            "revoked_grant_ids": sorted(
+                set(cast(list[str], current["revoked_grant_ids"]))
+                | set(cast(list[str], payload["revoked_grant_ids"]))
+            ),
+        }
+        previous_identity = identity
+
+    probe = history.get("probe_attested_proposal")
+    if probe is not None:
+        _stage_three_attested(cast(JSONValue, probe), current)
+
+
+def inspect_m2_stage_three(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageThreeInspection:
+    """Apply M2.1 stages one through three without granting authority."""
+
+    structural = inspect_m2_stage_two(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(structural, M2WireRejection):
+        return structural
+    try:
+        value = structural.decode()
+        if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+            anchor = structural.decode_trusted_anchor()
+            if not isinstance(anchor, dict):
+                return M2WireRejection(stage=2, code="input.schema_invalid")
+            _stage_three_attested(value, cast(dict[str, Any], anchor))
+        elif entrypoint == "initialize-anchor":
+            _stage_three_initialize(value)
+        else:
+            _stage_three_history(value)
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _StageThreeError) as error:
+        code = error.code if isinstance(error, _StageThreeError) else "identity.context_untrusted"
+        return M2WireRejection(stage=3, code=code)
+    return ContextBoundM2Input(structural=structural)
 
 
 def inspect_m2_wire(source: bytes | bytearray | memoryview) -> M2WireInspection:

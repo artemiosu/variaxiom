@@ -38,7 +38,10 @@ The repository supports Python 3.13 and 3.14. Python 3.15 remains prerelease as 
 
 ## Why `uv`
 
-`uv` provides a cross-platform lockfile and workspace model. The project will commit `uv.lock` when dependency resolution is performed in a networked development environment. The initial offline-built seed intentionally has no runtime dependencies and can be verified with `PYTHONPATH=src`.
+`uv` provides a cross-platform lockfile and workspace model. Development bootstrap and CI use the
+project-pinned `uv` 0.12.5 and the committed `uv.lock`; CI installs `uv` through a commit-pinned
+GitHub Action rather than an unverified package-install command. The reference runtime itself has
+no Python package dependencies and can still be exercised with `PYTHONPATH=src`.
 
 ## Why WIT and WASM components
 

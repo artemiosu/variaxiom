@@ -36,6 +36,7 @@ planned claim into a normative requirement, and generated context never resolves
 ## Identity, grants, and signatures
 
 - [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md)
+- [`../project/m2.1-runtime-implementation.md`](../project/m2.1-runtime-implementation.md)
 - [`../architecture/adr/0010-ed25519-detached-signatures.md`](../architecture/adr/0010-ed25519-detached-signatures.md)
 - [`../architecture/capability-security.md`](../architecture/capability-security.md)
 - [`../architecture/threat-model.md`](../architecture/threat-model.md)

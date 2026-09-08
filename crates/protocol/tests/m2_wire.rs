@@ -6,7 +6,10 @@ use std::path::{Path, PathBuf};
 use base64::Engine as _;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde::Deserialize;
-use variaxiom_protocol::{MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_wire, parse_json_strict};
+use variaxiom_protocol::{
+    M2Entrypoint, MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_stage_two, inspect_m2_wire,
+    parse_json_strict,
+};
 
 #[derive(Deserialize)]
 struct Manifest {
@@ -23,8 +26,11 @@ struct ManifestEntry {
 #[derive(Deserialize)]
 struct Case {
     case_id: String,
+    entrypoint: String,
     input_base64url: String,
     input_sha256: String,
+    #[serde(default)]
+    trusted_anchor: Option<serde_json::Value>,
     expected: Expected,
 }
 
@@ -51,6 +57,16 @@ fn input(case: &Case) -> Vec<u8> {
     URL_SAFE_NO_PAD
         .decode(&case.input_base64url)
         .expect("fixture input uses base64url")
+}
+
+fn entrypoint(case: &Case) -> M2Entrypoint {
+    match case.entrypoint.as_str() {
+        "verify-attested-proposal" => M2Entrypoint::VerifyAttestedProposal,
+        "replay-historical" => M2Entrypoint::ReplayHistorical,
+        "initialize-anchor" => M2Entrypoint::InitializeAnchor,
+        "advance-anchor-history" => M2Entrypoint::AdvanceAnchorHistory,
+        other => panic!("unexpected fixture entrypoint: {other}"),
+    }
 }
 
 #[test]
@@ -114,4 +130,115 @@ fn canonical_base_and_exact_limit_are_accepted() {
     assert_eq!(exact_input.len(), MAX_M2_WIRE_BYTES);
     let exact_wire = inspect_m2_wire(&exact_input).expect("exact byte limit must pass stage one");
     assert_eq!(exact_wire.digest(), exact.input_sha256);
+}
+
+#[test]
+fn frozen_stage_two_rejections_match() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let stage_two = manifest
+        .cases
+        .iter()
+        .filter(|entry| entry.stage == 2)
+        .collect::<Vec<_>>();
+    assert_eq!(stage_two.len(), 78);
+
+    for entry in stage_two {
+        let case = load_case(
+            &repository
+                .join("fixtures/conformance/v2")
+                .join(&entry.fixture),
+        );
+        let result = inspect_m2_stage_two(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        );
+        let rejection = match result {
+            Err(error) => error,
+            Ok(_) => panic!("{} unexpectedly passed stage two", case.case_id),
+        };
+        assert_eq!(
+            rejection.stage, case.expected.reached_stage,
+            "{}",
+            case.case_id
+        );
+        assert_eq!(
+            Some(rejection.code),
+            case.expected.code.as_deref(),
+            "{}",
+            case.case_id
+        );
+        assert!(!rejection.authorizing);
+    }
+}
+
+#[test]
+fn every_later_stage_case_passes_the_structural_boundary() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let later = manifest
+        .cases
+        .iter()
+        .filter(|entry| entry.stage > 2)
+        .collect::<Vec<_>>();
+    assert_eq!(later.len(), 151);
+    for entry in later {
+        let case = load_case(
+            &repository
+                .join("fixtures/conformance/v2")
+                .join(&entry.fixture),
+        );
+        let result = inspect_m2_stage_two(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .unwrap_or_else(|error| {
+            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+        });
+        assert!(!result.authorizing());
+        assert_eq!(result.entrypoint(), entrypoint(&case));
+    }
+}
+
+#[test]
+fn malformed_nested_shape_fails_closed_and_anchor_is_owned() {
+    let repository = root();
+    let case =
+        load_case(&repository.join("fixtures/conformance/v2/cases/bounded-signed-proposal.json"));
+    let mut value: serde_json::Value = parse_json_strict(&input(&case)).expect("case parses");
+    value["payload"]["promotion_input"]["payload"]["candidate"]["envelope"]["payload"] =
+        serde_json::json!([]);
+    let malformed = canonical_json(&value).expect("mutation canonicalizes");
+    let rejection = inspect_m2_stage_two(
+        &malformed,
+        M2Entrypoint::VerifyAttestedProposal,
+        case.trusted_anchor.as_ref(),
+    )
+    .expect_err("malformed nested payload must fail closed");
+    assert_eq!(rejection.code, "input.schema_invalid");
+
+    let mut caller_anchor = case.trusted_anchor.clone().expect("case has anchor");
+    let accepted = inspect_m2_stage_two(
+        &input(&case),
+        M2Entrypoint::VerifyAttestedProposal,
+        Some(&caller_anchor),
+    )
+    .expect("base case passes stage two");
+    caller_anchor["trust_domain_id"] = serde_json::json!("trust-domain:mutated");
+    assert_eq!(
+        accepted
+            .trusted_anchor()
+            .and_then(|anchor| anchor["trust_domain_id"].as_str()),
+        Some("trust-domain:example")
+    );
 }

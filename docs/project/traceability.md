@@ -9,7 +9,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 |---|---|---|---|---|
 | REQ-CORE-001 | architecture overview §5 | Python promotion gate | `tests/test_promotion.py`, Authority Test | partial |
 | REQ-CORE-002 | architecture overview §4 | module/trust-plane boundaries | Authority Test plus architecture review | partial |
-| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 wire inspector | shared v1 conformance plus M2 stage-one runtime tests | implemented |
+| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one/two inspector | shared v1 conformance plus all 237 M2 cases classified at the stage-two boundary in both runtimes | implemented |
 | REQ-AUTH-001 | constitution v1 | Python and Rust gates | ungranted-authority fixture and tests | implemented |
 | REQ-AUTH-002 | M2.1 spec and grant schema | bootstrap grant maps | v1 tests plus v2 signed base fixture | partial |
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
@@ -26,7 +26,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-LINE-002 | event-sourced lineage ADR | Python hash-chain ledger | tamper and JSONL-framing tests | partial |
 | REQ-ROLL-001 | constitution v1 | Python/Rust gate checks | missing-target tests | partial |
 | REQ-ROLL-002 | roadmap M2 | not implemented | future rollback drill | planned |
-| REQ-OPS-001 | constitution/M2.1 resource limits | candidate cost gate plus disabled M2 stage-one byte/depth boundary | v1 budget, frozen v2 exact-limit/+1 cases, and Python/Rust M2 wire tests | partial |
+| REQ-OPS-001 | constitution/M2.1 resource limits | candidate cost gate plus disabled M2 stage-one/two resource boundaries | v1 budget, frozen v2 exact-limit/+1 cases, and Python/Rust M2 wire/structure tests | partial |
 | REQ-OPS-002 | threat model | not implemented | future pause/revoke recovery tests | planned |
 | REQ-OPS-003 | security/non-goals | deny-by-default design | future sandbox and operator tests | partial |
 | REQ-OBS-001 | observatory architecture | not implemented | future OpenTelemetry contract tests | planned |

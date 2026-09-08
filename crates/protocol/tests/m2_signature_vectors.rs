@@ -119,9 +119,13 @@ fn classify(vector: &Vector) -> Result<(), &'static str> {
             decoded.len() == 32 && URL_SAFE_NO_PAD.encode(decoded) == vector.public_key_base64url
         });
     if let Some(public) = public.as_ref() {
+        let digest = Sha256::digest([b"variaxiom-key/v1\0Ed25519\0".as_slice(), public].concat());
         let computed_key_id = format!(
-            "key:sha256:{:x}",
-            Sha256::digest([b"variaxiom-key/v1\0Ed25519\0".as_slice(), public].concat())
+            "key:sha256:{}",
+            digest
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
         );
         if computed_key_id != vector.key_id {
             return Err("signature.key_id_mismatch");

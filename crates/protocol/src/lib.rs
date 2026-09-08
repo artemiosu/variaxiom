@@ -140,7 +140,10 @@ pub fn canonical_json<T: CanonicalSource>(value: &T) -> Result<Vec<u8>, Canonica
 /// Return a lowercase SHA-256 digest over canonical JSON bytes.
 pub fn canonical_digest<T: CanonicalSource>(value: &T) -> Result<String, CanonicalError> {
     let bytes = canonical_json(value)?;
-    Ok(format!("{:x}", Sha256::digest(bytes)))
+    Ok(Sha256::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 struct StrictValue(Value);

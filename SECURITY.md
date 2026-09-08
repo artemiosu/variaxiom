@@ -10,7 +10,10 @@ The project is pre-alpha. Only the latest `main` branch is currently maintained.
 
 Do not open a public issue for vulnerabilities that could expose secrets, escape a sandbox, corrupt lineage, bypass promotion, reveal hidden evaluators, or escalate authority.
 
-Until GitHub private vulnerability reporting is enabled, contact the repository owner through the verified contact channel on the GitHub profile and use the subject `Variaxiom security report`. Include:
+Use GitHub's [private vulnerability reporting](https://github.com/artemiosu/variaxiom/security/advisories/new).
+Do not include vulnerability details in a public issue, discussion, or pull request. If GitHub's
+private reporting service is unavailable, contact the repository owner through the verified
+contact channel on the GitHub profile and use the subject `Variaxiom security report`. Include:
 
 - affected commit/version;
 - threat model and impact;

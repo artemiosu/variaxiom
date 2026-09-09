@@ -9,14 +9,14 @@ acceptance evidence to pass in the required environments. Documentation alone is
 |---|---|---|---|---|
 | REQ-CORE-001 | architecture overview §5 | Python promotion gate | `tests/test_promotion.py`, Authority Test | partial |
 | REQ-CORE-002 | architecture overview §4 | module/trust-plane boundaries | Authority Test plus architecture review | partial |
-| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one/two/three inspector | shared v1 conformance plus all 237 M2 cases classified through the trusted-context boundary in both runtimes | implemented |
+| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one through stage-five inspector | shared v1 conformance plus all 237 M2 cases classified through the identity boundary in both runtimes | implemented |
 | REQ-AUTH-001 | constitution v1 | Python and Rust gates | ungranted-authority fixture and tests | implemented |
 | REQ-AUTH-002 | M2.1 spec and grant schema | bootstrap grant maps | v1 tests plus v2 signed base fixture | partial |
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
 | REQ-TRUST-001 | constitution and M2.1 identity context | proposer/verifier checks | v1 self-check plus v2 adversarial manifest | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
-| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | runtime not implemented | accepted 252-case identity, alias, role, genesis, transition, non-authorizing result, replay-anchor binding, revocation corpus, and result-contract council report | partial |
-| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | test-only cross-runtime verifier; runtime gate disabled | golden message/signature, accepted 252-case corpus, 19 Wycheproof vectors, direct selector cases, and result-contract council report | partial |
+| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | disabled runtime identity graph, role, ownership, and revocation boundary in Python/Rust | accepted 252-case identity, alias, role, genesis, transition, non-authorizing result, replay-anchor binding, revocation corpus, stage-five differential tests, and result-contract council report | partial |
+| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | disabled runtime target/key digest boundary; signature equations remain test-only | golden message/signature, accepted 252-case corpus, 19 Wycheproof vectors, stage-four and direct selector cases, and result-contract council report | partial |
 | REQ-EVID-001 | M1.1 conformance spec | Python/Rust gates | artifact-mismatch fixture | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |

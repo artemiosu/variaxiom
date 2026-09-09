@@ -51,12 +51,12 @@ This is not a human security audit and does not enable an authorizing runtime.
 Disabled runtime implementation is tracked in [issue #11](https://github.com/artemiosu/variaxiom/issues/11)
 and follows the bounded [implementation plan](m2.1-runtime-implementation.md). The frozen corpus is
 an input to that work and cannot be silently changed by the implementation PR. Its first draft
-now implements the non-authorizing stage-one canonical-wire boundary, stage-two structural
-validation, and stage-three trusted-context binding in both Python and Rust. Both implementations
-match all 23 frozen stage-three rejections and allow all 128 later-stage cases to proceed. The
-context boundary covers exact external anchor digests, domain, sequence, trusted time, cumulative
-revocations, and ordered history links. Signature equations, actor/key/role checks, grants, policy
-decisions, and returned anchor transitions remain unimplemented.
+now implements non-authorizing stages one through five in both Python and Rust: canonical wire,
+structural validation, trusted-context binding, target/key digest recomputation, and anchored
+identity/role/revocation checks. Both implementations match all 11 frozen stage-four and 23
+stage-five rejections and allow all 94 later-stage cases to proceed. Each passed boundary has a
+distinct owned type with `authorizing: false`. Signature equations, grant semantics, policy
+decisions, selector verification, and returned anchor transitions remain unimplemented.
 
 ## Next
 

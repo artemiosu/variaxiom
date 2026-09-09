@@ -9,8 +9,12 @@ from variaxiom.canonical import canonical_json, strict_json_loads
 from variaxiom.m2_verifier import (
     CanonicalM2Wire,
     ContextBoundM2Input,
+    DigestBoundM2Input,
+    IdentityBoundM2Input,
     M2WireRejection,
     StructurallyValidM2Input,
+    inspect_m2_stage_five,
+    inspect_m2_stage_four,
     inspect_m2_stage_three,
     inspect_m2_stage_two,
     inspect_m2_wire,
@@ -159,6 +163,64 @@ class M2WireInspectionTests(unittest.TestCase):
                 accepted = cast(ContextBoundM2Input, result)
                 self.assertFalse(accepted.authorizing)
                 self.assertEqual(accepted.entrypoint, case["entrypoint"])
+
+    def test_all_frozen_stage_four_rejections_match(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 4]
+        self.assertEqual(len(cases), 11)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_four(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, M2WireRejection)
+                rejection = cast(M2WireRejection, result)
+                self.assertEqual(rejection.stage, 4)
+                self.assertEqual(rejection.code, case["expected"]["code"])
+                self.assertFalse(rejection.authorizing)
+
+    def test_every_later_stage_case_passes_the_digest_boundary(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 4]
+        self.assertEqual(len(cases), 117)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_four(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, DigestBoundM2Input)
+                self.assertFalse(cast(DigestBoundM2Input, result).authorizing)
+
+    def test_all_frozen_stage_five_rejections_match(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 5]
+        self.assertEqual(len(cases), 23)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_five(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, M2WireRejection)
+                rejection = cast(M2WireRejection, result)
+                self.assertEqual(rejection.stage, 5)
+                self.assertEqual(rejection.code, case["expected"]["code"])
+                self.assertFalse(rejection.authorizing)
+
+    def test_every_later_stage_case_passes_the_identity_boundary(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 5]
+        self.assertEqual(len(cases), 94)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_five(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, IdentityBoundM2Input)
+                self.assertFalse(cast(IdentityBoundM2Input, result).authorizing)
 
 
 if __name__ == "__main__":

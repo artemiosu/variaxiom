@@ -6,6 +6,8 @@ ambient trust, policy, activation, or lineage-append capability.
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -100,6 +102,48 @@ class ContextBoundM2Input:
 
 M2StageThreeInspection = ContextBoundM2Input | M2WireRejection
 
+
+@dataclass(frozen=True, slots=True)
+class DigestBoundM2Input:
+    """Owned input that passed stages one through four, but grants no authority."""
+
+    context: ContextBoundM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.context.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.context.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.context.decode_trusted_anchor()
+
+
+M2StageFourInspection = DigestBoundM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class IdentityBoundM2Input:
+    """Owned input that passed stages one through five, but grants no authority."""
+
+    digest_bound: DigestBoundM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.digest_bound.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.digest_bound.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.digest_bound.decode_trusted_anchor()
+
+
+M2StageFiveInspection = IdentityBoundM2Input | M2WireRejection
+
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _PRINCIPAL_ID = re.compile(r"principal:[a-z0-9._:/-]+\Z")
 _TRUST_DOMAIN_ID = re.compile(r"trust-domain:[a-z0-9._:/-]+\Z")
@@ -125,6 +169,16 @@ class _StageThreeError(Exception):
 
 def _reject_stage_three(code: str) -> NoReturn:
     raise _StageThreeError(code)
+
+
+class _LaterStageError(Exception):
+    def __init__(self, stage: int, code: str) -> None:
+        self.stage = stage
+        self.code = code
+
+
+def _reject_later(stage: int, code: str) -> NoReturn:
+    raise _LaterStageError(stage, code)
 
 
 def _object(value: Any, fields: set[str], required: set[str] | None = None) -> dict[str, Any]:
@@ -1043,6 +1097,295 @@ def inspect_m2_stage_three(
         code = error.code if isinstance(error, _StageThreeError) else "identity.context_untrusted"
         return M2WireRejection(stage=3, code=code)
     return ContextBoundM2Input(structural=structural)
+
+
+_SignaturePair = tuple[dict[str, Any], str, str]
+_ROLE_FOR_KIND: Final = {
+    "candidate": "candidate-proposer",
+    "evidence": "evidence-verifier",
+    "authority-grant": "authority-issuer",
+    "promotion-decision": "promotion-selector",
+}
+
+
+def _signature_pairs(value: JSONValue, *, include_selector: bool = False) -> list[_SignaturePair]:
+    root = cast(dict[str, Any], value)
+    proposal = cast(dict[str, Any], root["payload"])
+    body = cast(dict[str, Any], proposal["promotion_input"])["payload"]
+    candidate = cast(dict[str, Any], body["candidate"])
+    pairs: list[_SignaturePair] = [
+        (candidate, "candidate", candidate["envelope"]["payload"]["proposer"])
+    ]
+    pairs.extend(
+        (item, "evidence", item["envelope"]["payload"]["verifier"])
+        for item in cast(list[dict[str, Any]], body["evidence"])
+    )
+    grant = body.get("authority_grant")
+    if grant is not None:
+        grant_pair = cast(dict[str, Any], grant)
+        pairs.append(
+            (
+                grant_pair,
+                "authority-grant",
+                grant_pair["envelope"]["payload"]["issuer_principal_id"],
+            )
+        )
+    if include_selector:
+        selector = cast(dict[str, Any], proposal["selector_signature"])
+        pairs.append(
+            (
+                {"envelope": proposal["decision"], "signature": selector},
+                "promotion-decision",
+                selector["payload"]["principal_id"],
+            )
+        )
+    return pairs
+
+
+def _identity_maps(
+    identity: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, tuple[str, dict[str, Any]]], bool]:
+    payload = cast(dict[str, Any], identity["payload"])
+    principals: dict[str, dict[str, Any]] = {}
+    keys: dict[str, tuple[str, dict[str, Any]]] = {}
+    public_keys: set[str] = set()
+    ambiguous = False
+    for principal in cast(list[dict[str, Any]], payload["principals"]):
+        principal_id = cast(str, principal["principal_id"])
+        ambiguous |= principal_id in principals
+        principals[principal_id] = principal
+        for key in cast(list[dict[str, Any]], principal["keys"]):
+            key_id = cast(str, key["key_id"])
+            public = cast(str, key["public_key_base64url"])
+            ambiguous |= key_id in keys or public in public_keys
+            keys[key_id] = (principal_id, key)
+            public_keys.add(public)
+    return principals, keys, ambiguous
+
+
+def _public_bytes(value: str) -> bytes | None:
+    try:
+        raw = base64.b64decode(
+            value + "=" * ((4 - len(value) % 4) % 4), altchars=b"-_", validate=True
+        )
+    except (ValueError, TypeError):
+        return None
+    if len(raw) != 32 or base64.urlsafe_b64encode(raw).decode().rstrip("=") != value:
+        return None
+    return raw
+
+
+def _computed_key_id(binding: dict[str, Any]) -> str | None:
+    public = _public_bytes(cast(str, binding["public_key_base64url"]))
+    if public is None:
+        return None
+    return "key:sha256:" + hashlib.sha256(b"variaxiom-key/v1\0Ed25519\0" + public).hexdigest()
+
+
+def _stage_four_pairs(
+    pairs: list[_SignaturePair], keys: dict[str, tuple[str, dict[str, Any]]]
+) -> None:
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        if signature["signed_digest"] != _canonical_digest(cast(JSONValue, pair["envelope"])):
+            _reject_later(4, "signature.digest_mismatch")
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        binding = keys.get(cast(str, signature["key_id"]))
+        if binding is not None:
+            expected = _computed_key_id(binding[1])
+            if expected is not None and binding[1]["key_id"] != expected:
+                _reject_later(4, "signature.key_id_mismatch")
+    for pair, kind, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        if signature["signed_kind"] != kind:
+            _reject_later(4, "signature.kind_mismatch")
+
+
+def _stage_four_all_bindings(identity: dict[str, Any]) -> None:
+    payload = cast(dict[str, Any], identity["payload"])
+    for principal in cast(list[dict[str, Any]], payload["principals"]):
+        for binding in cast(list[dict[str, Any]], principal["keys"]):
+            expected = _computed_key_id(binding)
+            if expected is not None and binding["key_id"] != expected:
+                _reject_later(4, "signature.key_id_mismatch")
+
+
+def _stage_four_attested(value: JSONValue) -> None:
+    identity, _ = _attested_contexts(value)
+    _, keys, _ = _identity_maps(identity)
+    _stage_four_pairs(_signature_pairs(value), keys)
+
+
+def _stage_four(value: JSONValue, entrypoint: M2Entrypoint) -> None:
+    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+        _stage_four_attested(value)
+        return
+    request = cast(dict[str, Any], value)
+    if entrypoint == "initialize-anchor":
+        _stage_four_all_bindings(cast(dict[str, Any], request["initial_identity_context"]))
+        return
+    identities = [cast(dict[str, Any], request["initial_identity_context"])]
+    identities.extend(
+        cast(dict[str, Any], step["next_identity_context"])
+        for step in cast(list[dict[str, Any]], request["steps"])
+    )
+    for identity in identities:
+        _stage_four_all_bindings(identity)
+    probe = request.get("probe_attested_proposal")
+    if probe is not None:
+        _stage_four_attested(cast(JSONValue, probe))
+
+
+def _stage_five_attested(value: JSONValue, anchor: dict[str, Any]) -> None:
+    identity, _ = _attested_contexts(value)
+    principals, keys, ambiguous = _identity_maps(identity)
+    pairs = _signature_pairs(value)
+    for pair, _, actor in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        if signature["principal_id"] != actor:
+            _reject_later(5, "signature.principal_mismatch")
+    if ambiguous:
+        _reject_later(5, "identity.key_ambiguous")
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        if signature["principal_id"] not in principals:
+            _reject_later(5, "identity.principal_unknown")
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        binding = keys.get(cast(str, signature["key_id"]))
+        if binding is None or binding[0] != signature["principal_id"]:
+            _reject_later(5, "identity.key_unbound")
+    revoked_keys = set(cast(list[str], anchor["revoked_key_ids"]))
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        if signature["key_id"] in revoked_keys:
+            _reject_later(5, "signature.key_revoked")
+    body = cast(dict[str, Any], cast(dict[str, Any], value)["payload"])["promotion_input"][
+        "payload"
+    ]
+    grant = body.get("authority_grant")
+    if grant is not None:
+        grant_pair = cast(dict[str, Any], grant)
+        grant_id = "grant:sha256:" + _canonical_digest(cast(JSONValue, grant_pair["envelope"]))
+        if grant_id in cast(list[str], anchor["revoked_grant_ids"]):
+            _reject_later(5, "grant.revoked")
+    for pair, kind, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        roles = cast(list[str], principals[cast(str, signature["principal_id"])]["roles"])
+        if _ROLE_FOR_KIND[kind] not in roles:
+            _reject_later(5, "identity.role_missing")
+    evidence_actors = [actor for _, kind, actor in pairs if kind == "evidence"]
+    other_actors = [actor for _, kind, actor in pairs if kind != "evidence"]
+    if len(other_actors) != len(set(other_actors)) or set(evidence_actors) & set(other_actors):
+        _reject_later(5, "identity.role_conflict")
+    constitution = cast(dict[str, Any], body["constitution"])["envelope"]["payload"]
+    evidence_principals = set(evidence_actors)
+    if (
+        evidence_principals
+        and len(evidence_principals) < constitution["minimum_independent_verifiers"]
+    ):
+        _reject_later(5, "identity.not_independent")
+
+
+def _advance_anchor_snapshot(
+    anchor: dict[str, Any], identity: dict[str, Any], authorization: dict[str, Any], now: int
+) -> dict[str, Any]:
+    payload = cast(dict[str, Any], identity["payload"])
+    registry = dict(cast(dict[str, str], anchor["key_ownership_registry"]))
+    for key_id, principal_id in _identity_key_owners(identity).items():
+        registry.setdefault(key_id, principal_id)
+    return {
+        "trust_domain_id": anchor["trust_domain_id"],
+        "current_identity_context_digest": _canonical_digest(cast(JSONValue, identity)),
+        "current_authorization_context_digest": _canonical_digest(cast(JSONValue, authorization)),
+        "current_snapshot_sequence": payload["snapshot_sequence"],
+        "trusted_now_unix_s": now,
+        "key_ownership_registry": dict(sorted(registry.items())),
+        "revoked_key_ids": sorted(
+            set(cast(list[str], anchor["revoked_key_ids"]))
+            | set(cast(list[str], payload["revoked_key_ids"]))
+        ),
+        "revoked_grant_ids": sorted(
+            set(cast(list[str], anchor["revoked_grant_ids"]))
+            | set(cast(list[str], payload["revoked_grant_ids"]))
+        ),
+    }
+
+
+def _stage_five_context(identity: dict[str, Any]) -> dict[str, tuple[str, dict[str, Any]]]:
+    _, keys, ambiguous = _identity_maps(identity)
+    if ambiguous:
+        _reject_later(5, "identity.key_ambiguous")
+    return keys
+
+
+def _stage_five(value: JSONValue, entrypoint: M2Entrypoint, anchor: JSONValue | None) -> None:
+    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+        _stage_five_attested(value, cast(dict[str, Any], anchor))
+        return
+    request = cast(dict[str, Any], value)
+    if entrypoint == "initialize-anchor":
+        _stage_five_context(cast(dict[str, Any], request["initial_identity_context"]))
+        return
+    current = cast(dict[str, Any], request["initial_anchor"])
+    _stage_five_context(cast(dict[str, Any], request["initial_identity_context"]))
+    for step in cast(list[dict[str, Any]], request["steps"]):
+        identity = cast(dict[str, Any], step["next_identity_context"])
+        authorization = cast(dict[str, Any], step["next_authorization_context"])
+        keys = _stage_five_context(identity)
+        registry = cast(dict[str, str], current["key_ownership_registry"])
+        for key_id, (principal_id, _) in keys.items():
+            prior_owner = registry.get(key_id)
+            if prior_owner is not None and prior_owner != principal_id:
+                _reject_later(5, "identity.key_ambiguous")
+            if key_id in cast(list[str], current["revoked_key_ids"]):
+                _reject_later(5, "signature.key_revoked")
+        current = _advance_anchor_snapshot(
+            current, identity, authorization, cast(int, step["trusted_now_unix_s"])
+        )
+    probe = request.get("probe_attested_proposal")
+    if probe is not None:
+        _stage_five_attested(cast(JSONValue, probe), current)
+
+
+def inspect_m2_stage_four(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageFourInspection:
+    """Apply M2.1 stages one through four without granting authority."""
+
+    context = inspect_m2_stage_three(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(context, M2WireRejection):
+        return context
+    try:
+        _stage_four(context.decode(), entrypoint)
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = error.code if isinstance(error, _LaterStageError) else "signature.digest_mismatch"
+        return M2WireRejection(stage=4, code=code)
+    return DigestBoundM2Input(context=context)
+
+
+def inspect_m2_stage_five(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageFiveInspection:
+    """Apply M2.1 stages one through five without cryptography or authority."""
+
+    digest_bound = inspect_m2_stage_four(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(digest_bound, M2WireRejection):
+        return digest_bound
+    try:
+        _stage_five(digest_bound.decode(), entrypoint, digest_bound.decode_trusted_anchor())
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = error.code if isinstance(error, _LaterStageError) else "identity.context_untrusted"
+        stage = error.stage if isinstance(error, _LaterStageError) else 5
+        return M2WireRejection(stage=stage, code=code)
+    return IdentityBoundM2Input(digest_bound=digest_bound)
 
 
 def inspect_m2_wire(source: bytes | bytearray | memoryview) -> M2WireInspection:

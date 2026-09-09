@@ -7,8 +7,8 @@ use base64::Engine as _;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde::Deserialize;
 use variaxiom_protocol::{
-    M2Entrypoint, MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_stage_three, inspect_m2_stage_two,
-    inspect_m2_wire, parse_json_strict,
+    M2Entrypoint, MAX_M2_WIRE_BYTES, canonical_json, inspect_m2_stage_five, inspect_m2_stage_four,
+    inspect_m2_stage_three, inspect_m2_stage_two, inspect_m2_wire, parse_json_strict,
 };
 
 #[derive(Deserialize)]
@@ -315,5 +315,151 @@ fn every_later_stage_case_passes_the_context_boundary() {
         });
         assert!(!result.authorizing());
         assert_eq!(result.entrypoint(), entrypoint(&case));
+    }
+}
+
+#[test]
+fn frozen_stage_four_rejections_match() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let cases = manifest
+        .cases
+        .iter()
+        .map(|entry| {
+            load_case(
+                &repository
+                    .join("fixtures/conformance/v2")
+                    .join(&entry.fixture),
+            )
+        })
+        .filter(|case| case.expected.reached_stage == 4)
+        .collect::<Vec<_>>();
+    assert_eq!(cases.len(), 11);
+    for case in cases {
+        let rejection = inspect_m2_stage_four(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .expect_err("case must fail stage four");
+        assert_eq!(rejection.stage, 4, "{}", case.case_id);
+        assert_eq!(
+            Some(rejection.code),
+            case.expected.code.as_deref(),
+            "{}",
+            case.case_id
+        );
+        assert!(!rejection.authorizing);
+    }
+}
+
+#[test]
+fn every_later_stage_case_passes_the_digest_boundary() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let cases = manifest
+        .cases
+        .iter()
+        .map(|entry| {
+            load_case(
+                &repository
+                    .join("fixtures/conformance/v2")
+                    .join(&entry.fixture),
+            )
+        })
+        .filter(|case| case.expected.reached_stage > 4)
+        .collect::<Vec<_>>();
+    assert_eq!(cases.len(), 117);
+    for case in cases {
+        let result = inspect_m2_stage_four(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .unwrap_or_else(|error| {
+            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+        });
+        assert!(!result.authorizing());
+    }
+}
+
+#[test]
+fn frozen_stage_five_rejections_match() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let cases = manifest
+        .cases
+        .iter()
+        .map(|entry| {
+            load_case(
+                &repository
+                    .join("fixtures/conformance/v2")
+                    .join(&entry.fixture),
+            )
+        })
+        .filter(|case| case.expected.reached_stage == 5)
+        .collect::<Vec<_>>();
+    assert_eq!(cases.len(), 23);
+    for case in cases {
+        let rejection = inspect_m2_stage_five(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .expect_err("case must fail stage five");
+        assert_eq!(rejection.stage, 5, "{}", case.case_id);
+        assert_eq!(
+            Some(rejection.code),
+            case.expected.code.as_deref(),
+            "{}",
+            case.case_id
+        );
+        assert!(!rejection.authorizing);
+    }
+}
+
+#[test]
+fn every_later_stage_case_passes_the_identity_boundary() {
+    let repository = root();
+    let manifest: Manifest = serde_json::from_slice(
+        &fs::read(repository.join("fixtures/conformance/v2/manifest.json"))
+            .expect("manifest is readable"),
+    )
+    .expect("manifest has expected shape");
+    let cases = manifest
+        .cases
+        .iter()
+        .map(|entry| {
+            load_case(
+                &repository
+                    .join("fixtures/conformance/v2")
+                    .join(&entry.fixture),
+            )
+        })
+        .filter(|case| case.expected.reached_stage > 5)
+        .collect::<Vec<_>>();
+    assert_eq!(cases.len(), 94);
+    for case in cases {
+        let result = inspect_m2_stage_five(
+            &input(&case),
+            entrypoint(&case),
+            case.trusted_anchor.as_ref(),
+        )
+        .unwrap_or_else(|error| {
+            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+        });
+        assert!(!result.authorizing());
     }
 }

@@ -11,9 +11,26 @@ import hashlib
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Final, Literal, NoReturn, cast
+from importlib import import_module
+from typing import Any, Final, Literal, NoReturn, Protocol, cast
 
 from .canonical import JSONValue, canonical_json, sha256_bytes, strict_json_loads
+
+
+class _SodiumBindings(Protocol):
+    def crypto_core_ed25519_is_valid_point(self, point: bytes) -> bool: ...
+
+
+class _VerifyKey(Protocol):
+    def __init__(self, key: bytes) -> None: ...
+
+    def verify(self, message: bytes, signature: bytes) -> bytes: ...
+
+
+# PyNaCl does not publish typing metadata. Keep the untyped boundary here and
+# expose only the two maintained verification operations used by this module.
+bindings = cast(_SodiumBindings, import_module("nacl.bindings"))
+VerifyKey = cast(type[_VerifyKey], import_module("nacl.signing").VerifyKey)
 
 MAX_M2_WIRE_BYTES: Final = 1_048_576
 
@@ -143,6 +160,33 @@ class IdentityBoundM2Input:
 
 
 M2StageFiveInspection = IdentityBoundM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class SignatureVerifiedM2Input:
+    """Owned input that passed stages one through six without authorizing effects."""
+
+    identity_bound: IdentityBoundM2Input
+    resulting_anchor_data: bytes | None = None
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.identity_bound.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.identity_bound.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.identity_bound.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        if self.resulting_anchor_data is None:
+            return None
+        return strict_json_loads(self.resulting_anchor_data)
+
+
+M2StageSixInspection = SignatureVerifiedM2Input | M2WireRejection
 
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _PRINCIPAL_ID = re.compile(r"principal:[a-z0-9._:/-]+\Z")
@@ -1386,6 +1430,169 @@ def inspect_m2_stage_five(
         stage = error.stage if isinstance(error, _LaterStageError) else 5
         return M2WireRejection(stage=stage, code=code)
     return IdentityBoundM2Input(digest_bound=digest_bound)
+
+
+_ED25519_L: Final = 2**252 + 27742317777372353535851937790883648493
+
+
+def _decode_unpadded(value: str, length: int) -> bytes:
+    try:
+        raw = base64.b64decode(
+            value + "=" * ((4 - len(value) % 4) % 4), altchars=b"-_", validate=True
+        )
+    except (TypeError, ValueError) as error:
+        raise _LaterStageError(6, "signature.encoding_invalid") from error
+    if len(raw) != length or base64.urlsafe_b64encode(raw).decode().rstrip("=") != value:
+        _reject_later(6, "signature.encoding_invalid")
+    return raw
+
+
+def _signing_message(signature: dict[str, Any]) -> bytes:
+    fields = (
+        "variaxiom-signature/v1",
+        signature["algorithm"],
+        signature["trust_domain_id"],
+        signature["principal_id"],
+        signature["key_id"],
+        signature["signed_kind"],
+        signature["signed_digest"],
+    )
+    try:
+        return ("\n".join(cast(tuple[str, ...], fields)) + "\n").encode("ascii")
+    except UnicodeEncodeError as error:
+        raise _LaterStageError(6, "signature.encoding_invalid") from error
+
+
+def _stage_six_pairs(
+    pairs: list[_SignaturePair], keys: dict[str, tuple[str, dict[str, Any]]]
+) -> None:
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        binding = keys[cast(str, signature["key_id"])][1]
+        if signature["algorithm"] != "Ed25519" or binding["algorithm"] != "Ed25519":
+            _reject_later(6, "signature.algorithm_unsupported")
+
+    prepared: list[tuple[bytes, bytes, bytes]] = []
+    for pair, _, _ in pairs:
+        signature = cast(dict[str, Any], pair["signature"])["payload"]
+        binding = keys[cast(str, signature["key_id"])][1]
+        public = _decode_unpadded(cast(str, binding["public_key_base64url"]), 32)
+        raw_signature = _decode_unpadded(cast(str, signature["signature_base64url"]), 64)
+        r_value = raw_signature[:32]
+        s_value = raw_signature[32:]
+        if (
+            not bindings.crypto_core_ed25519_is_valid_point(public)
+            or not bindings.crypto_core_ed25519_is_valid_point(r_value)
+            or int.from_bytes(s_value, "little") >= _ED25519_L
+        ):
+            _reject_later(6, "signature.encoding_invalid")
+        prepared.append((public, _signing_message(signature), raw_signature))
+
+    for public, message, raw_signature in prepared:
+        try:
+            VerifyKey(public).verify(message, raw_signature)
+        except Exception as error:
+            raise _LaterStageError(6, "signature.invalid") from error
+
+
+def _identity_bindings(identity: dict[str, Any]) -> list[dict[str, Any]]:
+    payload = cast(dict[str, Any], identity["payload"])
+    return [
+        key
+        for principal in cast(list[dict[str, Any]], payload["principals"])
+        for key in cast(list[dict[str, Any]], principal["keys"])
+    ]
+
+
+def _stage_six_contexts(identities: list[dict[str, Any]]) -> None:
+    bindings_to_check = [
+        binding for identity in identities for binding in _identity_bindings(identity)
+    ]
+    for binding in bindings_to_check:
+        if binding["algorithm"] != "Ed25519":
+            _reject_later(6, "signature.algorithm_unsupported")
+    for binding in bindings_to_check:
+        public = _decode_unpadded(cast(str, binding["public_key_base64url"]), 32)
+        if not bindings.crypto_core_ed25519_is_valid_point(public):
+            _reject_later(6, "signature.encoding_invalid")
+
+
+def _stage_six_attested(value: JSONValue) -> None:
+    identity, _ = _attested_contexts(value)
+    _, keys, _ = _identity_maps(identity)
+    _stage_six_pairs(_signature_pairs(value), keys)
+
+
+def _initial_anchor_snapshot(request: dict[str, Any]) -> dict[str, Any]:
+    identity = cast(dict[str, Any], request["initial_identity_context"])
+    authorization = cast(dict[str, Any], request["initial_authorization_context"])
+    payload = cast(dict[str, Any], identity["payload"])
+    return {
+        "trust_domain_id": payload["trust_domain_id"],
+        "current_identity_context_digest": _canonical_digest(cast(JSONValue, identity)),
+        "current_authorization_context_digest": _canonical_digest(cast(JSONValue, authorization)),
+        "current_snapshot_sequence": payload["snapshot_sequence"],
+        "trusted_now_unix_s": request["trusted_now_unix_s"],
+        "key_ownership_registry": dict(sorted(_identity_key_owners(identity).items())),
+        "revoked_key_ids": list(cast(list[str], payload["revoked_key_ids"])),
+        "revoked_grant_ids": list(cast(list[str], payload["revoked_grant_ids"])),
+    }
+
+
+def _stage_six(value: JSONValue, entrypoint: M2Entrypoint) -> dict[str, Any] | None:
+    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+        _stage_six_attested(value)
+        return None
+    request = cast(dict[str, Any], value)
+    if entrypoint == "initialize-anchor":
+        identity = cast(dict[str, Any], request["initial_identity_context"])
+        _stage_six_contexts([identity])
+        return _initial_anchor_snapshot(request)
+
+    identities = [cast(dict[str, Any], request["initial_identity_context"])]
+    identities.extend(
+        cast(dict[str, Any], step["next_identity_context"])
+        for step in cast(list[dict[str, Any]], request["steps"])
+    )
+    _stage_six_contexts(identities)
+    current = cast(dict[str, Any], request["initial_anchor"])
+    for step in cast(list[dict[str, Any]], request["steps"]):
+        current = _advance_anchor_snapshot(
+            current,
+            cast(dict[str, Any], step["next_identity_context"]),
+            cast(dict[str, Any], step["next_authorization_context"]),
+            cast(int, step["trusted_now_unix_s"]),
+        )
+    probe = request.get("probe_attested_proposal")
+    if probe is not None:
+        _stage_six_attested(cast(JSONValue, probe))
+    return current
+
+
+def inspect_m2_stage_six(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageSixInspection:
+    """Apply M2.1 stages one through six without signing or authority."""
+
+    identity_bound = inspect_m2_stage_five(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(identity_bound, M2WireRejection):
+        return identity_bound
+    try:
+        resulting_anchor = _stage_six(identity_bound.decode(), entrypoint)
+        anchor_data = (
+            canonical_json(cast(JSONValue, resulting_anchor))
+            if resulting_anchor is not None
+            else None
+        )
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = error.code if isinstance(error, _LaterStageError) else "signature.encoding_invalid"
+        return M2WireRejection(stage=6, code=code)
+    return SignatureVerifiedM2Input(
+        identity_bound=identity_bound, resulting_anchor_data=anchor_data
+    )
 
 
 def inspect_m2_wire(source: bytes | bytearray | memoryview) -> M2WireInspection:

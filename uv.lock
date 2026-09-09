@@ -469,11 +469,13 @@ wheels = [
 name = "variaxiom-lab"
 version = "0.1.0a0"
 source = { editable = "." }
+dependencies = [
+    { name = "pynacl" },
+]
 
 [package.optional-dependencies]
 dev = [
     { name = "jsonschema", extra = ["format"] },
-    { name = "pynacl" },
     { name = "pyright" },
     { name = "pyyaml" },
     { name = "ruff" },
@@ -482,7 +484,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "jsonschema", extras = ["format"], marker = "extra == 'dev'", specifier = ">=4.25,<5" },
-    { name = "pynacl", marker = "extra == 'dev'", specifier = ">=1.6,<2" },
+    { name = "pynacl", specifier = ">=1.6,<2" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400,<2" },
     { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.2,<7" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12,<1" },

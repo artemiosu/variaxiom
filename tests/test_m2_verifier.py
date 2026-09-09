@@ -12,9 +12,11 @@ from variaxiom.m2_verifier import (
     DigestBoundM2Input,
     IdentityBoundM2Input,
     M2WireRejection,
+    SignatureVerifiedM2Input,
     StructurallyValidM2Input,
     inspect_m2_stage_five,
     inspect_m2_stage_four,
+    inspect_m2_stage_six,
     inspect_m2_stage_three,
     inspect_m2_stage_two,
     inspect_m2_wire,
@@ -221,6 +223,60 @@ class M2WireInspectionTests(unittest.TestCase):
                 )
                 self.assertIsInstance(result, IdentityBoundM2Input)
                 self.assertFalse(cast(IdentityBoundM2Input, result).authorizing)
+
+    def test_all_frozen_stage_six_rejections_match(self) -> None:
+        cases = [
+            case
+            for case in self.cases()
+            if case["expected"]["reached_stage"] == 6 and case["expected"]["code"] is not None
+        ]
+        self.assertEqual(len(cases), 25)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_six(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, M2WireRejection)
+                rejection = cast(M2WireRejection, result)
+                self.assertEqual(rejection.stage, 6)
+                self.assertEqual(rejection.code, case["expected"]["code"])
+                self.assertFalse(rejection.authorizing)
+
+    def test_successful_anchor_operations_return_the_exact_frozen_anchor(self) -> None:
+        cases = [
+            case
+            for case in self.cases()
+            if case["expected"]["reached_stage"] == 6 and case["expected"]["code"] is None
+        ]
+        self.assertEqual(len(cases), 7)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_six(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, SignatureVerifiedM2Input)
+                accepted = cast(SignatureVerifiedM2Input, result)
+                self.assertFalse(accepted.authorizing)
+                self.assertEqual(
+                    accepted.decode_resulting_anchor(), case["expected"]["expected_anchor"]
+                )
+
+    def test_every_later_stage_case_passes_the_signature_boundary(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 6]
+        self.assertEqual(len(cases), 62)
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_six(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                self.assertIsInstance(result, SignatureVerifiedM2Input)
+                self.assertFalse(cast(SignatureVerifiedM2Input, result).authorizing)
 
 
 if __name__ == "__main__":

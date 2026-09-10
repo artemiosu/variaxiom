@@ -1,12 +1,17 @@
 //! Versioned protocol types and canonical serialization shared by the trusted kernel.
 
 mod m2_stage_four_five;
+mod m2_stage_seven_nine;
 mod m2_stage_six;
 mod m2_stage_three;
 mod m2_stage_two;
 
 pub use m2_stage_four_five::{
     DigestBoundM2Input, IdentityBoundM2Input, inspect_m2_stage_five, inspect_m2_stage_four,
+};
+pub use m2_stage_seven_nine::{
+    EvidenceBoundM2Input, GrantBoundM2Input, PolicyContextBoundM2Input, inspect_m2_stage_eight,
+    inspect_m2_stage_nine, inspect_m2_stage_seven,
 };
 pub use m2_stage_six::{SignatureVerifiedM2Input, inspect_m2_stage_six};
 pub use m2_stage_three::{ContextBoundM2Input, inspect_m2_stage_three};

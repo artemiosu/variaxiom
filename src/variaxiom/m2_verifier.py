@@ -1,7 +1,8 @@
 """Disabled M2.1 verification primitives.
 
-This module only inspects bounded canonical wire bytes. It has no signing,
-ambient trust, policy, activation, or lineage-append capability.
+This module only inspects bounded canonical wire bytes and computes pure policy
+results. It has no signing, ambient trust, activation, or lineage-append
+capability.
 """
 
 from __future__ import annotations
@@ -187,6 +188,106 @@ class SignatureVerifiedM2Input:
 
 
 M2StageSixInspection = SignatureVerifiedM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceBoundM2Input:
+    """Owned input whose evidence names the exact signed candidate digest."""
+
+    signature_verified: SignatureVerifiedM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.signature_verified.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.signature_verified.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.signature_verified.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        return self.signature_verified.decode_resulting_anchor()
+
+
+M2StageSevenInspection = EvidenceBoundM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class GrantBoundM2Input:
+    """Owned input whose optional grant exactly matches the authority delta."""
+
+    evidence_bound: EvidenceBoundM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.evidence_bound.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.evidence_bound.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.evidence_bound.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        return self.evidence_bound.decode_resulting_anchor()
+
+
+M2StageEightInspection = GrantBoundM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class PolicyContextBoundM2Input:
+    """Owned input bound to the exact constitution and artifact at stage nine."""
+
+    grant_bound: GrantBoundM2Input
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.grant_bound.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.grant_bound.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.grant_bound.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        return self.grant_bound.decode_resulting_anchor()
+
+
+M2StageNineInspection = PolicyContextBoundM2Input | M2WireRejection
+
+
+@dataclass(frozen=True, slots=True)
+class PolicyEvaluatedM2Input:
+    """Pure M1.1 policy result over a fully bound M2.1 input."""
+
+    policy_context: PolicyContextBoundM2Input
+    decision_data: bytes
+    authorizing: bool = False
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.policy_context.entrypoint
+
+    def decode(self) -> JSONValue:
+        return self.policy_context.decode()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.policy_context.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        return self.policy_context.decode_resulting_anchor()
+
+    def decode_decision(self) -> JSONValue:
+        return strict_json_loads(self.decision_data)
+
+
+M2StageTenInspection = PolicyEvaluatedM2Input | M2WireRejection
 
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _PRINCIPAL_ID = re.compile(r"principal:[a-z0-9._:/-]+\Z")
@@ -1592,6 +1693,290 @@ def inspect_m2_stage_six(
         return M2WireRejection(stage=6, code=code)
     return SignatureVerifiedM2Input(
         identity_bound=identity_bound, resulting_anchor_data=anchor_data
+    )
+
+
+def _promotion_body(value: JSONValue) -> dict[str, Any]:
+    root = cast(dict[str, Any], value)
+    proposal = cast(dict[str, Any], root["payload"])
+    promotion_input = cast(dict[str, Any], proposal["promotion_input"])
+    return cast(dict[str, Any], promotion_input["payload"])
+
+
+def _proposal_value(value: JSONValue, entrypoint: M2Entrypoint) -> JSONValue:
+    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+        return value
+    if entrypoint == "advance-anchor-history":
+        probe = cast(dict[str, Any], value).get("probe_attested_proposal")
+        if isinstance(probe, dict):
+            return cast(JSONValue, probe)
+    _reject_later(2, "input.kind_mismatch")
+
+
+def _stage_seven(value: JSONValue) -> None:
+    body = _promotion_body(value)
+    candidate_pair = cast(dict[str, Any], body["candidate"])
+    candidate_digest = _canonical_digest(cast(JSONValue, candidate_pair["envelope"]))
+    for evidence_pair in cast(list[dict[str, Any]], body["evidence"]):
+        evidence = cast(dict[str, Any], evidence_pair["envelope"])["payload"]
+        if cast(dict[str, Any], evidence)["subject_candidate_digest"] != candidate_digest:
+            _reject_later(7, "evidence.subject_digest_mismatch")
+
+
+def inspect_m2_stage_seven(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageSevenInspection:
+    """Bind every signed evidence envelope to the exact candidate digest."""
+
+    signature_verified = inspect_m2_stage_six(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(signature_verified, M2WireRejection):
+        return signature_verified
+    try:
+        _stage_seven(_proposal_value(signature_verified.decode(), entrypoint))
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = (
+            error.code
+            if isinstance(error, _LaterStageError)
+            else "evidence.subject_digest_mismatch"
+        )
+        stage = error.stage if isinstance(error, _LaterStageError) else 7
+        return M2WireRejection(stage=stage, code=code)
+    return EvidenceBoundM2Input(signature_verified=signature_verified)
+
+
+def _stage_eight(value: JSONValue) -> None:
+    body = _promotion_body(value)
+    candidate_pair = cast(dict[str, Any], body["candidate"])
+    candidate_envelope = cast(dict[str, Any], candidate_pair["envelope"])
+    candidate = cast(dict[str, Any], candidate_envelope["payload"])
+    candidate_digest = _canonical_digest(cast(JSONValue, candidate_envelope))
+    authorization = cast(dict[str, Any], body["authorization_context"])
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    constitution_pair = cast(dict[str, Any], body["constitution"])
+    constitution_envelope = cast(dict[str, Any], constitution_pair["envelope"])
+    lineage_capabilities = cast(dict[str, list[str]], authorization_payload["lineage_capabilities"])
+    parent_capabilities = set(lineage_capabilities.get(cast(str, candidate["parent_id"]), []))
+    delta = sorted(set(cast(list[str], candidate["requested_capabilities"])) - parent_capabilities)
+    grant_pair = body.get("authority_grant")
+    if grant_pair is None:
+        if delta:
+            _reject_later(8, "grant.capability_mismatch")
+        return
+
+    grant_envelope = cast(dict[str, Any], cast(dict[str, Any], grant_pair)["envelope"])
+    grant = cast(dict[str, Any], grant_envelope["payload"])
+    if grant["audience"] != "variaxiom-promotion/v2":
+        _reject_later(8, "grant.audience_mismatch")
+    if (
+        grant["trust_domain_id"] != authorization_payload["trust_domain_id"]
+        or grant["capability_namespace"] != authorization_payload["capability_namespace"]
+        or grant["constitution_digest"] != _canonical_digest(cast(JSONValue, constitution_envelope))
+        or grant["lineage_id"] != authorization_payload["lineage_id"]
+    ):
+        _reject_later(8, "grant.context_mismatch")
+    if grant["subject_candidate_digest"] != candidate_digest:
+        _reject_later(8, "grant.subject_mismatch")
+    if grant["capabilities"] != delta:
+        _reject_later(8, "grant.capability_mismatch")
+    not_before = cast(int, grant["not_before_unix_s"])
+    expires_at = cast(int, grant["expires_at_unix_s"])
+    if not_before >= expires_at:
+        _reject_later(8, "grant.interval_invalid")
+    identity = cast(dict[str, Any], body["identity_context"])
+    now = cast(int, cast(dict[str, Any], identity["payload"])["evaluation_time_unix_s"])
+    if now < not_before:
+        _reject_later(8, "grant.not_yet_valid")
+    if now >= expires_at:
+        _reject_later(8, "grant.expired")
+    if grant["delegable"] is not False:
+        _reject_later(8, "grant.delegation_forbidden")
+
+
+def inspect_m2_stage_eight(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageEightInspection:
+    """Validate an exact-delta, bounded, non-delegable authority grant."""
+
+    evidence_bound = inspect_m2_stage_seven(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(evidence_bound, M2WireRejection):
+        return evidence_bound
+    try:
+        _stage_eight(_proposal_value(evidence_bound.decode(), entrypoint))
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = error.code if isinstance(error, _LaterStageError) else "grant.context_mismatch"
+        stage = error.stage if isinstance(error, _LaterStageError) else 8
+        return M2WireRejection(stage=stage, code=code)
+    return GrantBoundM2Input(evidence_bound=evidence_bound)
+
+
+def _stage_nine(value: JSONValue) -> None:
+    body = _promotion_body(value)
+    authorization = cast(dict[str, Any], body["authorization_context"])
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    constitution_pair = cast(dict[str, Any], body["constitution"])
+    constitution_envelope = cast(dict[str, Any], constitution_pair["envelope"])
+    if authorization_payload["constitution_envelope_digest"] != _canonical_digest(
+        cast(JSONValue, constitution_envelope)
+    ):
+        _reject_later(9, "constitution.context_mismatch")
+    artifact_hash = constitution_pair["artifact_hash"]
+    if (
+        artifact_hash != _canonical_digest(cast(JSONValue, constitution_envelope["payload"]))
+        or authorization_payload["constitution_artifact_hash"] != artifact_hash
+    ):
+        _reject_later(9, "constitution.artifact_mismatch")
+
+
+def inspect_m2_stage_nine(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageNineInspection:
+    """Bind policy to the anchored constitution envelope and artifact bytes."""
+
+    grant_bound = inspect_m2_stage_eight(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(grant_bound, M2WireRejection):
+        return grant_bound
+    try:
+        _stage_nine(_proposal_value(grant_bound.decode(), entrypoint))
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, _LaterStageError) as error:
+        code = (
+            error.code if isinstance(error, _LaterStageError) else "constitution.context_mismatch"
+        )
+        stage = error.stage if isinstance(error, _LaterStageError) else 9
+        return M2WireRejection(stage=stage, code=code)
+    return PolicyContextBoundM2Input(grant_bound=grant_bound)
+
+
+def _policy_decision(value: JSONValue) -> dict[str, JSONValue]:
+    from .constitution import Constitution
+    from .domain import Candidate, Evidence, EvidenceStatus, PromotionDecision
+    from .promotion import PromotionContext, PromotionGate
+
+    root = cast(dict[str, Any], value)
+    proposal = cast(dict[str, Any], root["payload"])
+    promotion_input = cast(dict[str, Any], proposal["promotion_input"])
+    body = cast(dict[str, Any], promotion_input["payload"])
+    candidate_payload = cast(
+        dict[str, Any], cast(dict[str, Any], body["candidate"])["envelope"]["payload"]
+    )
+    candidate = Candidate(
+        candidate_id=cast(str, candidate_payload["candidate_id"]),
+        parent_id=cast(str, candidate_payload["parent_id"]),
+        artifact_hash=cast(str, candidate_payload["artifact_hash"]),
+        proposer=cast(str, candidate_payload["proposer"]),
+        rollback_target=cast(str, candidate_payload["rollback_target"]),
+        baseline_capabilities=frozenset(
+            cast(list[str], candidate_payload["baseline_capabilities"])
+        ),
+        requested_capabilities=frozenset(
+            cast(list[str], candidate_payload["requested_capabilities"])
+        ),
+        estimated_cost_micro_usd=cast(int, candidate_payload["estimated_cost_micro_usd"]),
+        metadata=cast(dict[str, JSONValue], candidate_payload["metadata"]),
+    )
+    evidence: list[Evidence] = []
+    for evidence_pair in cast(list[dict[str, Any]], body["evidence"]):
+        item = cast(dict[str, Any], evidence_pair["envelope"])["payload"]
+        payload = cast(dict[str, Any], item)
+        evidence.append(
+            Evidence(
+                evidence_id=cast(str, payload["evidence_id"]),
+                subject_id=candidate.candidate_id,
+                artifact_hash=cast(str, payload["artifact_hash"]),
+                check=cast(str, payload["check"]),
+                status=cast(EvidenceStatus, payload["status"]),
+                verifier=cast(str, payload["verifier"]),
+                independent=cast(bool, payload["independent"]),
+                details=cast(dict[str, JSONValue], payload["details"]),
+            )
+        )
+    constitution_payload = cast(
+        dict[str, Any], cast(dict[str, Any], body["constitution"])["envelope"]["payload"]
+    )
+    constitution = Constitution(
+        version=cast(str, constitution_payload["version"]),
+        mandatory_checks=tuple(cast(list[str], constitution_payload["mandatory_checks"])),
+        minimum_independent_verifiers=cast(
+            int, constitution_payload["minimum_independent_verifiers"]
+        ),
+        max_candidate_cost_micro_usd=cast(
+            int, constitution_payload["max_candidate_cost_micro_usd"]
+        ),
+        require_known_parent=cast(bool, constitution_payload["require_known_parent"]),
+        require_rollback_target=cast(bool, constitution_payload["require_rollback_target"]),
+        forbid_self_verification=cast(bool, constitution_payload["forbid_self_verification"]),
+        forbid_implicit_authority_escalation=cast(
+            bool, constitution_payload["forbid_implicit_authority_escalation"]
+        ),
+        reject_any_failed_evidence=cast(bool, constitution_payload["reject_any_failed_evidence"]),
+    )
+    authorization = cast(dict[str, Any], body["authorization_context"])
+    authorization_payload = cast(dict[str, Any], authorization["payload"])
+    grant_pair = body.get("authority_grant")
+    authority_grants: dict[str, frozenset[str]] = {}
+    grant_id: str | None = None
+    if grant_pair is not None:
+        grant_envelope = cast(dict[str, Any], cast(dict[str, Any], grant_pair)["envelope"])
+        grant_id = "grant:sha256:" + _canonical_digest(cast(JSONValue, grant_envelope))
+        authority_grants[grant_id] = frozenset(
+            cast(list[str], cast(dict[str, Any], grant_envelope["payload"])["capabilities"])
+        )
+    context = PromotionContext(
+        known_lineage_ids=frozenset(cast(list[str], authorization_payload["known_lineage_ids"])),
+        known_artifact_hashes=frozenset(
+            cast(list[str], authorization_payload["verified_artifact_hashes"])
+        ),
+        authority_grants=authority_grants,
+        lineage_capabilities={
+            lineage_id: frozenset(capabilities)
+            for lineage_id, capabilities in cast(
+                dict[str, list[str]], authorization_payload["lineage_capabilities"]
+            ).items()
+        },
+    )
+    raw = PromotionGate(constitution).decide(
+        candidate, evidence, context, authority_grant_id=grant_id
+    )
+    decision = PromotionDecision(
+        candidate_id=raw.candidate_id,
+        status=raw.status,
+        reasons=raw.reasons,
+        evidence_ids=raw.evidence_ids,
+        input_digest=_canonical_digest(cast(JSONValue, promotion_input)),
+        constitution_version=raw.constitution_version,
+        gate_version=raw.gate_version,
+    )
+    return decision.envelope()
+
+
+def inspect_m2_stage_ten(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageTenInspection:
+    """Return the pure deterministic M1.1 policy decision for a bound M2 input."""
+
+    policy_context = inspect_m2_stage_nine(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(policy_context, M2WireRejection):
+        return policy_context
+    try:
+        decision_data = canonical_json(
+            _policy_decision(_proposal_value(policy_context.decode(), entrypoint))
+        )
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        return M2WireRejection(stage=2, code="input.schema_invalid")
+    return PolicyEvaluatedM2Input(
+        policy_context=policy_context,
+        decision_data=decision_data,
     )
 
 

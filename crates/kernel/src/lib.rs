@@ -4,6 +4,10 @@
 //! code. It only applies small deterministic rules to facts produced by other
 //! trust domains.
 
+mod m2_stage_ten;
+
+pub use m2_stage_ten::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
+
 use std::collections::BTreeSet;
 
 pub use variaxiom_protocol::Constitution;

@@ -289,6 +289,48 @@ class PolicyEvaluatedM2Input:
 
 M2StageTenInspection = PolicyEvaluatedM2Input | M2WireRejection
 
+
+@dataclass(frozen=True, slots=True, init=False)
+class VerifiedM2Proposal:
+    """Fully verified signed proposal with no durable-append capability.
+
+    A live ``verify-attested-proposal`` result may authorize the proposal as
+    data. Historical replay and anchor-history probes remain explicitly
+    non-authorizing, and no M2.1 result can append or activate lineage.
+    """
+
+    policy_evaluated: PolicyEvaluatedM2Input
+
+    @property
+    def entrypoint(self) -> M2Entrypoint:
+        return self.policy_evaluated.entrypoint
+
+    @property
+    def authorizing(self) -> bool:
+        return self.entrypoint == "verify-attested-proposal"
+
+    def decode(self) -> JSONValue:
+        return self.policy_evaluated.decode()
+
+    def decode_decision(self) -> JSONValue:
+        return self.policy_evaluated.decode_decision()
+
+    def decode_trusted_anchor(self) -> JSONValue | None:
+        return self.policy_evaluated.decode_trusted_anchor()
+
+    def decode_resulting_anchor(self) -> JSONValue | None:
+        return self.policy_evaluated.decode_resulting_anchor()
+
+
+M2StageElevenInspection = VerifiedM2Proposal | M2WireRejection
+
+
+def _verified_proposal(value: PolicyEvaluatedM2Input) -> VerifiedM2Proposal:
+    proposal = object.__new__(VerifiedM2Proposal)
+    object.__setattr__(proposal, "policy_evaluated", value)
+    return proposal
+
+
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _PRINCIPAL_ID = re.compile(r"principal:[a-z0-9._:/-]+\Z")
 _TRUST_DOMAIN_ID = re.compile(r"trust-domain:[a-z0-9._:/-]+\Z")
@@ -1382,10 +1424,16 @@ def _stage_four(value: JSONValue, entrypoint: M2Entrypoint) -> None:
         _stage_four_attested(cast(JSONValue, probe))
 
 
-def _stage_five_attested(value: JSONValue, anchor: dict[str, Any]) -> None:
+def _stage_five_attested(
+    value: JSONValue,
+    anchor: dict[str, Any],
+    *,
+    pairs: list[_SignaturePair] | None = None,
+    role_pairs: list[_SignaturePair] | None = None,
+) -> None:
     identity, _ = _attested_contexts(value)
     principals, keys, ambiguous = _identity_maps(identity)
-    pairs = _signature_pairs(value)
+    pairs = _signature_pairs(value) if pairs is None else pairs
     for pair, _, actor in pairs:
         signature = cast(dict[str, Any], pair["signature"])["payload"]
         if signature["principal_id"] != actor:
@@ -1420,8 +1468,9 @@ def _stage_five_attested(value: JSONValue, anchor: dict[str, Any]) -> None:
         roles = cast(list[str], principals[cast(str, signature["principal_id"])]["roles"])
         if _ROLE_FOR_KIND[kind] not in roles:
             _reject_later(5, "identity.role_missing")
-    evidence_actors = [actor for _, kind, actor in pairs if kind == "evidence"]
-    other_actors = [actor for _, kind, actor in pairs if kind != "evidence"]
+    actors_to_compare = pairs if role_pairs is None else role_pairs
+    evidence_actors = [actor for _, kind, actor in actors_to_compare if kind == "evidence"]
+    other_actors = [actor for _, kind, actor in actors_to_compare if kind != "evidence"]
     if len(other_actors) != len(set(other_actors)) or set(evidence_actors) & set(other_actors):
         _reject_later(5, "identity.role_conflict")
     constitution = cast(dict[str, Any], body["constitution"])["envelope"]["payload"]
@@ -1978,6 +2027,57 @@ def inspect_m2_stage_ten(
         policy_context=policy_context,
         decision_data=decision_data,
     )
+
+
+def inspect_m2_stage_eleven(
+    source: bytes | bytearray | memoryview,
+    entrypoint: M2Entrypoint,
+    *,
+    trusted_anchor: JSONValue | None = None,
+) -> M2StageElevenInspection:
+    """Recompute the decision and verify its detached selector attestation.
+
+    Success verifies an immutable signed proposal. It does not append lineage,
+    activate a candidate, read ambient state, or expose signing operations.
+    """
+
+    evaluated = inspect_m2_stage_ten(source, entrypoint, trusted_anchor=trusted_anchor)
+    if isinstance(evaluated, M2WireRejection):
+        return evaluated
+    try:
+        value = _proposal_value(evaluated.decode(), entrypoint)
+        proposal = cast(dict[str, Any], value)
+        payload = cast(dict[str, Any], proposal["payload"])
+        if canonical_json(cast(JSONValue, payload["decision"])) != evaluated.decision_data:
+            return M2WireRejection(stage=11, code="decision.content_mismatch")
+
+        effective_anchor = evaluated.decode_resulting_anchor()
+        if effective_anchor is None:
+            effective_anchor = evaluated.decode_trusted_anchor()
+        if not isinstance(effective_anchor, dict):
+            return M2WireRejection(stage=2, code="input.schema_invalid")
+
+        identity, _ = _attested_contexts(cast(JSONValue, proposal))
+        _, keys, _ = _identity_maps(identity)
+        all_pairs = _signature_pairs(cast(JSONValue, proposal), include_selector=True)
+        selector_pair = all_pairs[-1]
+        selector_signature = cast(dict[str, Any], selector_pair[0]["signature"])["payload"]
+        if selector_signature["trust_domain_id"] != effective_anchor["trust_domain_id"]:
+            return M2WireRejection(stage=11, code="signature.domain_mismatch")
+
+        _stage_four_pairs([selector_pair], keys)
+        _stage_five_attested(
+            cast(JSONValue, proposal),
+            cast(dict[str, Any], effective_anchor),
+            pairs=[selector_pair],
+            role_pairs=all_pairs,
+        )
+        _stage_six_pairs([selector_pair], keys)
+    except _LaterStageError as error:
+        return M2WireRejection(stage=11, code=error.code)
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        return M2WireRejection(stage=2, code="input.schema_invalid")
+    return _verified_proposal(evaluated)
 
 
 def inspect_m2_wire(source: bytes | bytearray | memoryview) -> M2WireInspection:

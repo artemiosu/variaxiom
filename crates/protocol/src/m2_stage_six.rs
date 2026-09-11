@@ -108,6 +108,12 @@ fn pairs(value: &Value) -> Check<Vec<Pair<'_>>> {
     Ok(result)
 }
 
+fn selector_pair(value: &Value) -> Check<Pair<'_>> {
+    Ok(Pair {
+        signature: &proposal_payload(value)?["selector_signature"],
+    })
+}
+
 type KeyMap<'a> = BTreeMap<String, &'a Map<String, Value>>;
 
 fn identity_keys(identity: &Value) -> Check<KeyMap<'_>> {
@@ -232,6 +238,29 @@ fn stage_six_pairs(pairs: &[Pair<'_>], keys: &KeyMap<'_>) -> Check {
 fn stage_six_attested(value: &Value) -> Check {
     let keys = identity_keys(attested_identity(value)?)?;
     stage_six_pairs(&pairs(value)?, &keys)
+}
+
+pub(crate) fn verify_selector_stage_six(value: &Value) -> Result<(), M2WireRejection> {
+    let keys = identity_keys(attested_identity(value).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.0,
+        authorizing: false,
+    })?)
+    .map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.0,
+        authorizing: false,
+    })?;
+    let selector = selector_pair(value).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.0,
+        authorizing: false,
+    })?;
+    stage_six_pairs(&[selector], &keys).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.0,
+        authorizing: false,
+    })
 }
 
 fn identity_bindings(identity: &Value) -> Check<Vec<&Map<String, Value>>> {

@@ -19,6 +19,12 @@ pub struct PolicyEvaluatedM2Input {
 }
 
 impl PolicyEvaluatedM2Input {
+    /// Return the exact stage-nine policy context used by the kernel.
+    #[must_use]
+    pub const fn policy_context(&self) -> &PolicyContextBoundM2Input {
+        &self.policy_context
+    }
+
     /// Return the inspected operation.
     #[must_use]
     pub const fn entrypoint(&self) -> M2Entrypoint {

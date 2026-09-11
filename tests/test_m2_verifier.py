@@ -18,7 +18,9 @@ from variaxiom.m2_verifier import (
     PolicyEvaluatedM2Input,
     SignatureVerifiedM2Input,
     StructurallyValidM2Input,
+    VerifiedM2Proposal,
     inspect_m2_stage_eight,
+    inspect_m2_stage_eleven,
     inspect_m2_stage_five,
     inspect_m2_stage_four,
     inspect_m2_stage_nine,
@@ -410,6 +412,46 @@ class M2WireInspectionTests(unittest.TestCase):
                     self.assertEqual(fresh["payload"]["status"], "accepted")
         self.assertEqual(mismatched_supplied_decisions, 2)
         self.assertEqual(policy_rejections, 2)
+
+    def test_stage_eleven_matches_every_frozen_terminal_result(self) -> None:
+        cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 11]
+        self.assertEqual(len(cases), 37)
+        verified = 0
+        rejected = 0
+        for case in cases:
+            with self.subTest(case=case["case_id"]):
+                result = inspect_m2_stage_eleven(
+                    decode_input(case),
+                    case["entrypoint"],
+                    trusted_anchor=cast(Any, case.get("trusted_anchor")),
+                )
+                expected = cast(dict[str, Any], case["expected"])
+                if expected["status"] == "rejected":
+                    rejected += 1
+                    self.assertIsInstance(result, M2WireRejection)
+                    rejection = cast(M2WireRejection, result)
+                    self.assertEqual(rejection.stage, expected["reached_stage"])
+                    self.assertEqual(rejection.code, expected["code"])
+                    self.assertFalse(rejection.authorizing)
+                    continue
+
+                verified += 1
+                self.assertIsInstance(result, VerifiedM2Proposal)
+                proposal = cast(VerifiedM2Proposal, result)
+                self.assertEqual(proposal.authorizing, expected["authorizing"])
+                self.assertEqual(proposal.decode_resulting_anchor(), expected["expected_anchor"])
+                decision = cast(dict[str, Any], proposal.decode_decision())
+                self.assertEqual(decision["payload"]["status"], expected["decision_status"])
+                if case["case_id"] == "bounded-signed-proposal":
+                    with self.assertRaises(TypeError):
+                        VerifiedM2Proposal(proposal.policy_evaluated)  # type: ignore[call-arg]
+                    decoded = cast(dict[str, Any], proposal.decode())
+                    decoded["payload"]["decision"]["payload"]["status"] = "mutated"
+                    fresh = cast(dict[str, Any], proposal.decode())
+                    self.assertEqual(fresh["payload"]["decision"]["payload"]["status"], "accepted")
+
+        self.assertEqual(verified, 29)
+        self.assertEqual(rejected, 8)
 
 
 if __name__ == "__main__":

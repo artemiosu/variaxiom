@@ -20,8 +20,9 @@ reviews with no remaining P0/P1. This authorizes a disabled implementation, not 
 security claim or a substitute for human review.
 
 Stage-eleven implementation review later exposed an unsafe positive authority flag and an
-unfrozen two-phase result API. Issue #16 corrects the contract in a separate proposed 252-case
-freeze; it is not accepted until repeated automated review has no open P0/P1.
+unfrozen two-phase result API. Issue #16 corrects the contract with an accepted 252-case,
+always-non-authorizing freeze. Three isolated automated reviewers reported no P0/P1 on revision
+`7642611c014ff683a6aadc614f709ca959f8583b`; this remains defense in depth, not a human audit.
 
 ## Implemented
 
@@ -39,7 +40,7 @@ freeze; it is not accepted until repeated automated review has no open P0/P1.
 - architecture, research, governance, launch, and security documentation;
 - pinned GitHub Actions CI, dependency review, and OpenSSF Scorecard workflows.
 - cross-language canonical promotion envelopes and shared Python/Rust fixtures;
-- frozen M2.1 schemas and a 237-case adversarial corpus with a non-authorizing fixture oracle;
+- frozen M2.1 schemas and a 252-case adversarial corpus with a non-authorizing fixture oracle;
 - CodeQL, project context routing, requirement traceability, and spec-driven increment gates.
 
 ## Not implemented yet

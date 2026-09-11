@@ -1,7 +1,7 @@
 {
   "schema_version": "variaxiom-project/v1",
   "project": "Variaxiom",
-  "reviewed": "2026-09-07",
+  "reviewed": "2026-09-11",
   "repository": {
     "url": "https://github.com/artemiosu/variaxiom",
     "default_branch": "main",
@@ -27,7 +27,7 @@
     "id": "M2.1",
     "title": "Identity, authority grants, and detached signatures",
     "status": "in_progress",
-    "verification": "accepted_237_case_contract_under_non_authorizing_result_correction_issue_16",
+    "verification": "accepted_252_case_nonauthorizing_contract_runtime_pending",
     "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",
@@ -128,6 +128,15 @@
       "result": "passed",
       "artifact": "docs/reports/m2.1-schema-fixture-council-2026-09-07.md",
       "url": "https://github.com/artemiosu/variaxiom/pull/10"
+    },
+    {
+      "id": "m2.1-result-contract-council",
+      "revision": "7642611c014ff683a6aadc614f709ca959f8583b",
+      "observed_on": "2026-09-11",
+      "check": "252 always-non-authorizing shared cases, exact replay-anchor binding, clean-clone verification, GitHub CI, and three isolated automated reviews",
+      "result": "passed",
+      "artifact": "docs/reports/m2.1-result-contract-council-2026-09-11.md",
+      "url": "https://github.com/artemiosu/variaxiom/pull/17"
     }
   ],
   "open_decisions": [
@@ -146,6 +155,7 @@
   "blockers": [
     {"id": "independent-security-council", "status": "resolved", "scope": "three-role automated review tracked by GitHub issue 5; unanimous PASS at 081e670 with no remaining P0/P1"},
     {"id": "reproduction-report-publication", "status": "resolved", "scope": "published M1.1 evidence in closed issue 3"},
+    {"id": "m2.1-result-contract-correction", "status": "resolved", "scope": "issue 16 correction accepted at reviewed revision 7642611 with all M2.1 outputs fixed non-authorizing"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
     {"id": "social-preview-upload", "status": "resolved", "scope": "GitHub repository social preview"}
   ],

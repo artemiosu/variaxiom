@@ -519,7 +519,7 @@ def make_case(
     *,
     decision_status: str = "not-reached",
     entrypoint: str = "verify-attested-proposal",
-    authorizing: bool = True,
+    success_stage: int = 11,
     notes: str = "Frozen shared conformance vector.",
 ) -> dict[str, Any]:
     wire = source if isinstance(source, bytes) else canonical_bytes(source)
@@ -535,9 +535,9 @@ def make_case(
             "status": "verified" if code is None else "rejected",
             "code": code,
             "decision_status": decision_status,
-            "authorizing": authorizing if code is None else False,
+            "authorizing": False,
             "expected_anchor": None,
-            "reached_stage": stage if code is not None else 11,
+            "reached_stage": stage if code is not None else success_stage,
         },
         "signature_vectors": (
             vectors(source)
@@ -750,6 +750,17 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             decision_status="accepted",
             notes="Complete accepted path with four distinct principals and four verified signatures.",
         ),
+        make_case(
+            "evaluate-new-accepted",
+            10,
+            base["payload"]["promotion_input"],
+            base_anchor,
+            None,
+            decision_status="accepted",
+            entrypoint="evaluate-new",
+            success_stage=10,
+            notes="Raw promotion input evaluates without requiring a decision or selector signature.",
+        ),
         make_case("utf8-bom-rejected", 1, b"\xef\xbb\xbf{}", base_anchor, "input.encoding_invalid"),
         make_case(
             "utf16-rejected", 1, b"\xff\xfe{\x00}\x00", base_anchor, "input.encoding_invalid"
@@ -789,6 +800,19 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             5,
         ),
     ]
+    evaluate_bad_anchor = copy.deepcopy(base_anchor)
+    evaluate_bad_anchor["current_identity_context_digest"] = "a" * 64
+    cases.append(
+        make_case(
+            "evaluate-new-anchor-mismatch",
+            3,
+            base["payload"]["promotion_input"],
+            evaluate_bad_anchor,
+            "identity.context_untrusted",
+            entrypoint="evaluate-new",
+            notes="Raw evaluation still requires the separately supplied live trusted anchor.",
+        )
+    )
 
     missing_genesis_version = copy.deepcopy(identity0)
     del missing_genesis_version["envelope_version"]
@@ -2490,6 +2514,21 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             notes="Policy rejection is a verified, signed result rather than a verifier error.",
         )
     )
+    evaluate_policy_rejection = copy.deepcopy(base)
+    policy_cost(evaluate_policy_rejection)
+    cases.append(
+        make_case(
+            "evaluate-new-policy-rejected",
+            10,
+            evaluate_policy_rejection["payload"]["promotion_input"],
+            base_anchor,
+            None,
+            decision_status="rejected",
+            entrypoint="evaluate-new",
+            success_stage=10,
+            notes="Policy rejection is a successful non-authorizing evaluation result.",
+        )
+    )
     cases.append(
         proposal_case(
             base,
@@ -2531,6 +2570,177 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
                 ("payload", "selector_signature", "payload", "signature_base64url"),
                 invalid_equation,
             ),
+        )
+    )
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-digest-mismatch",
+            11,
+            "signature.digest_mismatch",
+            mutate(("payload", "selector_signature", "payload", "signed_digest"), "a" * 64),
+        )
+    )
+
+    def selector_key_id_mismatch(value: dict[str, Any]) -> None:
+        fake_key_id = "key:sha256:" + "a" * 64
+        identity = promotion(value)["identity_context"]["payload"]
+        descriptor = next(
+            item for item in identity["principals"] if item["principal_id"] == "principal:selector"
+        )
+        descriptor["keys"][0]["key_id"] = fake_key_id
+        value["payload"]["decision"] = policy_decision(value["payload"]["promotion_input"])
+        selector = value["payload"]["selector_signature"]["payload"]
+        selector["signed_digest"] = digest(value["payload"]["decision"])
+        selector["key_id"] = fake_key_id
+        selector["signature_base64url"] = raw_base64url(
+            signing_key("selector").sign(signing_message(selector)).signature
+        )
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-key-id-mismatch",
+            11,
+            "signature.key_id_mismatch",
+            selector_key_id_mismatch,
+            reanchor=True,
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-kind-mismatch",
+            11,
+            "signature.kind_mismatch",
+            mutate(("payload", "selector_signature", "payload", "signed_kind"), "evidence"),
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-principal-unknown",
+            11,
+            "identity.principal_unknown",
+            mutate(
+                ("payload", "selector_signature", "payload", "principal_id"),
+                "principal:unknown",
+            ),
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-key-unbound",
+            11,
+            "identity.key_unbound",
+            mutate(
+                ("payload", "selector_signature", "payload", "key_id"),
+                key_id("builder"),
+            ),
+        )
+    )
+    selector_revoked_anchor = copy.deepcopy(base_anchor)
+    selector_revoked_anchor["revoked_key_ids"] = [key_id("selector")]
+    cases.append(
+        make_case(
+            "selector-key-revoked",
+            11,
+            base,
+            selector_revoked_anchor,
+            "signature.key_revoked",
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-algorithm-unsupported",
+            11,
+            "signature.algorithm_unsupported",
+            mutate(("payload", "selector_signature", "payload", "algorithm"), "Ed448"),
+        )
+    )
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-encoding-invalid",
+            11,
+            "signature.encoding_invalid",
+            mutate(
+                ("payload", "selector_signature", "payload", "signature_base64url"),
+                "invalid=",
+            ),
+        )
+    )
+
+    def selector_public_encoding(value: dict[str, Any]) -> None:
+        identity = promotion(value)["identity_context"]["payload"]
+        descriptor = next(
+            item for item in identity["principals"] if item["principal_id"] == "principal:selector"
+        )
+        encoded_public = raw_base64url(bytes(32))
+        invalid_point_key_id = key_id_from_public(encoded_public)
+        descriptor["keys"][0]["public_key_base64url"] = encoded_public
+        descriptor["keys"][0]["key_id"] = invalid_point_key_id
+        value["payload"]["decision"] = policy_decision(value["payload"]["promotion_input"])
+        value["payload"]["selector_signature"] = signature(
+            value["payload"]["decision"], "promotion-decision", "selector"
+        )
+        selector = value["payload"]["selector_signature"]["payload"]
+        selector["key_id"] = invalid_point_key_id
+        selector["signature_base64url"] = raw_base64url(
+            signing_key("selector").sign(signing_message(selector)).signature
+        )
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-public-key-encoding-invalid",
+            11,
+            "signature.encoding_invalid",
+            selector_public_encoding,
+            reanchor=True,
+        )
+    )
+
+    def selector_scalar_l(value: dict[str, Any]) -> None:
+        selector = value["payload"]["selector_signature"]["payload"]
+        raw = decode_base64url(selector["signature_base64url"])
+        selector["signature_base64url"] = raw_base64url(raw[:32] + L.to_bytes(32, "little"))
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-scalar-l-invalid",
+            11,
+            "signature.encoding_invalid",
+            selector_scalar_l,
+        )
+    )
+
+    def selector_low_order_r(value: dict[str, Any]) -> None:
+        selector = value["payload"]["selector_signature"]["payload"]
+        raw = decode_base64url(selector["signature_base64url"])
+        selector["signature_base64url"] = raw_base64url(bytes(32) + raw[32:])
+
+    cases.append(
+        proposal_case(
+            base,
+            base_anchor,
+            "selector-low-order-r-invalid",
+            11,
+            "signature.encoding_invalid",
+            selector_low_order_r,
         )
     )
 
@@ -2948,7 +3158,6 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             None,
             decision_status="accepted",
             entrypoint="replay-historical",
-            authorizing=False,
         )
     )
 
@@ -3567,10 +3776,47 @@ def main() -> int:
     args = parser.parse_args()
     base, anchor = build()
     cases = build_cases(base, anchor)
+    verification = {
+        "verification_version": "verification-result/v1",
+        "status": "verified",
+        "code": None,
+    }
+    evaluated_result = {
+        "result_version": "evaluated-proposal/v1",
+        "verification": verification,
+        "authorizing": False,
+        "promotion_input": base["payload"]["promotion_input"],
+        "decision": base["payload"]["decision"],
+    }
+    verified_result = {
+        "result_version": "verified-proposal/v1",
+        "verification": verification,
+        "authorizing": False,
+        "attested_proposal": base,
+    }
+    replay_result = {
+        "result_version": "replay-result/v1",
+        "verification": verification,
+        "authorizing": False,
+        "attested_proposal_digest": digest(base),
+        "reproduced_decision_digest": digest(base["payload"]["decision"]),
+    }
+    anchor_result = {
+        "result_version": "anchor-transition-result/v1",
+        "verification": verification,
+        "authorizing": False,
+        "resulting_anchor": anchor,
+    }
     manifest = {
         "manifest_version": "m2.1-conformance-manifest/v2",
         "spec_revision": hashlib.sha256(SPEC.read_bytes()).hexdigest(),
         "base_fixture": "base-attested-proposal.json",
+        "result_fixtures": {
+            "evaluated_proposal": "base-evaluated-proposal.json",
+            "verified_proposal": "base-verified-proposal.json",
+            "replay_result": "base-replay-result.json",
+            "anchor_transition_result": "base-anchor-transition-result.json",
+        },
         "cases": [
             {
                 "case_id": item["case_id"],
@@ -3583,6 +3829,10 @@ def main() -> int:
     golden = vectors(base)[-1]
     outputs = {
         OUT / "base-attested-proposal.json": render(base),
+        OUT / "base-evaluated-proposal.json": render(evaluated_result),
+        OUT / "base-verified-proposal.json": render(verified_result),
+        OUT / "base-replay-result.json": render(replay_result),
+        OUT / "base-anchor-transition-result.json": render(anchor_result),
         OUT / "golden-signature.json": render(golden),
         OUT / "manifest.json": render(manifest),
         **{CASES / f"{item['case_id']}.json": render(item) for item in cases},

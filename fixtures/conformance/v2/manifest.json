@@ -512,6 +512,11 @@
       "stage": 3
     },
     {
+      "case_id": "evaluate-new-anchor-mismatch",
+      "fixture": "cases/evaluate-new-anchor-mismatch.json",
+      "stage": 3
+    },
+    {
       "case_id": "evidence-signature-domain-mismatch",
       "fixture": "cases/evidence-signature-domain-mismatch.json",
       "stage": 3
@@ -1002,6 +1007,16 @@
       "stage": 9
     },
     {
+      "case_id": "evaluate-new-accepted",
+      "fixture": "cases/evaluate-new-accepted.json",
+      "stage": 10
+    },
+    {
+      "case_id": "evaluate-new-policy-rejected",
+      "fixture": "cases/evaluate-new-policy-rejected.json",
+      "stage": 10
+    },
+    {
       "case_id": "policy-baseline-mismatch",
       "fixture": "cases/policy-baseline-mismatch.json",
       "stage": 10
@@ -1097,8 +1112,23 @@
       "stage": 11
     },
     {
+      "case_id": "selector-algorithm-unsupported",
+      "fixture": "cases/selector-algorithm-unsupported.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-digest-mismatch",
+      "fixture": "cases/selector-digest-mismatch.json",
+      "stage": 11
+    },
+    {
       "case_id": "selector-domain-mismatch",
       "fixture": "cases/selector-domain-mismatch.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-encoding-invalid",
+      "fixture": "cases/selector-encoding-invalid.json",
       "stage": 11
     },
     {
@@ -1107,13 +1137,53 @@
       "stage": 11
     },
     {
+      "case_id": "selector-key-id-mismatch",
+      "fixture": "cases/selector-key-id-mismatch.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-key-revoked",
+      "fixture": "cases/selector-key-revoked.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-key-unbound",
+      "fixture": "cases/selector-key-unbound.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-kind-mismatch",
+      "fixture": "cases/selector-kind-mismatch.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-low-order-r-invalid",
+      "fixture": "cases/selector-low-order-r-invalid.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-principal-unknown",
+      "fixture": "cases/selector-principal-unknown.json",
+      "stage": 11
+    },
+    {
       "case_id": "selector-proposer-role-conflict",
       "fixture": "cases/selector-proposer-role-conflict.json",
       "stage": 11
     },
     {
+      "case_id": "selector-public-key-encoding-invalid",
+      "fixture": "cases/selector-public-key-encoding-invalid.json",
+      "stage": 11
+    },
+    {
       "case_id": "selector-role-missing",
       "fixture": "cases/selector-role-missing.json",
+      "stage": 11
+    },
+    {
+      "case_id": "selector-scalar-l-invalid",
+      "fixture": "cases/selector-scalar-l-invalid.json",
       "stage": 11
     },
     {
@@ -1188,5 +1258,11 @@
     }
   ],
   "manifest_version": "m2.1-conformance-manifest/v2",
-  "spec_revision": "be3b36518521023d24cbe1e9b67aa50d3c7ff225e28883a32d5c7a295b7d86ba"
+  "result_fixtures": {
+    "anchor_transition_result": "base-anchor-transition-result.json",
+    "evaluated_proposal": "base-evaluated-proposal.json",
+    "replay_result": "base-replay-result.json",
+    "verified_proposal": "base-verified-proposal.json"
+  },
+  "spec_revision": "a587c07175a8d149606b4278ec996c91ff414aa49d8a4515baf2701456c51378"
 }

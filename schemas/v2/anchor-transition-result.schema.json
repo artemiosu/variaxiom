@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/anchor-transition-result.schema.json",
+  "title": "Variaxiom M2.1 anchor transition result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result_version", "verification", "authorizing", "resulting_anchor"],
+  "properties": {
+    "result_version": {"const": "anchor-transition-result/v1"},
+    "verification": {
+      "allOf": [
+        {"$ref": "verification-result.schema.json"},
+        {"properties": {"status": {"const": "verified"}, "code": {"type": "null"}}}
+      ]
+    },
+    "authorizing": {"const": false},
+    "resulting_anchor": {"$ref": "trusted-anchor.schema.json"}
+  }
+}

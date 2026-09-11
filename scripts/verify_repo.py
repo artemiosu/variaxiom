@@ -65,7 +65,16 @@ REQUIRED_FILES = (
     "schemas/v2/anchor-history.schema.json",
     "schemas/v2/signature-vector.schema.json",
     "schemas/v2/conformance-case.schema.json",
+    "schemas/v2/verification-result.schema.json",
+    "schemas/v2/evaluated-proposal.schema.json",
+    "schemas/v2/verified-proposal.schema.json",
+    "schemas/v2/replay-result.schema.json",
+    "schemas/v2/anchor-transition-result.schema.json",
     "fixtures/conformance/v2/base-attested-proposal.json",
+    "fixtures/conformance/v2/base-evaluated-proposal.json",
+    "fixtures/conformance/v2/base-verified-proposal.json",
+    "fixtures/conformance/v2/base-replay-result.json",
+    "fixtures/conformance/v2/base-anchor-transition-result.json",
     "fixtures/conformance/v2/golden-signature.json",
     "fixtures/conformance/v2/manifest.json",
     "fixtures/conformance/v2/manifest.schema.json",
@@ -704,6 +713,18 @@ def main() -> int:
         )
         Draft202012Validator.check_schema(published_manifest_schema)
         base = strict_json_loads((v2_root / "base-attested-proposal.json").read_bytes())
+        result_fixtures = {
+            "evaluated_proposal": strict_json_loads(
+                (v2_root / "base-evaluated-proposal.json").read_bytes()
+            ),
+            "verified_proposal": strict_json_loads(
+                (v2_root / "base-verified-proposal.json").read_bytes()
+            ),
+            "replay_result": strict_json_loads((v2_root / "base-replay-result.json").read_bytes()),
+            "anchor_transition_result": strict_json_loads(
+                (v2_root / "base-anchor-transition-result.json").read_bytes()
+            ),
+        }
         manifest = strict_json_loads((v2_root / "manifest.json").read_bytes())
         golden = strict_json_loads((v2_root / "golden-signature.json").read_bytes())
         published_registry = Registry().with_resources(
@@ -722,6 +743,16 @@ def main() -> int:
         errors.extend(
             _validate_instance(manifest, "v2/manifest.schema.json", schemas, "M2.1 manifest")
         )
+        result_schemas = {
+            "evaluated_proposal": "v2/evaluated-proposal.schema.json",
+            "verified_proposal": "v2/verified-proposal.schema.json",
+            "replay_result": "v2/replay-result.schema.json",
+            "anchor_transition_result": "v2/anchor-transition-result.schema.json",
+        }
+        for name, value in result_fixtures.items():
+            errors.extend(_validate_instance(value, result_schemas[name], schemas, f"M2.1 {name}"))
+            if manifest["result_fixtures"][name] != f"base-{name.replace('_', '-')}.json":
+                errors.append(f"M2.1 manifest result fixture path differs for {name}")
         errors.extend(
             _validate_instance(
                 golden, "v2/signature-vector.schema.json", schemas, "M2.1 golden signature"

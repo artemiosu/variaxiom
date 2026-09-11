@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/replay-result.schema.json",
+  "title": "Variaxiom M2.1 historical replay result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result_version", "verification", "authorizing", "attested_proposal_digest", "reproduced_decision_digest"],
+  "properties": {
+    "result_version": {"const": "replay-result/v1"},
+    "authorizing": {"const": false},
+    "verification": {
+      "allOf": [
+        {"$ref": "verification-result.schema.json"},
+        {"properties": {"status": {"const": "verified"}, "code": {"type": "null"}}}
+      ]
+    },
+    "attested_proposal_digest": {"$ref": "common.schema.json#/$defs/sha256"},
+    "reproduced_decision_digest": {"$ref": "common.schema.json#/$defs/sha256"}
+  }
+}

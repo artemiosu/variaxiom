@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/verified-proposal.schema.json",
+  "title": "Variaxiom M2.1 verified attested proposal result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result_version", "verification", "authorizing", "attested_proposal"],
+  "properties": {
+    "result_version": {"const": "verified-proposal/v1"},
+    "authorizing": {"const": false},
+    "verification": {
+      "allOf": [
+        {"$ref": "verification-result.schema.json"},
+        {"properties": {"status": {"const": "verified"}, "code": {"type": "null"}}}
+      ]
+    },
+    "attested_proposal": {"$ref": "envelope.schema.json#/$defs/attestedProposal"}
+  }
+}

@@ -33,9 +33,9 @@ ROLE_FOR_KIND = {
     "authority-grant": "authority-issuer",
     "promotion-decision": "promotion-selector",
 }
-EXPECTED_CASE_COUNT = 237
+EXPECTED_CASE_COUNT = 251
 EXPECTED_MANIFEST_INVENTORY_SHA256 = (
-    "2cf14b99c2f22cbe1b56588d9ae8901fc79ab22f57328bf6c9dd8432101212d4"
+    "e14c8f84a4f44297e650440b1a657257b28236b86f35a665c1d3416814b2d036"
 )
 
 REQUIRED_CASE_IDS = {
@@ -73,6 +73,9 @@ REQUIRED_CASE_IDS = {
     "initialize-anchor-unsupported-algorithm",
     "initialize-anchor-unsorted-roles",
     "insufficient-independent-verifiers",
+    "evaluate-new-accepted",
+    "evaluate-new-anchor-mismatch",
+    "evaluate-new-policy-rejected",
     "nested-candidate-envelope-version-unsupported",
     "nested-candidate-kind-mismatch",
     "precedence-digest-before-key-id",
@@ -98,6 +101,17 @@ REQUIRED_CASE_IDS = {
     "revoked-grant-removal",
     "revoked-key-removal",
     "selector-issuer-role-conflict",
+    "selector-algorithm-unsupported",
+    "selector-digest-mismatch",
+    "selector-encoding-invalid",
+    "selector-key-id-mismatch",
+    "selector-key-revoked",
+    "selector-key-unbound",
+    "selector-kind-mismatch",
+    "selector-low-order-r-invalid",
+    "selector-principal-unknown",
+    "selector-public-key-encoding-invalid",
+    "selector-scalar-l-invalid",
     "selector-proposer-role-conflict",
     "selector-verifier-role-conflict",
     "signature-wrong-length",
@@ -1044,10 +1058,12 @@ def evaluate_case(case: dict[str, Any]) -> Result:
     if case["entrypoint"] == "initialize-anchor":
         return evaluate_initialize_anchor(value)
     try:
-        version_kind_preflight(value)
+        evaluate_new = case["entrypoint"] == "evaluate-new"
+        verification_value = {"payload": {"promotion_input": value}} if evaluate_new else value
+        version_kind_preflight(verification_value)
         if schema_errors(value, "v2/envelope.schema.json"):
             reject(2, "input.schema_invalid")
-        semantic_stage_two(value)
+        semantic_stage_two(verification_value)
         anchor = case["trusted_anchor"]
         if (
             len(anchor["key_ownership_registry"]) > 4096
@@ -1055,6 +1071,7 @@ def evaluate_case(case: dict[str, Any]) -> Result:
             or len(anchor["revoked_grant_ids"]) > 4096
         ):
             reject(2, "input.limit_exceeded")
+        value = verification_value
         body = value["payload"]["promotion_input"]["payload"]
         identity = body["identity_context"]
         authorization = body["authorization_context"]
@@ -1127,6 +1144,15 @@ def evaluate_case(case: dict[str, Any]) -> Result:
         ):
             reject(9, "constitution.artifact_mismatch")
         expected_decision = policy_decision(value["payload"]["promotion_input"])
+        if evaluate_new:
+            return (
+                "verified",
+                10,
+                None,
+                expected_decision["payload"]["status"],
+                False,
+                None,
+            )
         if canonical_bytes(expected_decision) != canonical_bytes(value["payload"]["decision"]):
             reject(11, "decision.content_mismatch")
         selector_pair = all_pairs(value, include_selector=True)[-1]
@@ -1154,7 +1180,7 @@ def evaluate_case(case: dict[str, Any]) -> Result:
             11,
             None,
             expected_decision["payload"]["status"],
-            case["entrypoint"] == "verify-attested-proposal",
+            False,
             None,
         )
     except Rejected as error:

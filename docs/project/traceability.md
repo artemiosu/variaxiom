@@ -9,18 +9,18 @@ acceptance evidence to pass in the required environments. Documentation alone is
 |---|---|---|---|---|
 | REQ-CORE-001 | architecture overview §5 | Python promotion gate | `tests/test_promotion.py`, Authority Test | partial |
 | REQ-CORE-002 | architecture overview §4 | module/trust-plane boundaries | Authority Test plus architecture review | partial |
-| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one through stage-ten inspector | shared v1 conformance plus frozen M2 failures through stage nine and 37 exact stage-ten decisions in both runtimes | implemented |
+| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one through stage-eleven verifier | shared v1 conformance plus all 237 frozen M2 cases exercised at their assigned boundary and 37 exact terminal results in both runtimes | implemented |
 | REQ-AUTH-001 | constitution v1 | Python and Rust gates | ungranted-authority fixture and tests | implemented |
 | REQ-AUTH-002 | M2.1 spec and grant schema | disabled exact-delta signed-grant verification in Python/Rust | v1 tests plus 21 frozen stage-eight grant failures and 40 later-boundary passes | partial |
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
 | REQ-TRUST-001 | constitution and M2.1 identity context | proposer/verifier checks | v1 self-check plus v2 adversarial manifest | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
-| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | disabled runtime identity graph, role, ownership, and revocation boundary in Python/Rust | accepted 252-case identity, alias, role, genesis, transition, non-authorizing result, replay-anchor binding, revocation corpus, stage-five differential tests, and result-contract council report | partial |
-| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | disabled Python/Rust runtime target/key binding and strict Ed25519 verification | golden message/signature, accepted 252-case corpus, 19 Wycheproof vectors, stage-four, stage-six, and direct selector cases, and result-contract council report | partial |
+| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | disabled runtime identity graph, role, ownership, revocation, and selector boundary in Python/Rust | accepted 252-case identity, alias, role, genesis, transition, non-authorizing result, replay-anchor binding, revocation, selector-role vectors, stage-five/eleven tests, and result-contract council report | partial |
+| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | disabled Python/Rust runtime target/key binding, strict Ed25519, and selector verification | golden message/signature, accepted 252-case corpus, 19 Wycheproof vectors, stage-four/six/eleven and direct selector cases, and result-contract council report | partial |
 | REQ-EVID-001 | M1.1/M2.1 conformance specs | Python/Rust exact candidate/artifact evidence binding | v1 artifact mismatch plus frozen v2 adjacent-candidate and stage-ten policy tests | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |
-| REQ-PROM-001 | constitution, M1.1, and M2.1 | Python/Rust pure gates plus disabled stage-ten adapter | repeated v1 tests and 37 exact cross-language v2 decisions | implemented |
+| REQ-PROM-001 | constitution, M1.1, and M2.1 | Python/Rust pure gates plus disabled stage-ten/eleven verifier | repeated v1 tests, 37 exact cross-language v2 decisions, and 37 exact terminal outcomes | implemented |
 | REQ-PROM-002 | lineage architecture | append-only Python ledger | rejected Authority Test lineage | partial |
 | REQ-LINE-001 | data model and M1.1 | artifact store/canonical hashing | artifact and conformance tests | implemented |
 | REQ-LINE-002 | event-sourced lineage ADR | Python hash-chain ledger | tamper and JSONL-framing tests | partial |

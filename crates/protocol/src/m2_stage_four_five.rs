@@ -153,6 +153,24 @@ fn pairs(value: &Value) -> Check<Vec<Pair<'_>>> {
     Ok(result)
 }
 
+fn selector_pair(value: &Value) -> Check<Pair<'_>> {
+    let proposal = proposal_payload(value)?;
+    let signature = &proposal["selector_signature"];
+    let actor = text(&object(&object(signature)?["payload"])?["principal_id"])?;
+    Ok(Pair {
+        envelope: &proposal["decision"],
+        signature,
+        kind: "promotion-decision",
+        actor,
+    })
+}
+
+fn pairs_with_selector(value: &Value) -> Check<Vec<Pair<'_>>> {
+    let mut result = pairs(value)?;
+    result.push(selector_pair(value)?);
+    Ok(result)
+}
+
 type PrincipalMap<'a> = BTreeMap<String, &'a Map<String, Value>>;
 type KeyMap<'a> = BTreeMap<String, (String, &'a Map<String, Value>)>;
 
@@ -303,10 +321,14 @@ fn has_role(principal: &Map<String, Value>, role: &str) -> bool {
         .is_some_and(|roles| roles.iter().any(|item| item.as_str() == Some(role)))
 }
 
-fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
+fn stage_five_attested_pairs(
+    value: &Value,
+    anchor: &Map<String, Value>,
+    pairs: &[Pair<'_>],
+    role_pairs: &[Pair<'_>],
+) -> Check {
     let (principals, keys, ambiguous) = identity_maps(attested_identity(value)?)?;
-    let pairs = pairs(value)?;
-    for pair in &pairs {
+    for pair in pairs {
         if text(&signature_payload(*pair)?["principal_id"])? != pair.actor {
             return Err(invalid(5, "signature.principal_mismatch"));
         }
@@ -314,12 +336,12 @@ fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
     if ambiguous {
         return Err(invalid(5, "identity.key_ambiguous"));
     }
-    for pair in &pairs {
+    for pair in pairs {
         if !principals.contains_key(text(&signature_payload(*pair)?["principal_id"])?) {
             return Err(invalid(5, "identity.principal_unknown"));
         }
     }
-    for pair in &pairs {
+    for pair in pairs {
         let signature = signature_payload(*pair)?;
         let principal_id = text(&signature["principal_id"])?;
         if keys
@@ -332,7 +354,7 @@ fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
     let revoked_keys = anchor["revoked_key_ids"]
         .as_array()
         .ok_or_else(|| invalid(5, "identity.context_untrusted"))?;
-    for pair in &pairs {
+    for pair in pairs {
         let key_id = text(&signature_payload(*pair)?["key_id"])?;
         if revoked_keys
             .iter()
@@ -357,7 +379,7 @@ fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
             return Err(invalid(5, "grant.revoked"));
         }
     }
-    for pair in &pairs {
+    for pair in pairs {
         let principal_id = text(&signature_payload(*pair)?["principal_id"])?;
         let principal = principals
             .get(principal_id)
@@ -366,12 +388,12 @@ fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
             return Err(invalid(5, "identity.role_missing"));
         }
     }
-    let evidence_actors = pairs
+    let evidence_actors = role_pairs
         .iter()
         .filter(|pair| pair.kind == "evidence")
         .map(|pair| pair.actor)
         .collect::<BTreeSet<_>>();
-    let other_actors = pairs
+    let other_actors = role_pairs
         .iter()
         .filter(|pair| pair.kind != "evidence")
         .map(|pair| pair.actor)
@@ -392,6 +414,54 @@ fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
         return Err(invalid(5, "identity.not_independent"));
     }
     Ok(())
+}
+
+fn stage_five_attested(value: &Value, anchor: &Map<String, Value>) -> Check {
+    let pairs = pairs(value)?;
+    stage_five_attested_pairs(value, anchor, &pairs, &pairs)
+}
+
+pub(crate) fn verify_selector_stages_four_five(
+    value: &Value,
+    anchor: &Value,
+) -> Result<(), M2WireRejection> {
+    let identity = attested_identity(value).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let (_, keys, _) = identity_maps(identity).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let selector = selector_pair(value).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    stage_four_pairs(&[selector], &keys).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let all_pairs = pairs_with_selector(value).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let anchor = object(anchor).map_err(|error| M2WireRejection {
+        stage: 11,
+        code: error.code,
+        authorizing: false,
+    })?;
+    stage_five_attested_pairs(value, anchor, &[selector], &all_pairs).map_err(|error| {
+        M2WireRejection {
+            stage: 11,
+            code: error.code,
+            authorizing: false,
+        }
+    })
 }
 
 fn stage_five_context(identity: &Value) -> Check<KeyMap<'_>> {

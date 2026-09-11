@@ -1062,6 +1062,11 @@
       "stage": 11
     },
     {
+      "case_id": "historical-replay-alternate-anchor-bound",
+      "fixture": "cases/historical-replay-alternate-anchor-bound.json",
+      "stage": 11
+    },
+    {
       "case_id": "historical-replay-nonauthorizing",
       "fixture": "cases/historical-replay-nonauthorizing.json",
       "stage": 11
@@ -1264,5 +1269,5 @@
     "replay_result": "base-replay-result.json",
     "verified_proposal": "base-verified-proposal.json"
   },
-  "spec_revision": "a587c07175a8d149606b4278ec996c91ff414aa49d8a4515baf2701456c51378"
+  "spec_revision": "30a31bde12a946912473ab201054ff9f39dc0fdd7a386a5424d712768460693f"
 }

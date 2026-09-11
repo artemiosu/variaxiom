@@ -3,7 +3,7 @@
 - **Reviewed:** 2026-09-07
 - **Release:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 - **Current product increment:** M2.1 — identity, authority grants, and detached signatures
-- **Active specification:** [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md) (accepted for disabled experimental implementation)
+- **Active specification:** [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md) (issue #16 correction proposed; previous 237-case baseline accepted only for disabled experimental implementation)
 
 ## Current verified baseline
 
@@ -40,7 +40,8 @@ results set `authorizing: true`, including two rejected policy decisions, and th
 two-phase public result schemas were not frozen. Correction issue
 [#16](https://github.com/artemiosu/variaxiom/issues/16) is active. This branch proposes four exact
 non-authorizing result schemas, an `evaluate-new` entry point, eight direct selector adversarial
-cases, direct selector point/scalar boundary cases, and a 251-case inventory. It is not accepted
+cases, direct selector point/scalar boundary cases, replay-to-anchor digest binding, and a 252-case
+inventory. It is not accepted
 until the repeated council returns no P0/P1.
 
 ## Next

@@ -8,6 +8,7 @@
     "decision_status": "not-reached",
     "expected_anchor": null,
     "reached_stage": 1,
+    "recorded_trusted_anchor_digest": null,
     "status": "rejected"
   },
   "input_base64url": "77u_e30",

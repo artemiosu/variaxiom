@@ -15,8 +15,8 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
 | REQ-TRUST-001 | constitution and M2.1 identity context | proposer/verifier checks | v1 self-check plus v2 adversarial manifest | partial |
 | REQ-TRUST-002 | protected evaluation ADR | not isolated yet | future sandbox adversarial suite | planned |
-| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | runtime not implemented | proposed 251-case identity, alias, role, genesis, transition, non-authorizing result, and revocation corpus; repeat review pending | partial |
-| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | test-only cross-runtime verifier; runtime gate disabled | golden message/signature, proposed 251-case corpus, 19 Wycheproof vectors, and direct selector cases; repeat review pending | partial |
+| REQ-ID-001 | M2.1 spec, ADR 0010, principal/anchor/result schemas | runtime not implemented | proposed 252-case identity, alias, role, genesis, transition, non-authorizing result, replay-anchor binding, and revocation corpus; repeat review pending | partial |
+| REQ-SIG-001 | M2.1 spec, ADR 0010, signature and result schemas | test-only cross-runtime verifier; runtime gate disabled | golden message/signature, proposed 252-case corpus, 19 Wycheproof vectors, and direct selector cases; repeat review pending | partial |
 | REQ-EVID-001 | M1.1 conformance spec | Python/Rust gates | artifact-mismatch fixture | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |

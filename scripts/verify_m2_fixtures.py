@@ -33,9 +33,9 @@ ROLE_FOR_KIND = {
     "authority-grant": "authority-issuer",
     "promotion-decision": "promotion-selector",
 }
-EXPECTED_CASE_COUNT = 251
+EXPECTED_CASE_COUNT = 252
 EXPECTED_MANIFEST_INVENTORY_SHA256 = (
-    "e14c8f84a4f44297e650440b1a657257b28236b86f35a665c1d3416814b2d036"
+    "50418584443bab07d9f79e551de1ceec014b2da301d150716fc474f94832adc0"
 )
 
 REQUIRED_CASE_IDS = {
@@ -76,6 +76,7 @@ REQUIRED_CASE_IDS = {
     "evaluate-new-accepted",
     "evaluate-new-anchor-mismatch",
     "evaluate-new-policy-rejected",
+    "historical-replay-alternate-anchor-bound",
     "nested-candidate-envelope-version-unsupported",
     "nested-candidate-kind-mismatch",
     "precedence-digest-before-key-id",
@@ -1229,6 +1230,11 @@ def main() -> int:
             observed_anchor,
         ) = evaluate_case(case)
         expected = case["expected"]
+        recorded_trusted_anchor_digest = (
+            digest(case["trusted_anchor"])
+            if case["entrypoint"] == "replay-historical" and observed_status == "verified"
+            else None
+        )
         if observed_stage is not None:
             counts[observed_stage] = counts.get(observed_stage, 0) + 1
         if (
@@ -1237,11 +1243,12 @@ def main() -> int:
             or observed_stage != expected["reached_stage"]
             or decision_status != expected["decision_status"]
             or authorizing != expected["authorizing"]
+            or recorded_trusted_anchor_digest != expected["recorded_trusted_anchor_digest"]
             or canonical_bytes(observed_anchor) != canonical_bytes(expected["expected_anchor"])
         ):
             failures.append(
-                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status, authorizing, observed_anchor)} "
-                f"expected={(expected['status'], expected['reached_stage'], expected['code'], expected['decision_status'], expected['authorizing'], expected['expected_anchor'])}"
+                f"{case['case_id']}: observed={(observed_status, observed_stage, observed_code, decision_status, authorizing, recorded_trusted_anchor_digest, observed_anchor)} "
+                f"expected={(expected['status'], expected['reached_stage'], expected['code'], expected['decision_status'], expected['authorizing'], expected['recorded_trusted_anchor_digest'], expected['expected_anchor'])}"
             )
         for vector in case["signature_vectors"]:
             observed_vector_code = classify_signature_vector(vector)

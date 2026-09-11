@@ -20,7 +20,7 @@ reviews with no remaining P0/P1. This authorizes a disabled implementation, not 
 security claim or a substitute for human review.
 
 Stage-eleven implementation review later exposed an unsafe positive authority flag and an
-unfrozen two-phase result API. Issue #16 corrects the contract in a separate proposed 251-case
+unfrozen two-phase result API. Issue #16 corrects the contract in a separate proposed 252-case
 freeze; it is not accepted until repeated automated review has no open P0/P1.
 
 ## Implemented

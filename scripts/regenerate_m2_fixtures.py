@@ -537,6 +537,9 @@ def make_case(
             "decision_status": decision_status,
             "authorizing": False,
             "expected_anchor": None,
+            "recorded_trusted_anchor_digest": (
+                digest(anchor) if code is None and entrypoint == "replay-historical" else None
+            ),
             "reached_stage": stage if code is not None else success_stage,
         },
         "signature_vectors": (
@@ -645,6 +648,7 @@ def history_case(
             ),
             "authorizing": False,
             "expected_anchor": expected_anchor,
+            "recorded_trusted_anchor_digest": None,
             "reached_stage": stage if code is not None else (11 if probe is not None else 6),
         },
         "signature_vectors": vectors(probe) if probe is not None else [],
@@ -690,6 +694,7 @@ def initialization_case(
                 if code is None
                 else None
             ),
+            "recorded_trusted_anchor_digest": None,
             "reached_stage": stage if code is not None else 6,
         },
         "signature_vectors": [],
@@ -3160,6 +3165,20 @@ def build_cases(base: dict[str, Any], base_anchor: dict[str, Any]) -> list[dict[
             entrypoint="replay-historical",
         )
     )
+    alternate_recorded_anchor = copy.deepcopy(base_anchor)
+    alternate_recorded_anchor["revoked_key_ids"] = ["key:sha256:" + "e" * 64]
+    cases.append(
+        make_case(
+            "historical-replay-alternate-anchor-bound",
+            11,
+            base,
+            alternate_recorded_anchor,
+            None,
+            decision_status="accepted",
+            entrypoint="replay-historical",
+            notes="The same historical proposal binds a different recorded trust snapshot digest.",
+        )
+    )
 
     base_body = promotion(base)
     identity0 = base_body["identity_context"]
@@ -3799,6 +3818,7 @@ def main() -> int:
         "verification": verification,
         "authorizing": False,
         "attested_proposal_digest": digest(base),
+        "recorded_trusted_anchor_digest": digest(anchor),
         "reproduced_decision_digest": digest(base["payload"]["decision"]),
     }
     anchor_result = {

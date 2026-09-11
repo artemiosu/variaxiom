@@ -26,8 +26,8 @@ production credential is stored here. `scripts/regenerate_m2_fixtures.py` determ
 rebuilds every object, digest, message, and test signature.
 
 `scripts/verify_m2_fixtures.py` executes the normative stage order and checks every declared result.
-It pins the complete ordered inventory at 251 cases with SHA-256
-`e14c8f84a4f44297e650440b1a657257b28236b86f35a665c1d3416814b2d036`; adding, removing,
+It pins the complete ordered inventory at 252 cases with SHA-256
+`50418584443bab07d9f79e551de1ceec014b2da301d150716fc474f94832adc0`; adding, removing,
 renaming, moving, or reclassifying a case requires an explicit reviewed update to that pin. The
 hashed UTF-8 preimage is one LF-terminated line per manifest entry in manifest order:
 `<stage>:<case_id>:<fixture>`.

@@ -22,7 +22,7 @@
     "expected": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "code", "decision_status", "authorizing", "reached_stage", "expected_anchor"],
+      "required": ["status", "code", "decision_status", "authorizing", "reached_stage", "expected_anchor", "recorded_trusted_anchor_digest"],
       "properties": {
         "status": {"enum": ["verified", "rejected"]},
         "code": {"oneOf": [{"type": "null"}, {"$ref": "common.schema.json#/$defs/stableVerificationCode"}]},
@@ -31,6 +31,9 @@
         "reached_stage": {"type": "integer", "minimum": 1, "maximum": 11},
         "expected_anchor": {
           "oneOf": [{"type": "null"}, {"$ref": "trusted-anchor.schema.json"}]
+        },
+        "recorded_trusted_anchor_digest": {
+          "oneOf": [{"type": "null"}, {"$ref": "common.schema.json#/$defs/sha256"}]
         }
       }
     },
@@ -78,6 +81,16 @@
     {
       "if": {"properties": {"entrypoint": {"enum": ["initialize-anchor", "advance-anchor-history", "replay-historical"]}}},
       "then": {"properties": {"expected": {"properties": {"authorizing": {"const": false}}}}}
+    },
+    {
+      "if": {
+        "properties": {
+          "entrypoint": {"const": "replay-historical"},
+          "expected": {"properties": {"status": {"const": "verified"}}}
+        }
+      },
+      "then": {"properties": {"expected": {"properties": {"recorded_trusted_anchor_digest": {"$ref": "common.schema.json#/$defs/sha256"}}}}},
+      "else": {"properties": {"expected": {"properties": {"recorded_trusted_anchor_digest": {"type": "null"}}}}}
     },
     {
       "if": {

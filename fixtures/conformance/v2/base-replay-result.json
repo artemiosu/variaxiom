@@ -1,6 +1,7 @@
 {
   "attested_proposal_digest": "224dd416283a927960b742a9ad7a05a1c79245f65381de69036faf86b972fdc7",
   "authorizing": false,
+  "recorded_trusted_anchor_digest": "67b6f16e4058a3a9b3d9e4197cc226d183fcf97486f8f5d0bc81ac69e96844bf",
   "reproduced_decision_digest": "21e2113480e4457975aa2a7aba2bb83058ff97d6d7c7a74a0d627a918f301c25",
   "result_version": "replay-result/v1",
   "verification": {

@@ -418,6 +418,7 @@ class M2WireInspectionTests(unittest.TestCase):
         self.assertEqual(len(cases), 37)
         verified = 0
         rejected = 0
+        unsafe_fixture_authorizing = 0
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_eleven(
@@ -438,7 +439,8 @@ class M2WireInspectionTests(unittest.TestCase):
                 verified += 1
                 self.assertIsInstance(result, VerifiedM2Proposal)
                 proposal = cast(VerifiedM2Proposal, result)
-                self.assertEqual(proposal.authorizing, expected["authorizing"])
+                unsafe_fixture_authorizing += int(expected["authorizing"])
+                self.assertFalse(proposal.authorizing)
                 self.assertEqual(proposal.decode_resulting_anchor(), expected["expected_anchor"])
                 decision = cast(dict[str, Any], proposal.decode_decision())
                 self.assertEqual(decision["payload"]["status"], expected["decision_status"])
@@ -452,6 +454,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
         self.assertEqual(verified, 29)
         self.assertEqual(rejected, 8)
+        self.assertEqual(unsafe_fixture_authorizing, 27)
 
 
 if __name__ == "__main__":

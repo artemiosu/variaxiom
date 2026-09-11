@@ -2,11 +2,30 @@
 
 use serde_json::Value;
 use variaxiom_protocol::{
-    CanonicalM2Wire, M2Entrypoint, M2WireRejection, PromotionDecision,
-    verify_m2_stage_eleven_protocol,
+    CanonicalM2Wire, M2Entrypoint, M2WireRejection, PromotionDecision, canonical_json,
+    verify_m2_selector_attestation,
 };
 
 use crate::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
+
+fn rejection(code: &'static str) -> M2WireRejection {
+    M2WireRejection {
+        stage: 11,
+        code,
+        authorizing: false,
+    }
+}
+
+fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2WireRejection> {
+    match entrypoint {
+        M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
+        M2Entrypoint::AdvanceAnchorHistory => value
+            .as_object()
+            .and_then(|history| history.get("probe_attested_proposal"))
+            .ok_or_else(|| rejection("input.schema_invalid")),
+        M2Entrypoint::InitializeAnchor => Err(rejection("input.schema_invalid")),
+    }
+}
 
 /// A fully verified signed proposal with no durable-lineage capability.
 #[derive(Clone, Debug, PartialEq)]
@@ -45,13 +64,13 @@ impl VerifiedM2Proposal {
         self.policy_evaluated.resulting_anchor()
     }
 
-    /// Live verification authorizes only the proposal as data.
+    /// M2.1 results are always non-authorizing data.
     ///
-    /// Replay and anchor-history probes remain non-authorizing. No M2.1
-    /// result can activate a candidate or append durable lineage.
+    /// No value returned by this disabled verifier can activate a candidate
+    /// or append durable lineage.
     #[must_use]
     pub const fn authorizing(&self) -> bool {
-        matches!(self.entrypoint(), M2Entrypoint::VerifyAttestedProposal)
+        false
     }
 }
 
@@ -62,13 +81,20 @@ pub fn inspect_m2_stage_eleven(
     trusted_anchor: Option<&Value>,
 ) -> Result<VerifiedM2Proposal, M2WireRejection> {
     let policy_evaluated = inspect_m2_stage_ten(source, entrypoint, trusted_anchor)?;
-    let decision = serde_json::to_value(policy_evaluated.decision().envelope()).map_err(|_| {
-        M2WireRejection {
-            stage: 11,
-            code: "input.schema_invalid",
-            authorizing: false,
-        }
-    })?;
-    verify_m2_stage_eleven_protocol(policy_evaluated.policy_context(), &decision)?;
+    let decision = serde_json::to_value(policy_evaluated.decision().envelope())
+        .map_err(|_| rejection("input.schema_invalid"))?;
+    let proposal = proposal_value(policy_evaluated.wire().value(), entrypoint)?;
+    let supplied = proposal
+        .as_object()
+        .and_then(|envelope| envelope.get("payload"))
+        .and_then(Value::as_object)
+        .and_then(|payload| payload.get("decision"))
+        .ok_or_else(|| rejection("input.schema_invalid"))?;
+    let supplied = canonical_json(supplied).map_err(|_| rejection("input.schema_invalid"))?;
+    let computed = canonical_json(&decision).map_err(|_| rejection("input.schema_invalid"))?;
+    if supplied != computed {
+        return Err(rejection("decision.content_mismatch"));
+    }
+    verify_m2_selector_attestation(policy_evaluated.policy_context())?;
     Ok(VerifiedM2Proposal { policy_evaluated })
 }

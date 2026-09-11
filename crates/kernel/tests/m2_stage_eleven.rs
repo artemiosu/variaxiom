@@ -92,6 +92,7 @@ fn every_frozen_terminal_result_matches() {
 
     let mut verified = 0;
     let mut rejected = 0;
+    let mut unsafe_fixture_authorizing = 0;
     for case in cases {
         let result = inspect_m2_stage_eleven(
             &input(&case),
@@ -116,12 +117,8 @@ fn every_frozen_terminal_result_matches() {
         let proposal = result.unwrap_or_else(|error| {
             panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
         });
-        assert_eq!(
-            proposal.authorizing(),
-            case.expected.authorizing,
-            "{}",
-            case.case_id
-        );
+        unsafe_fixture_authorizing += usize::from(case.expected.authorizing);
+        assert!(!proposal.authorizing(), "{}", case.case_id);
         assert_eq!(
             proposal.resulting_anchor(),
             case.expected.expected_anchor.as_ref(),
@@ -136,4 +133,5 @@ fn every_frozen_terminal_result_matches() {
     }
     assert_eq!(verified, 29);
     assert_eq!(rejected, 8);
+    assert_eq!(unsafe_fixture_authorizing, 27);
 }

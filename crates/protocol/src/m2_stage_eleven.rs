@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 
 use crate::m2_stage_four_five::verify_selector_stages_four_five;
 use crate::m2_stage_six::verify_selector_stage_six;
-use crate::{M2Entrypoint, M2WireRejection, PolicyContextBoundM2Input, canonical_json};
+use crate::{M2Entrypoint, M2WireRejection, PolicyContextBoundM2Input};
 
 fn rejection(code: &'static str) -> M2WireRejection {
     M2WireRejection {
@@ -30,25 +30,17 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2W
     }
 }
 
-/// Verify exact decision equality and the selector signature over that decision.
+/// Verify only the selector signature over the proposal's embedded decision.
 ///
-/// This protocol helper consumes a stage-nine bound value and a decision that
-/// was independently recomputed by the Rust kernel. Success remains data only;
-/// it does not append or activate lineage.
-pub fn verify_m2_stage_eleven_protocol(
+/// This is not a complete stage-eleven verifier and does not recompute policy.
+/// The trusted kernel must first compare the embedded decision with its own
+/// independently recomputed decision. Success remains data only; it does not
+/// append or activate lineage.
+pub fn verify_m2_selector_attestation(
     policy_context: &PolicyContextBoundM2Input,
-    computed_decision: &Value,
 ) -> Result<(), M2WireRejection> {
     let proposal = proposal_value(policy_context.wire().value(), policy_context.entrypoint())?;
     let payload = object(&object(proposal)?["payload"])?;
-    let supplied =
-        canonical_json(&payload["decision"]).map_err(|_| rejection("input.schema_invalid"))?;
-    let computed =
-        canonical_json(computed_decision).map_err(|_| rejection("input.schema_invalid"))?;
-    if supplied != computed {
-        return Err(rejection("decision.content_mismatch"));
-    }
-
     let anchor = policy_context
         .resulting_anchor()
         .or_else(|| policy_context.trusted_anchor())

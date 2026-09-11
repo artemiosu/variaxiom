@@ -7,7 +7,7 @@ mod m2_stage_six;
 mod m2_stage_three;
 mod m2_stage_two;
 
-pub use m2_stage_eleven::verify_m2_stage_eleven_protocol;
+pub use m2_stage_eleven::verify_m2_selector_attestation;
 pub use m2_stage_four_five::{
     DigestBoundM2Input, IdentityBoundM2Input, inspect_m2_stage_five, inspect_m2_stage_four,
 };

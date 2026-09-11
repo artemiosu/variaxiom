@@ -51,22 +51,32 @@ This is not a human security audit and does not enable an authorizing runtime.
 Disabled runtime implementation is tracked in [issue #11](https://github.com/artemiosu/variaxiom/issues/11)
 and follows the bounded [implementation plan](m2.1-runtime-implementation.md). The frozen corpus is
 an input to that work and cannot be silently changed by the implementation PR. Its first draft
-now implements all eleven frozen stages in both Python and Rust: canonical wire,
+now implements all eleven internal frozen stages in both Python and Rust: canonical wire,
 structural validation, trusted-context binding, target/key digest recomputation, and anchored
 identity/role/revocation checks followed by the strict Ed25519 profile, exact evidence and grant
 binding, constitution/artifact binding, deterministic M1.1 policy, exact decision comparison, and
-promotion-selector verification. Both implementations match all 37 terminal fixtures: eight
-stage-eleven failures, 27 live verified proposals, one explicitly non-authorizing historical
-replay, and one explicitly non-authorizing anchor-history probe. Intermediate boundaries remain
-non-authorizing; returned anchor data is immutable and cannot mutate trusted state. The complete
-implementation remains disabled and cannot append or activate durable lineage.
+promotion-selector verification. Both implementations match the status, stable code, decision,
+and returned anchor of all 37 terminal fixtures. Every implementation result deliberately remains
+non-authorizing, including the 27 live evaluations; it does not reproduce the unsafe `true` values
+in the frozen fixture field. Returned anchor data is immutable and cannot mutate trusted state.
+The complete implementation remains disabled and cannot append or activate durable lineage.
+
+The first automated implementation review found no P0 issue, but it did find blocking P1 API and
+contract defects. The caller-supplied-decision bypass in a public Rust helper has been removed.
+The remaining blockers belong to the accepted contract rather than this implementation branch:
+`authorizing` can be true for a rejected policy decision, and the normative two-phase
+`evaluate_new` / `verify_attested_proposal` / `replay_historical` result APIs are not frozen in the
+schemas and fixtures. Until a separate contract-correction change is accepted, the draft is not
+ready to merge and no M2.1 result may be treated as an authority capability.
 
 ## Next
 
-1. Rebase draft PR #12, implement the distinct two-phase APIs, and rerun the full corpus and
-   automated three-role implementation review.
-2. M2.2 — transactional SQLite lineage and projections.
-3. M2.3 — tamper/replay/fault-injection suite and rollback drill.
+1. Implement the accepted distinct two-phase APIs and direct selector adversarial coverage in
+   rebased draft PR #12.
+2. Repeat the full corpus, clean-clone, CI, and three-role automated review; merge only with no
+   open P0/P1 findings.
+3. M2.2 — transactional SQLite lineage and projections.
+4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 
 ## Open decisions
 

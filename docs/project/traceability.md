@@ -9,7 +9,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 |---|---|---|---|---|
 | REQ-CORE-001 | architecture overview §5 | Python promotion gate | `tests/test_promotion.py`, Authority Test | partial |
 | REQ-CORE-002 | architecture overview §4 | module/trust-plane boundaries | Authority Test plus architecture review | partial |
-| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 stage-one through stage-eleven verifier | shared v1 conformance plus all 237 frozen M2 cases exercised at their assigned boundary and 37 exact terminal results in both runtimes | implemented |
+| REQ-CORE-003 | M1.1/M2.1 specs and ADR 0009 | Python/Rust protocol modules and disabled M2 internal stage-one through stage-eleven pipeline; public two-phase API blocked on contract correction | shared v1 conformance plus all 237 frozen M2 cases exercised at their assigned boundary; 37 terminal statuses/codes/decisions/anchors match while unsafe positive authority flags are intentionally suppressed | partial |
 | REQ-AUTH-001 | constitution v1 | Python and Rust gates | ungranted-authority fixture and tests | implemented |
 | REQ-AUTH-002 | M2.1 spec and grant schema | disabled exact-delta signed-grant verification in Python/Rust | v1 tests plus 21 frozen stage-eight grant failures and 40 later-boundary passes | partial |
 | REQ-AUTH-003 | multi-agent architecture | not implemented | future cell lease tests | planned |
@@ -20,7 +20,7 @@ acceptance evidence to pass in the required environments. Documentation alone is
 | REQ-EVID-001 | M1.1/M2.1 conformance specs | Python/Rust exact candidate/artifact evidence binding | v1 artifact mismatch plus frozen v2 adjacent-candidate and stage-ten policy tests | implemented |
 | REQ-EVID-002 | evaluation framework | bootstrap evidence objects | v1/v2 schemas and exact-candidate signed base fixture | partial |
 | REQ-EVID-003 | evaluation framework | policy documentation only | future calibrated-evidence tests | planned |
-| REQ-PROM-001 | constitution, M1.1, and M2.1 | Python/Rust pure gates plus disabled stage-ten/eleven verifier | repeated v1 tests, 37 exact cross-language v2 decisions, and 37 exact terminal outcomes | implemented |
+| REQ-PROM-001 | constitution, M1.1, and M2.1 | Python/Rust pure gates plus disabled internal stage-ten/eleven pipeline; authority-safe public result contract pending | repeated v1 tests, 37 exact cross-language v2 decisions, and non-authorizing terminal implementation results | partial |
 | REQ-PROM-002 | lineage architecture | append-only Python ledger | rejected Authority Test lineage | partial |
 | REQ-LINE-001 | data model and M1.1 | artifact store/canonical hashing | artifact and conformance tests | implemented |
 | REQ-LINE-002 | event-sourced lineage ADR | Python hash-chain ledger | tamper and JSONL-framing tests | partial |

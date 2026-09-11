@@ -294,9 +294,8 @@ M2StageTenInspection = PolicyEvaluatedM2Input | M2WireRejection
 class VerifiedM2Proposal:
     """Fully verified signed proposal with no durable-append capability.
 
-    A live ``verify-attested-proposal`` result may authorize the proposal as
-    data. Historical replay and anchor-history probes remain explicitly
-    non-authorizing, and no M2.1 result can append or activate lineage.
+    Every M2.1 result is non-authorizing data. It cannot be used as a Python
+    capability for activation or durable lineage append.
     """
 
     policy_evaluated: PolicyEvaluatedM2Input
@@ -307,7 +306,7 @@ class VerifiedM2Proposal:
 
     @property
     def authorizing(self) -> bool:
-        return self.entrypoint == "verify-attested-proposal"
+        return False
 
     def decode(self) -> JSONValue:
         return self.policy_evaluated.decode()

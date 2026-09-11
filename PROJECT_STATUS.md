@@ -41,8 +41,10 @@ always-non-authorizing freeze. Three isolated automated reviewers reported no P0
 - pinned GitHub Actions CI, dependency review, and OpenSSF Scorecard workflows.
 - cross-language canonical promotion envelopes and shared Python/Rust fixtures;
 - frozen M2.1 schemas and a 252-case adversarial corpus with a non-authorizing fixture oracle;
-- disabled Python/Rust M2.1 stage-one through stage-eleven verifier, validated against every
-  frozen case at its assigned boundary and all 37 terminal results;
+- disabled Python/Rust M2.1 internal stage-one through stage-eleven pipeline, validated against
+  every frozen case at its assigned boundary and all 37 terminal statuses, codes, decisions, and
+  anchors; all implementation results stay non-authorizing while the accepted public result/API
+  contract is implemented;
 - CodeQL, project context routing, requirement traceability, and spec-driven increment gates.
 
 ## Not implemented yet

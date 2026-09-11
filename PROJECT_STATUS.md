@@ -3,7 +3,7 @@
 **Version:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 **Maturity:** pre-alpha research implementation
 **Primary public proof:** The Authority Test
-**Last status review:** 2026-09-07
+**Last status review:** 2026-09-11
 
 The concise source of truth for active development is
 [`docs/project/current.md`](docs/project/current.md); machine-readable status is in
@@ -18,6 +18,10 @@ grants, and detached signatures passed its three-role automated specification co
 schema/fixture freeze plus 19 curated Wycheproof vectors also passed three isolated automated
 reviews with no remaining P0/P1. This authorizes a disabled implementation, not a production
 security claim or a substitute for human review.
+
+Stage-eleven implementation review later exposed an unsafe positive authority flag and an
+unfrozen two-phase result API. Issue #16 corrects the contract in a separate proposed 251-case
+freeze; it is not accepted until repeated automated review has no open P0/P1.
 
 ## Implemented
 

@@ -36,6 +36,25 @@
       "minLength": 1,
       "not": {"pattern": "[\\u0000-\\u001f\\u007f]"}
     },
+    "stableVerificationCode": {
+      "enum": [
+        "input.encoding_invalid", "input.duplicate_member", "input.schema_invalid",
+        "input.version_unsupported", "input.kind_mismatch", "input.limit_exceeded",
+        "signature.algorithm_unsupported", "signature.encoding_invalid",
+        "signature.key_id_mismatch", "signature.key_revoked", "signature.domain_mismatch",
+        "signature.principal_mismatch", "signature.kind_mismatch",
+        "signature.digest_mismatch", "signature.invalid", "identity.principal_unknown",
+        "identity.context_untrusted", "identity.context_stale", "identity.key_ambiguous",
+        "identity.key_unbound", "identity.role_missing", "identity.role_conflict",
+        "identity.not_independent", "authorization.context_untrusted",
+        "evidence.subject_digest_mismatch", "grant.audience_mismatch",
+        "grant.context_mismatch", "grant.subject_mismatch", "grant.capability_mismatch",
+        "grant.interval_invalid", "grant.not_yet_valid", "grant.expired", "grant.revoked",
+        "grant.delegation_forbidden", "constitution.context_mismatch",
+        "constitution.artifact_mismatch", "decision.content_mismatch",
+        "lineage.head_mismatch"
+      ]
+    },
     "canonicalValue": {
       "oneOf": [
         {"type": ["string", "boolean", "null"]},

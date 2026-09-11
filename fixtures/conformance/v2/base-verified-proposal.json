@@ -1,0 +1,273 @@
+{
+  "attested_proposal": {
+    "envelope_version": "variaxiom-envelope/v1",
+    "kind": "attested-proposal",
+    "payload": {
+      "decision": {
+        "envelope_version": "variaxiom-envelope/v1",
+        "kind": "promotion-decision",
+        "payload": {
+          "candidate_id": "candidate:bounded-network",
+          "constitution_version": "constitution/v1",
+          "evidence_ids": [
+            "evidence:unit"
+          ],
+          "gate_version": "proof-gate/v1",
+          "input_digest": "efba06d3ae00ca2f8deaf85acbbd042b90c9e24c2ad7973ca828761b0719214a",
+          "reasons": [
+            "promotion.accepted"
+          ],
+          "status": "accepted"
+        }
+      },
+      "promotion_input": {
+        "envelope_version": "variaxiom-envelope/v1",
+        "kind": "promotion-input",
+        "payload": {
+          "authority_grant": {
+            "envelope": {
+              "envelope_version": "variaxiom-envelope/v1",
+              "kind": "authority-grant",
+              "payload": {
+                "audience": "variaxiom-promotion/v2",
+                "capabilities": [
+                  "network.example.com"
+                ],
+                "capability_namespace": "variaxiom-capability/v1",
+                "constitution_digest": "6b77964b3bafe24c26c5e99d093abdbda51de3605787f94204ad9e2cb02c3555",
+                "delegable": false,
+                "expires_at_unix_s": 1788742800,
+                "grant_version": "authority-grant/v1",
+                "issuer_principal_id": "principal:issuer",
+                "lineage_id": "lineage:example",
+                "not_before_unix_s": 1788739200,
+                "subject_candidate_digest": "0d6c1889fd6ef5d3cf4a24f5f0156e8380627a63a4fd9d49c21b544cd7c9aaad",
+                "trust_domain_id": "trust-domain:example"
+              }
+            },
+            "signature": {
+              "envelope_version": "variaxiom-envelope/v1",
+              "kind": "detached-signature",
+              "payload": {
+                "algorithm": "Ed25519",
+                "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
+                "principal_id": "principal:issuer",
+                "signature_base64url": "_T9SubiP9NSljVfj1pYexVFSZckExJqXUlwjWd22GDL9Pgx9YTYO2TiwcxE2aM3kyRjNk4H8bXW0OpBKiKb3Bg",
+                "signature_version": "detached-signature/v1",
+                "signed_digest": "352d87e20238409d3726984c5176f524b5ccd775fb545d7e2a9728edef2d3c23",
+                "signed_kind": "authority-grant",
+                "trust_domain_id": "trust-domain:example"
+              }
+            }
+          },
+          "authorization_context": {
+            "envelope_version": "variaxiom-envelope/v1",
+            "kind": "authorization-context",
+            "payload": {
+              "authorization_context_version": "authorization-context/v1",
+              "capability_namespace": "variaxiom-capability/v1",
+              "constitution_artifact_hash": "238a9361525f8ce47a425b93c6a49ff5fa66f8bc0a70c7aed0267f11a9044c9c",
+              "constitution_envelope_digest": "6b77964b3bafe24c26c5e99d093abdbda51de3605787f94204ad9e2cb02c3555",
+              "known_lineage_ids": [
+                "genome:parent"
+              ],
+              "lineage_capabilities": {
+                "genome:parent": []
+              },
+              "lineage_id": "lineage:example",
+              "trust_domain_id": "trust-domain:example",
+              "verified_artifact_hashes": [
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          },
+          "candidate": {
+            "envelope": {
+              "envelope_version": "variaxiom-envelope/v1",
+              "kind": "candidate",
+              "payload": {
+                "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "baseline_capabilities": [],
+                "candidate_id": "candidate:bounded-network",
+                "candidate_version": "candidate/v2",
+                "estimated_cost_micro_usd": 10,
+                "metadata": {},
+                "parent_id": "genome:parent",
+                "proposer": "principal:builder",
+                "requested_capabilities": [
+                  "network.example.com"
+                ],
+                "rollback_target": "genome:parent"
+              }
+            },
+            "signature": {
+              "envelope_version": "variaxiom-envelope/v1",
+              "kind": "detached-signature",
+              "payload": {
+                "algorithm": "Ed25519",
+                "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
+                "principal_id": "principal:builder",
+                "signature_base64url": "13T0Xi-XWOVnGjrrCIA5BO3BeI2cODLFt63ulxfOhkZhkixZY-16GTjBUYRpqfAQAsLith1cuwGDfJhAuAIZCw",
+                "signature_version": "detached-signature/v1",
+                "signed_digest": "0d6c1889fd6ef5d3cf4a24f5f0156e8380627a63a4fd9d49c21b544cd7c9aaad",
+                "signed_kind": "candidate",
+                "trust_domain_id": "trust-domain:example"
+              }
+            }
+          },
+          "constitution": {
+            "artifact_hash": "238a9361525f8ce47a425b93c6a49ff5fa66f8bc0a70c7aed0267f11a9044c9c",
+            "envelope": {
+              "envelope_version": "variaxiom-envelope/v1",
+              "kind": "constitution",
+              "payload": {
+                "forbid_implicit_authority_escalation": true,
+                "forbid_self_verification": true,
+                "mandatory_checks": [
+                  "unit"
+                ],
+                "max_candidate_cost_micro_usd": 100,
+                "minimum_independent_verifiers": 1,
+                "reject_any_failed_evidence": true,
+                "require_known_parent": true,
+                "require_rollback_target": true,
+                "version": "constitution/v1"
+              }
+            }
+          },
+          "evidence": [
+            {
+              "envelope": {
+                "envelope_version": "variaxiom-envelope/v1",
+                "kind": "evidence",
+                "payload": {
+                  "artifact_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "check": "unit",
+                  "details": {},
+                  "evidence_id": "evidence:unit",
+                  "evidence_version": "evidence/v2",
+                  "independent": true,
+                  "status": "pass",
+                  "subject_candidate_digest": "0d6c1889fd6ef5d3cf4a24f5f0156e8380627a63a4fd9d49c21b544cd7c9aaad",
+                  "verifier": "principal:verifier"
+                }
+              },
+              "signature": {
+                "envelope_version": "variaxiom-envelope/v1",
+                "kind": "detached-signature",
+                "payload": {
+                  "algorithm": "Ed25519",
+                  "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
+                  "principal_id": "principal:verifier",
+                  "signature_base64url": "DOrFhpmfRvly9xj-nSmx6aQQNI-6Sfpz8uLSnnwBrFKmTKYc8_Kj-hcxRhuTIXhNrXu_VSYn7IvhOyqacLXlDA",
+                  "signature_version": "detached-signature/v1",
+                  "signed_digest": "0bc200d35a2fac8fad61282aebfb018f328121e5c72b0f8e7c888b01dc75e1b7",
+                  "signed_kind": "evidence",
+                  "trust_domain_id": "trust-domain:example"
+                }
+              }
+            }
+          ],
+          "identity_context": {
+            "envelope_version": "variaxiom-envelope/v1",
+            "kind": "identity-context",
+            "payload": {
+              "evaluation_time_unix_s": 1788739200,
+              "identity_context_version": "identity-context/v1",
+              "previous_snapshot_digest": null,
+              "principals": [
+                {
+                  "keys": [
+                    {
+                      "algorithm": "Ed25519",
+                      "key_binding_version": "key-binding/v1",
+                      "key_id": "key:sha256:91e1d587474928b566c13e8546c977aa13927c40c372185d565ddff51251d609",
+                      "public_key_base64url": "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
+                    }
+                  ],
+                  "principal_id": "principal:builder",
+                  "principal_version": "principal/v1",
+                  "roles": [
+                    "candidate-proposer"
+                  ]
+                },
+                {
+                  "keys": [
+                    {
+                      "algorithm": "Ed25519",
+                      "key_binding_version": "key-binding/v1",
+                      "key_id": "key:sha256:f07fd6c6c4c836eda5bb0a4ee2df0cfc4524aad004bc89bb9ee2ae475747722e",
+                      "public_key_base64url": "PUAXw-hDiVqStwqnTRt-vJyYLM8uxJaMwM1V8Sr0Zgw"
+                    }
+                  ],
+                  "principal_id": "principal:issuer",
+                  "principal_version": "principal/v1",
+                  "roles": [
+                    "authority-issuer"
+                  ]
+                },
+                {
+                  "keys": [
+                    {
+                      "algorithm": "Ed25519",
+                      "key_binding_version": "key-binding/v1",
+                      "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
+                      "public_key_base64url": "_FHNjmIYoaONpH7QAjDwWAgW7RO6MwOsXeuRFUiQgCU"
+                    }
+                  ],
+                  "principal_id": "principal:selector",
+                  "principal_version": "principal/v1",
+                  "roles": [
+                    "promotion-selector"
+                  ]
+                },
+                {
+                  "keys": [
+                    {
+                      "algorithm": "Ed25519",
+                      "key_binding_version": "key-binding/v1",
+                      "key_id": "key:sha256:740e460f44788aae65619d9aa807c8ce7e536701e85d429c4226762698eeb92e",
+                      "public_key_base64url": "J4EX_BRMcjQPZ9DyMW6Dhs7_vyskKMnFH-98WX8dQm4"
+                    }
+                  ],
+                  "principal_id": "principal:verifier",
+                  "principal_version": "principal/v1",
+                  "roles": [
+                    "evidence-verifier"
+                  ]
+                }
+              ],
+              "revoked_grant_ids": [],
+              "revoked_key_ids": [],
+              "snapshot_sequence": 0,
+              "trust_domain_id": "trust-domain:example"
+            }
+          },
+          "protocol_version": "promotion-input/v2"
+        }
+      },
+      "proposal_version": "attested-proposal/v1",
+      "selector_signature": {
+        "envelope_version": "variaxiom-envelope/v1",
+        "kind": "detached-signature",
+        "payload": {
+          "algorithm": "Ed25519",
+          "key_id": "key:sha256:005a52fe2eb6f9212a89a6da5399f8547e4532d442a22121f9d1a39228623f5a",
+          "principal_id": "principal:selector",
+          "signature_base64url": "7ufVvvPCzYkEwvT3SycR60pK-sqxcI_0kzMNMBbJqPM5TDmCkrNsxqK0ZVOHZwulpHxR45w-6tEQhsjomqmqBQ",
+          "signature_version": "detached-signature/v1",
+          "signed_digest": "21e2113480e4457975aa2a7aba2bb83058ff97d6d7c7a74a0d627a918f301c25",
+          "signed_kind": "promotion-decision",
+          "trust_domain_id": "trust-domain:example"
+        }
+      }
+    }
+  },
+  "authorizing": false,
+  "result_version": "verified-proposal/v1",
+  "verification": {
+    "code": null,
+    "status": "verified",
+    "verification_version": "verification-result/v1"
+  }
+}

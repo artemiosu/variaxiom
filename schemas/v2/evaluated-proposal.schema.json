@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://variaxiom.dev/schemas/v2/evaluated-proposal.schema.json",
+  "title": "Variaxiom M2.1 evaluated proposal result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["result_version", "verification", "authorizing", "promotion_input", "decision"],
+  "properties": {
+    "result_version": {"const": "evaluated-proposal/v1"},
+    "authorizing": {"const": false},
+    "verification": {
+      "allOf": [
+        {"$ref": "verification-result.schema.json"},
+        {"properties": {"status": {"const": "verified"}, "code": {"type": "null"}}}
+      ]
+    },
+    "promotion_input": {"$ref": "envelope.schema.json#/$defs/promotionInput"},
+    "decision": {"$ref": "../decision-envelope.schema.json"}
+  }
+}

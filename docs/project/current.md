@@ -34,11 +34,20 @@ reached unanimous PASS on revision `84467c08d3867a807b3328cb1410ba91b2852654` wi
 P0/P1. This is not a human security audit. It authorizes only a disabled verifier implementation;
 no M2.1 runtime may yet authorize or append durable lineage.
 
+Automated stage-eleven review of draft implementation PR
+[#12](https://github.com/artemiosu/variaxiom/pull/12) found a contract defect: 27 live fixture
+results set `authorizing: true`, including two rejected policy decisions, and the distinct
+two-phase public result schemas were not frozen. Correction issue
+[#16](https://github.com/artemiosu/variaxiom/issues/16) is active. This branch proposes four exact
+non-authorizing result schemas, an `evaluate-new` entry point, eight direct selector adversarial
+cases, direct selector point/scalar boundary cases, and a 251-case inventory. It is not accepted
+until the repeated council returns no P0/P1.
+
 ## Next
 
-1. Implement the frozen M2.1 contract in disabled Python and Rust verifier APIs without changing
-   fixture semantics.
-2. Run the full corpus through both implementations and repeat the automated three-role review.
+1. Review and accept the issue #16 result-contract correction with no open P0/P1.
+2. Rebase draft PR #12, implement the distinct two-phase APIs, and rerun the full corpus and
+   automated three-role implementation review.
 3. M2.2 — transactional SQLite lineage and projections.
 4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 

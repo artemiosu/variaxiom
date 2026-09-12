@@ -23,7 +23,7 @@
   the proposed M2.1 identity/grant/signature specification.
 - [x] Define identity/grant schemas and shared adversarial fixtures.
 - [x] Implement disabled signature verification; signing/private-key custody remain out of scope.
-- [ ] Specify and review the transactional SQLite store in
+- [x] Specify and review the transactional SQLite store in
   [issue #18](https://github.com/artemiosu/variaxiom/issues/18).
 - [ ] Freeze SQLite schemas, SQL migration bytes, and shared fault fixtures.
 - [ ] Implement the disabled transactional SQLite store.

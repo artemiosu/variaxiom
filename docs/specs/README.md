@@ -38,6 +38,7 @@ prose remains directional.
 - [`m2.1-identity-grants-signatures.md`](m2.1-identity-grants-signatures.md) — accepted after a
   unanimous three-role automated security-council review; schemas and shared fixtures precede the
   disabled verifier implementation.
-- [`m2.2-transactional-sqlite-lineage.md`](m2.2-transactional-sqlite-lineage.md) — proposed
-  contract for Rust-owned local SQLite persistence, exact-head CAS, idempotency, rollback, outbox,
-  and deterministic projections; no writer implementation is included.
+- [`m2.2-transactional-sqlite-lineage.md`](m2.2-transactional-sqlite-lineage.md) — accepted after a
+  unanimous three-role automated council review with P0/P1/P2=0; freezes Rust-owned local SQLite
+  persistence, exact-head CAS, idempotency, rollback, outbox, and deterministic projections, but
+  includes no schema, fixture, migration, or writer implementation.

@@ -1,7 +1,7 @@
 {
   "schema_version": "variaxiom-project/v1",
   "project": "Variaxiom",
-  "reviewed": "2026-09-11",
+  "reviewed": "2026-09-12",
   "repository": {
     "url": "https://github.com/artemiosu/variaxiom",
     "default_branch": "main",
@@ -24,33 +24,39 @@
     "risks": "docs/project/risk-register.md"
   },
   "active_increment": {
-    "id": "M2.1",
-    "title": "Identity, authority grants, and detached signatures",
-    "status": "implemented",
-    "verification": "accepted_252_case_nonauthorizing_contract_disabled_python_rust_runtime_reviewed_clean_clone_ci_passed",
-    "specification": "docs/specs/m2.1-identity-grants-signatures.md",
+    "id": "M2.2",
+    "title": "Transactional SQLite lineage and deterministic projections",
+    "status": "in_progress",
+    "verification": "specification_proposed_issue_18_no_schema_fixture_or_writer_implementation",
+    "specification": "docs/specs/m2.2-transactional-sqlite-lineage.md",
     "requirements": [
+      "REQ-CORE-001",
+      "REQ-CORE-002",
       "REQ-CORE-003",
-      "REQ-AUTH-002",
-      "REQ-TRUST-001",
-      "REQ-EVID-001",
-      "REQ-EVID-002",
+      "REQ-PROM-001",
+      "REQ-PROM-002",
+      "REQ-LINE-001",
       "REQ-LINE-002",
+      "REQ-ROLL-001",
+      "REQ-ROLL-002",
       "REQ-OPS-001",
-      "REQ-ID-001",
-      "REQ-SIG-001"
+      "REQ-OPS-002",
+      "REQ-OPS-003",
+      "REQ-OBS-001",
+      "REQ-REP-001",
+      "REQ-REP-002"
     ]
   },
   "next_increment": {
-    "id": "M2.2",
-    "title": "Transactional SQLite lineage and projections",
+    "id": "M2.3",
+    "title": "Transactional lineage fault injection and rollback drill",
     "status": "planned",
     "specification": null
   },
   "requirements": [
-    {"id": "REQ-CORE-001", "status": "partial", "evidence": ["tests/test_promotion.py"]},
-    {"id": "REQ-CORE-002", "status": "partial", "evidence": ["docs/architecture/overview.md"]},
-    {"id": "REQ-CORE-003", "status": "partial", "evidence": ["tests/test_conformance.py", "crates/kernel/tests/promotion_conformance.rs", "tests/test_m2_verifier.py", "crates/protocol/tests/m2_wire.rs", "crates/kernel/tests/m2_stage_eleven.rs"]},
+    {"id": "REQ-CORE-001", "status": "partial", "evidence": ["tests/test_promotion.py", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-CORE-002", "status": "partial", "evidence": ["docs/architecture/overview.md", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-CORE-003", "status": "partial", "evidence": ["tests/test_conformance.py", "crates/kernel/tests/promotion_conformance.rs", "tests/test_m2_verifier.py", "crates/protocol/tests/m2_wire.rs", "crates/kernel/tests/m2_stage_eleven.rs", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
     {"id": "REQ-AUTH-001", "status": "implemented", "evidence": ["fixtures/conformance/v1/promotion/authority-drift-rejected.json"]},
     {"id": "REQ-AUTH-002", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/exact-authority-grant-accepted.json", "fixtures/conformance/v1/promotion/partial-authority-grant-rejected.json", "schemas/v2/authority-grant.schema.json", "fixtures/conformance/v2/base-attested-proposal.json"]},
     {"id": "REQ-AUTH-003", "status": "planned", "evidence": []},
@@ -62,17 +68,17 @@
     {"id": "REQ-EVID-002", "status": "partial", "evidence": ["schemas/evidence.schema.json", "schemas/v2/evidence.schema.json", "fixtures/conformance/v2/base-attested-proposal.json"]},
     {"id": "REQ-EVID-003", "status": "planned", "evidence": []},
     {"id": "REQ-PROM-001", "status": "partial", "evidence": ["tests/test_conformance.py", "crates/kernel/tests/promotion_conformance.rs", "tests/test_m2_verifier.py", "crates/kernel/tests/m2_stage_eleven.rs"]},
-    {"id": "REQ-PROM-002", "status": "partial", "evidence": ["docs/demo/lineage.jsonl"]},
+    {"id": "REQ-PROM-002", "status": "partial", "evidence": ["docs/demo/lineage.jsonl", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
     {"id": "REQ-LINE-001", "status": "implemented", "evidence": ["tests/test_artifacts.py", "tests/test_conformance.py"]},
-    {"id": "REQ-LINE-002", "status": "partial", "evidence": ["tests/test_ledger.py"]},
-    {"id": "REQ-ROLL-001", "status": "partial", "evidence": ["tests/test_promotion.py"]},
-    {"id": "REQ-ROLL-002", "status": "planned", "evidence": []},
+    {"id": "REQ-LINE-002", "status": "partial", "evidence": ["tests/test_ledger.py", "docs/specs/m2.2-transactional-sqlite-lineage.md", "docs/architecture/adr/0011-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-ROLL-001", "status": "partial", "evidence": ["tests/test_promotion.py", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-ROLL-002", "status": "planned", "evidence": ["docs/specs/m2.2-transactional-sqlite-lineage.md"]},
     {"id": "REQ-OPS-001", "status": "partial", "evidence": ["fixtures/conformance/v1/promotion/cost-limit-rejected.json", "schemas/v2/common.schema.json", "fixtures/conformance/v2/manifest.json", "tests/test_m2_verifier.py", "crates/protocol/tests/m2_wire.rs"]},
-    {"id": "REQ-OPS-002", "status": "planned", "evidence": []},
-    {"id": "REQ-OPS-003", "status": "partial", "evidence": ["AGENTS.md", "docs/architecture/threat-model.md"]},
-    {"id": "REQ-OBS-001", "status": "planned", "evidence": []},
+    {"id": "REQ-OPS-002", "status": "planned", "evidence": ["docs/specs/m2.2-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-OPS-003", "status": "partial", "evidence": ["AGENTS.md", "docs/architecture/threat-model.md", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
+    {"id": "REQ-OBS-001", "status": "planned", "evidence": ["docs/specs/m2.2-transactional-sqlite-lineage.md"]},
     {"id": "REQ-REP-001", "status": "verified", "evidence": ["scripts/bootstrap.sh", "scripts/verify.sh", "REPRODUCIBILITY.md"]},
-    {"id": "REQ-REP-002", "status": "partial", "evidence": ["tests/test_demo.py"]},
+    {"id": "REQ-REP-002", "status": "partial", "evidence": ["tests/test_demo.py", "docs/specs/m2.2-transactional-sqlite-lineage.md"]},
     {"id": "REQ-CTX-001", "status": "implemented", "evidence": ["docs/context/index.md", "project.yaml"]},
     {"id": "REQ-CTX-002", "status": "implemented", "evidence": ["docs/specs/README.md", "docs/project/traceability.md"]},
     {"id": "REQ-CTX-003", "status": "partial", "evidence": ["docs/context/index.md"]}
@@ -80,7 +86,7 @@
   "milestones": [
     {"id": "M0", "status": "partial", "document": "docs/project/milestones.md"},
     {"id": "M1", "status": "implemented", "document": "docs/project/milestones.md"},
-    {"id": "M2", "status": "planned", "document": "docs/project/milestones.md"},
+    {"id": "M2", "status": "in_progress", "document": "docs/project/milestones.md"},
     {"id": "M3", "status": "planned", "document": "docs/project/milestones.md"},
     {"id": "M4", "status": "planned", "document": "docs/project/milestones.md"}
   ],
@@ -152,14 +158,18 @@
     {"id": "DEC-001", "status": "accepted", "target": "M2.1", "question": "Use prime-subgroup-validated Ed25519 with detached domain-separated signatures as specified by ADR 0010"},
     {"id": "DEC-002", "status": "deferred", "target": "future-envelope", "question": "Adopt full RFC 8785/JCS in a new envelope version"},
     {"id": "DEC-003", "status": "planned", "target": "governance", "question": "Appoint a second trusted maintainer"},
-    {"id": "DEC-004", "status": "deferred", "target": "M4", "question": "Select the first external harness adapter"}
+    {"id": "DEC-004", "status": "deferred", "target": "M4", "question": "Select the first external harness adapter"},
+    {"id": "DEC-005", "status": "in_progress", "target": "M2.2", "question": "Adopt an exact SQLite 3.53.4 source baseline with WAL/FULL transactions and exact event-head and lineage-head compare-and-swap"}
   ],
   "risks": [
     {"id": "R4", "status": "active", "document": "docs/project/risk-register.md"},
     {"id": "R8", "status": "mitigating", "document": "docs/project/risk-register.md"},
     {"id": "R10", "status": "active", "document": "docs/project/risk-register.md"},
     {"id": "R19", "status": "active", "document": "docs/project/risk-register.md"},
-    {"id": "R20", "status": "active", "document": "docs/project/risk-register.md"}
+    {"id": "R20", "status": "active", "document": "docs/project/risk-register.md"},
+    {"id": "R21", "status": "mitigating", "document": "docs/project/risk-register.md"},
+    {"id": "R22", "status": "active", "document": "docs/project/risk-register.md"},
+    {"id": "R23", "status": "active", "document": "docs/project/risk-register.md"}
   ],
   "blockers": [
     {"id": "independent-security-council", "status": "resolved", "scope": "three-role automated review tracked by GitHub issue 5; unanimous PASS at 081e670 with no remaining P0/P1"},
@@ -181,6 +191,7 @@
     "protocol": ["docs/specs/m1.1-cross-language-conformance.md", "docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/data-model.md", "schemas", "fixtures/conformance"],
     "kernel": ["docs/architecture/overview.md", "docs/architecture/threat-model.md", "constitution/constitution.toml", "crates/kernel", "crates/protocol"],
     "identity_signatures": ["docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/adr/0010-ed25519-detached-signatures.md", "docs/architecture/capability-security.md", "docs/project/risk-register.md"],
+    "transactional_lineage": ["docs/specs/m2.2-transactional-sqlite-lineage.md", "docs/architecture/adr/0011-transactional-sqlite-lineage.md", "docs/architecture/data-model.md", "docs/architecture/threat-model.md", "docs/project/risk-register.md", "crates/kernel"],
     "operations": ["REPRODUCIBILITY.md", "SECURITY.md", "docs/project/github-setup.md", ".github/workflows"]
   },
   "required_checks": {

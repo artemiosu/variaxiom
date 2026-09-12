@@ -53,12 +53,28 @@ Large traces and binaries live in the artifact store; events contain hashes and 
 
 ## Transactions
 
-Production promotion should atomically:
+M2.2 defines the normative local transaction in
+[`../specs/m2.2-transactional-sqlite-lineage.md`](../specs/m2.2-transactional-sqlite-lineage.md).
+A promotion commit atomically:
 
-1. verify evidence and lease state;
-2. write the decision;
-3. advance the active lineage pointer;
-4. reserve rollback state;
-5. emit an outbox event.
+1. re-verifies raw M2.1 proposal bytes against the separately supplied live anchor;
+2. stores immutable protocol objects and the independently recomputed decision;
+3. appends one canonical hash-linked event;
+4. exact-head compares and advances the global event head and, only for an accepted decision, the
+   selected lineage head;
+5. reserves rollback state, updates rebuildable projections, stores an immutable retry receipt,
+   and enqueues an outbox row.
 
-External deployment is a later saga with canary and compensating rollback; it cannot always be made atomically reversible.
+A separate operator permission and event advance M2.1 trust anchors; evaluation cannot smuggle an
+anchor change. Before SQLite commit, an external root custodian durably records the exact pending
+operation. It finalizes the resulting root before acknowledgement or outbox handoff, so recovery
+accepts only a previously approved one-event extension. Required and retainable raw artifacts are
+streamed under a retention lease and permanently pinned by the transaction; a policy-rejected,
+never-pinned artifact that cannot be retained remains represented by immutable bounded observation
+evidence rather than being treated as available. The durable pending operation lists the referenced
+artifact digests so process-death recovery closes the interval between an in-process lease and a
+committed pin.
+
+Rejected decisions append inspectable evidence but do not change selected lineage. External
+deployment is a later saga with canary and compensating rollback; it cannot always be made
+atomically reversible and is not part of M2.2.

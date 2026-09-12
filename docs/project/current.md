@@ -1,9 +1,9 @@
 # Current development context
 
-- **Reviewed:** 2026-09-11
+- **Reviewed:** 2026-09-12
 - **Release:** 0.1.0-alpha seed (unreleased; no Git tag yet)
-- **Current product increment:** M2.1 — identity, authority grants, and detached signatures
-- **Active specification:** [`../specs/m2.1-identity-grants-signatures.md`](../specs/m2.1-identity-grants-signatures.md) (issue #16 correction accepted for disabled experimental implementation)
+- **Current product increment:** M2.2 — transactional SQLite lineage and deterministic projections
+- **Active specification:** [`../specs/m2.2-transactional-sqlite-lineage.md`](../specs/m2.2-transactional-sqlite-lineage.md) (proposed; review tracked by issue #18; not yet accepted)
 
 ## Current verified baseline
 
@@ -23,6 +23,19 @@ The display release, Python package version (`0.1.0a0`), and Rust workspace vers
 not claim that a release tag exists; `project.yaml` records the authoritative release state.
 
 ## Now
+
+M2.1 implementation PR #12 is merged and issue #11 is closed. Its runtime remains disabled,
+non-authorizing, and unable to sign, append, activate, or deploy. Exact implementation revision
+`ec38563d93bab1854592caebbad31a67d7e714a2` and the merged evidence commit are preserved in the
+implementation council report.
+
+M2.2 specification work is active in [issue #18](https://github.com/artemiosu/variaxiom/issues/18).
+The proposed contract introduces a separately operator-controlled Rust writer, a local SQLite
+3.53.4-pinned store, canonical hash-linked events, global and per-lineage exact-head CAS, permanent
+idempotency receipts, atomic rollback reservations and outbox enqueue, and deterministic shadow
+projection comparison. It contains no schema, fixture, migration, or runtime implementation. The
+specification is not normative until the automated three-role review has no open P0/P1/P2; that review
+does not replace a human security audit.
 
 M1.1 is published and independently reproduced from the public repository. The clean-clone report
 records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
@@ -77,10 +90,12 @@ capability.
 
 ## Next
 
-1. Merge reviewed PR #12 and close issue #11 without enabling the verifier or lineage append.
-2. M2.2 — specify transactional SQLite lineage, exact-head compare-and-swap, idempotency, crash
-   recovery, and deterministic projections before implementation.
-3. M2.3 — tamper/replay/fault-injection suite and rollback drill.
+1. Review and accept the M2.2 specification only after three isolated automated roles report no
+   open P0/P1/P2.
+2. Freeze exact v3 schemas, SQL migration bytes, and shared transaction/fault fixtures in a
+   separate PR; keep the writer disabled.
+3. Implement the small Rust writer and Python oracle, then perform M2.3 fault injection and a
+   rollback drill before enabling any durable lineage path.
 
 ## Open decisions
 

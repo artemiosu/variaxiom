@@ -42,6 +42,15 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../architecture/threat-model.md`](../architecture/threat-model.md)
 - [`../project/risk-register.md`](../project/risk-register.md)
 
+## Transactional lineage and recovery
+
+- [`../specs/m2.2-transactional-sqlite-lineage.md`](../specs/m2.2-transactional-sqlite-lineage.md)
+- [`../architecture/adr/0011-transactional-sqlite-lineage.md`](../architecture/adr/0011-transactional-sqlite-lineage.md)
+- [`../architecture/data-model.md`](../architecture/data-model.md)
+- [`../architecture/threat-model.md`](../architecture/threat-model.md)
+- [`../project/risk-register.md`](../project/risk-register.md)
+- `crates/kernel/` and the future frozen `schemas/v3/` and transaction fixtures
+
 ## Evaluation and research
 
 - [`../research/evaluation-framework.md`](../research/evaluation-framework.md)

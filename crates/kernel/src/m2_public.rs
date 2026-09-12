@@ -18,7 +18,7 @@ pub struct VerificationResult {
 impl VerificationResult {
     fn from_rejection(rejection: M2WireRejection) -> Self {
         Self {
-            code: rejection.code.to_owned(),
+            code: rejection.code().to_owned(),
         }
     }
 

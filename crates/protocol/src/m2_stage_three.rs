@@ -175,6 +175,7 @@ fn string_set(value: &Value) -> Check<BTreeSet<String>> {
         .collect()
 }
 
+#[cfg(feature = "conformance")]
 fn stage_three_history(value: &Value) -> Check {
     let history = object(value)?;
     let mut anchor = object(&history["initial_anchor"])?.clone();
@@ -281,6 +282,7 @@ fn validate(structural: &StructurallyValidM2Input) -> Check {
             stage_three_attested(structural.wire().value(), object(anchor)?)
         }
         M2Entrypoint::InitializeAnchor => stage_three_initialize(structural.wire().value()),
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => stage_three_history(structural.wire().value()),
     }
 }

@@ -10,11 +10,12 @@ repository.workspace = true
 
 [features]
 default = []
-internal-api = []
+# Test-only staged inspectors and bounded history carrier.
+conformance = ["variaxiom-protocol/conformance"]
 
 [dependencies]
 serde_json = "1"
-variaxiom-protocol = { path = "../protocol", features = ["internal-api"] }
+variaxiom-protocol = { path = "../protocol", features = ["kernel-bridge"] }
 
 [dev-dependencies]
 base64 = "0.22"
@@ -22,11 +23,11 @@ serde = { version = "1", features = ["derive"] }
 
 [[test]]
 name = "m2_policy"
-required-features = ["internal-api"]
+required-features = ["conformance"]
 
 [[test]]
 name = "m2_stage_eleven"
-required-features = ["internal-api"]
+required-features = ["conformance"]
 
 [lints]
 workspace = true

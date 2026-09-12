@@ -12,9 +12,9 @@ pub use m2_public::{
     AnchorTransitionResult, EvaluatedProposal, ReplayResult, VerificationResult, VerifiedProposal,
     advance_anchor, evaluate_new, initialize_anchor, replay_historical, verify_attested_proposal,
 };
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "conformance")]
 pub use m2_stage_eleven::{VerifiedM2Proposal, inspect_m2_stage_eleven};
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "conformance")]
 pub use m2_stage_ten::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
 
 use std::collections::BTreeSet;

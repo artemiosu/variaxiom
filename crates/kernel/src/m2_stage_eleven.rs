@@ -9,16 +9,13 @@ use variaxiom_protocol::{
 use crate::m2_stage_ten::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
 
 fn rejection(code: &'static str) -> M2WireRejection {
-    M2WireRejection {
-        stage: 11,
-        code,
-        authorizing: false,
-    }
+    M2WireRejection::new(11, code)
 }
 
 fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2WireRejection> {
     match entrypoint {
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => value
             .as_object()
             .and_then(|history| history.get("probe_attested_proposal"))
@@ -37,7 +34,7 @@ pub struct VerifiedM2Proposal {
 
 impl VerifiedM2Proposal {
     /// Return the inspected operation.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn entrypoint(&self) -> M2Entrypoint {
         self.policy_evaluated.entrypoint()
@@ -62,7 +59,7 @@ impl VerifiedM2Proposal {
     }
 
     /// Return the exact resulting anchor retained for a history probe.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn resulting_anchor(&self) -> Option<&Value> {
         self.policy_evaluated.resulting_anchor()
@@ -72,7 +69,7 @@ impl VerifiedM2Proposal {
     ///
     /// No value returned by this disabled verifier can activate a candidate
     /// or append durable lineage.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn authorizing(&self) -> bool {
         false

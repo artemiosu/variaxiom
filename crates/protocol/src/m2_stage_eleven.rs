@@ -23,6 +23,7 @@ fn object(value: &Value) -> Result<&Map<String, Value>, M2WireRejection> {
 fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2WireRejection> {
     match entrypoint {
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => object(value)?
             .get("probe_attested_proposal")
             .ok_or_else(|| rejection("input.schema_invalid")),

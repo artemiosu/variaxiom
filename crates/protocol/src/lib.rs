@@ -1,34 +1,40 @@
 //! Versioned protocol types and canonical serialization shared by the trusted kernel.
 
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_eleven;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_four_five;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_seven_nine;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_six;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_three;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 mod m2_stage_two;
 
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_eleven::verify_m2_selector_attestation;
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_four_five::{
     DigestBoundM2Input, IdentityBoundM2Input, inspect_m2_stage_five, inspect_m2_stage_four,
 };
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_seven_nine::{
     EvidenceBoundM2Input, GrantBoundM2Input, PolicyContextBoundM2Input, inspect_m2_stage_eight,
     inspect_m2_stage_nine, inspect_m2_stage_seven,
 };
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_six::{SignatureVerifiedM2Input, inspect_m2_stage_six};
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_three::{ContextBoundM2Input, inspect_m2_stage_three};
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub use m2_stage_two::{M2Entrypoint, StructurallyValidM2Input, inspect_m2_stage_two};
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -45,13 +51,14 @@ use sha2::{Digest, Sha256};
 /// Its constructor is private, and it has no activation, append, or
 /// authorization capability. User-facing callers receive the exact
 /// `anchor-transition-result/v1` wrapper from `variaxiom-kernel` instead.
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ValidatedAnchorTransition {
     resulting_anchor: Value,
 }
 
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 impl ValidatedAnchorTransition {
     /// Return the validated anchor snapshot for the kernel result wrapper.
     #[must_use]
@@ -70,7 +77,8 @@ impl ValidatedAnchorTransition {
 ///
 /// This internal-feature API exists only across the protocol/kernel crate
 /// boundary. The conformance history carrier remains a test-only transport.
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub fn validate_trusted_anchor_transition(
     previous_anchor: &Value,
     previous_identity_context: &Value,
@@ -345,20 +353,105 @@ pub fn parse_json_strict<T: DeserializeOwned>(source: &[u8]) -> Result<T, Canoni
     Ok(serde_json::from_value(value.0)?)
 }
 
-/// Stable stage-one rejection returned for untrusted M2.1 wire bytes.
-#[cfg(feature = "internal-api")]
+/// Stable non-authorizing rejection returned by an M2.1 validation stage.
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct M2WireRejection {
     /// Normative validation stage from one through eleven.
-    pub stage: u8,
+    stage: u8,
     /// Stable M2.1 failure code.
-    pub code: &'static str,
+    code: &'static str,
     /// Wire inspection never authorizes a side effect.
-    pub authorizing: bool,
+    authorizing: bool,
+}
+
+#[cfg(feature = "kernel-bridge")]
+impl M2WireRejection {
+    /// Construct a bounded non-authorizing rejection across the internal
+    /// protocol/kernel bridge.
+    #[doc(hidden)]
+    #[must_use]
+    pub fn new(stage: u8, code: &'static str) -> Self {
+        assert!((1..=11).contains(&stage), "invalid M2.1 validation stage");
+        assert!(
+            stable_m2_code(code),
+            "invalid M2.1 stable verification code"
+        );
+        Self {
+            stage,
+            code,
+            authorizing: false,
+        }
+    }
+
+    /// Return the normative validation stage.
+    #[must_use]
+    pub const fn stage(&self) -> u8 {
+        self.stage
+    }
+
+    /// Return the stable verification code.
+    #[must_use]
+    pub const fn code(&self) -> &'static str {
+        self.code
+    }
+
+    /// Rejections never authorize effects.
+    #[must_use]
+    pub const fn authorizing(&self) -> bool {
+        self.authorizing
+    }
+}
+
+#[cfg(feature = "kernel-bridge")]
+fn stable_m2_code(code: &str) -> bool {
+    matches!(
+        code,
+        "authorization.context_untrusted"
+            | "constitution.artifact_mismatch"
+            | "constitution.context_mismatch"
+            | "decision.content_mismatch"
+            | "evidence.subject_digest_mismatch"
+            | "grant.audience_mismatch"
+            | "grant.capability_mismatch"
+            | "grant.context_mismatch"
+            | "grant.delegation_forbidden"
+            | "grant.expired"
+            | "grant.interval_invalid"
+            | "grant.not_yet_valid"
+            | "grant.revoked"
+            | "grant.subject_mismatch"
+            | "identity.context_stale"
+            | "identity.context_untrusted"
+            | "identity.key_ambiguous"
+            | "identity.key_unbound"
+            | "identity.not_independent"
+            | "identity.principal_unknown"
+            | "identity.role_conflict"
+            | "identity.role_missing"
+            | "input.duplicate_member"
+            | "input.encoding_invalid"
+            | "input.kind_mismatch"
+            | "input.limit_exceeded"
+            | "input.schema_invalid"
+            | "input.version_unsupported"
+            | "lineage.head_mismatch"
+            | "signature.algorithm_unsupported"
+            | "signature.digest_mismatch"
+            | "signature.domain_mismatch"
+            | "signature.encoding_invalid"
+            | "signature.invalid"
+            | "signature.key_id_mismatch"
+            | "signature.key_revoked"
+            | "signature.kind_mismatch"
+            | "signature.principal_mismatch"
+    )
 }
 
 /// Immutable canonical bytes accepted at the M2.1 stage-one boundary.
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct CanonicalM2Wire {
     bytes: Vec<u8>,
@@ -366,7 +459,7 @@ pub struct CanonicalM2Wire {
     value: Value,
 }
 
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 impl CanonicalM2Wire {
     /// Return the exact canonical bytes accepted by the boundary.
     #[must_use]
@@ -387,7 +480,7 @@ impl CanonicalM2Wire {
     }
 }
 
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
 fn m2_wire_rejection(code: &'static str) -> M2WireRejection {
     M2WireRejection {
         stage: 1,
@@ -400,7 +493,8 @@ fn m2_wire_rejection(code: &'static str) -> M2WireRejection {
 ///
 /// Success authenticates nothing and grants no authority. Later stages must
 /// consume this owned snapshot rather than a caller-controlled mutable value.
-#[cfg(feature = "internal-api")]
+#[cfg(feature = "kernel-bridge")]
+#[doc(hidden)]
 pub fn inspect_m2_wire(source: &[u8]) -> Result<CanonicalM2Wire, M2WireRejection> {
     if source.len() > MAX_M2_WIRE_BYTES {
         return Err(m2_wire_rejection("input.limit_exceeded"));

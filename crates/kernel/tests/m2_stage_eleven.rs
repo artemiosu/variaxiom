@@ -105,20 +105,30 @@ fn every_frozen_terminal_result_matches() {
         if case.expected.status == "rejected" {
             rejected += 1;
             let error = result.expect_err("frozen case must reject");
-            assert_eq!(error.stage, case.expected.reached_stage, "{}", case.case_id);
             assert_eq!(
-                Some(error.code),
+                error.stage(),
+                case.expected.reached_stage,
+                "{}",
+                case.case_id
+            );
+            assert_eq!(
+                Some(error.code()),
                 case.expected.code.as_deref(),
                 "{}",
                 case.case_id
             );
-            assert!(!error.authorizing, "{}", case.case_id);
+            assert!(!error.authorizing(), "{}", case.case_id);
             continue;
         }
 
         verified += 1;
         let proposal = result.unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         fixture_authorizing += usize::from(case.expected.authorizing);
         assert!(!proposal.authorizing(), "{}", case.case_id);

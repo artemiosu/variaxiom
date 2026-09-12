@@ -151,6 +151,7 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
     match entrypoint {
         M2Entrypoint::EvaluateNew => Ok(value),
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => object(value, 2, "input.kind_mismatch")?
             .get("probe_attested_proposal")
             .ok_or(Invalid {

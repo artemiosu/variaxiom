@@ -61,8 +61,9 @@ assigned boundary, including 51 policy decisions and 49 stage-eleven results. Th
 `advance_anchor` operations return the accepted result shapes; replay binds the exact separately
 supplied anchor snapshot actually used by verification. Every result fixes `authorizing` to
 `false`, returned anchor data is immutable, and callers cannot directly construct a successful
-result. Only the five normative operations are in the ordinary package/crate API; staged
-inspectors and the history carrier are private, non-default conformance machinery. The
+result. Only the five normative operations are supported by the Python facade and Rust kernel
+crate. Rust keeps its cross-crate protocol bridge hidden from generated documentation, and the
+history carrier exists only under the explicit non-default `conformance` feature. The
 implementation remains disabled and cannot sign, append, or activate durable lineage.
 
 The issue #16 contract correction removed the earlier positive-authority fixture defect and is

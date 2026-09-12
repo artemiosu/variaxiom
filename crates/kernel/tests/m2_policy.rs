@@ -104,7 +104,12 @@ fn every_frozen_stage_ten_policy_decision_matches() {
         let raw = input(&case);
         let result = inspect_m2_stage_ten(&raw, entrypoint(&case), case.trusted_anchor.as_ref())
             .unwrap_or_else(|error| {
-                panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+                panic!(
+                    "{}: {} at stage {}",
+                    case.case_id,
+                    error.code(),
+                    error.stage()
+                )
             });
         assert!(!result.authorizing(), "{}", case.case_id);
         assert_eq!(

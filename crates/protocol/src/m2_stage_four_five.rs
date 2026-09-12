@@ -293,6 +293,7 @@ fn stage_four(context: &ContextBoundM2Input) -> Check {
         M2Entrypoint::InitializeAnchor => {
             stage_four_bindings(&object(value)?["initial_identity_context"])
         }
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => {
             let history = object(value)?;
             stage_four_bindings(&history["initial_identity_context"])?;
@@ -477,6 +478,7 @@ fn stage_five_context(identity: &Value) -> Check<KeyMap<'_>> {
     Ok(keys)
 }
 
+#[cfg(feature = "conformance")]
 fn advance_anchor(
     anchor: &Map<String, Value>,
     identity: &Value,
@@ -570,6 +572,7 @@ fn stage_five(digest_bound: &DigestBoundM2Input) -> Check {
             stage_five_context(&object(value)?["initial_identity_context"])?;
             Ok(())
         }
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => {
             let history = object(value)?;
             let mut anchor = object(&history["initial_anchor"])?.clone();

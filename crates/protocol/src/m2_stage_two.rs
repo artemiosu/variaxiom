@@ -18,6 +18,7 @@ pub enum M2Entrypoint {
     /// Inspect a genesis anchor initialization request.
     InitializeAnchor,
     /// Inspect a bounded sequence of anchor transitions.
+    #[cfg(feature = "conformance")]
     AdvanceAnchorHistory,
 }
 
@@ -947,6 +948,7 @@ fn validate(value: &Value, entrypoint: M2Entrypoint, trusted_anchor: Option<&Val
             authorization(&body["initial_authorization_context"])?;
             uint(&body["trusted_now_unix_s"])?;
         }
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => {
             let body = object(value)?;
             let initial_identity = body.get("initial_identity_context").unwrap_or(&Value::Null);

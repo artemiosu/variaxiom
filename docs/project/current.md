@@ -67,17 +67,20 @@ history carrier exists only under the explicit non-default `conformance` feature
 implementation remains disabled and cannot sign, append, or activate durable lineage.
 
 The issue #16 contract correction removed the earlier positive-authority fixture defect and is
-now consumed by the rebased implementation. Local full-corpus and language-specific checks pass;
-the implementation branch still requires a clean-clone reproduction, GitHub matrix, and repeated
-three-role automated review before it may merge. No M2.1 result is an authority capability.
+now consumed by the completed disabled implementation. Exact revision
+`ec38563d93bab1854592caebbad31a67d7e714a2` passed a fresh public-clone bootstrap and full verify,
+the Linux/macOS/Windows GitHub matrix, CodeQL, dependency review, and three isolated automated
+review roles with no P0/P1/P2. The public evidence is recorded in
+[`../reports/m2.1-implementation-council-2026-09-11.md`](../reports/m2.1-implementation-council-2026-09-11.md).
+This is still not a human security audit, production cryptography certification, or authority
+capability.
 
 ## Next
 
-1. Repeat the full corpus, clean-clone, CI, and three-role automated review of rebased draft PR
-   #12; merge only with no open P0/P1 findings.
-2. Publish the exact implementation evidence and close issue #11 after merge.
-3. M2.2 — transactional SQLite lineage and projections.
-4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
+1. Merge reviewed PR #12 and close issue #11 without enabling the verifier or lineage append.
+2. M2.2 — specify transactional SQLite lineage, exact-head compare-and-swap, idempotency, crash
+   recovery, and deterministic projections before implementation.
+3. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 
 ## Open decisions
 

@@ -26,6 +26,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Return the inspected operation.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn entrypoint(&self) -> M2Entrypoint {
         self.policy_context.entrypoint()
@@ -44,6 +45,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Return the exact resulting anchor retained for a history probe.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn resulting_anchor(&self) -> Option<&Value> {
         self.policy_context.resulting_anchor()
@@ -56,6 +58,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Policy evaluation alone never authorizes an effect.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn authorizing(&self) -> bool {
         false

@@ -25,4 +25,9 @@ fi
 "${PYTHON[@]}" -m unittest discover -s tests -v
 "${PYTHON[@]}" -m variaxiom.cli --home .variaxiom demo --reset >/dev/null
 "${PYTHON[@]}" -m variaxiom.cli --home .variaxiom verify
+if command -v cargo >/dev/null 2>&1; then
+  cargo fmt --all -- --check
+  cargo test --workspace --all-targets --all-features --locked
+  cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+fi
 printf '\nVariaxiom verification complete.\n'

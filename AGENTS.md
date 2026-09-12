@@ -36,8 +36,8 @@ Run `bash scripts/verify.sh`. If Rust is installed, also run:
 
 ```bash
 cargo fmt --all -- --check
-cargo test --workspace --all-targets --locked
-cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --all-targets --all-features --locked
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 ```
 
 Sign commits according to `DCO.md`. Security-sensitive changes to `constitution/`, `schemas/`,

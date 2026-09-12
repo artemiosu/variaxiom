@@ -44,7 +44,8 @@ always-non-authorizing freeze. Three isolated automated reviewers reported no P0
 - disabled Python/Rust M2.1 internal stage-one through stage-eleven pipeline, validated against
   every frozen case at its assigned boundary and all 49 stage-eleven statuses, codes, decisions,
   and anchors; distinct public evaluate, verify, replay, initialize, and advance results are
-  implemented and always non-authorizing;
+  implemented and always non-authorizing, while staged/history inspection remains private test
+  machinery;
 - CodeQL, project context routing, requirement traceability, and spec-driven increment gates.
 
 ## Not implemented yet

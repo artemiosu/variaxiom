@@ -59,9 +59,11 @@ promotion-selector verification. Both implementations match all 252 accepted cas
 assigned boundary, including 51 policy decisions and 49 stage-eleven results. The distinct public
 `evaluate_new`, `verify_attested_proposal`, `replay_historical`, `initialize_anchor`, and
 `advance_anchor` operations return the accepted result shapes; replay binds the exact separately
-supplied anchor digest. Every result fixes `authorizing` to `false`, and returned anchor data is
-immutable. The implementation remains disabled and cannot sign, append, or activate durable
-lineage.
+supplied anchor snapshot actually used by verification. Every result fixes `authorizing` to
+`false`, returned anchor data is immutable, and callers cannot directly construct a successful
+result. Only the five normative operations are in the ordinary package/crate API; staged
+inspectors and the history carrier are private, non-default conformance machinery. The
+implementation remains disabled and cannot sign, append, or activate durable lineage.
 
 The issue #16 contract correction removed the earlier positive-authority fixture defect and is
 now consumed by the rebased implementation. Local full-corpus and language-specific checks pass;

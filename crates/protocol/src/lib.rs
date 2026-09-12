@@ -1,22 +1,34 @@
 //! Versioned protocol types and canonical serialization shared by the trusted kernel.
 
+#[cfg(feature = "internal-api")]
 mod m2_stage_eleven;
+#[cfg(feature = "internal-api")]
 mod m2_stage_four_five;
+#[cfg(feature = "internal-api")]
 mod m2_stage_seven_nine;
+#[cfg(feature = "internal-api")]
 mod m2_stage_six;
+#[cfg(feature = "internal-api")]
 mod m2_stage_three;
+#[cfg(feature = "internal-api")]
 mod m2_stage_two;
 
+#[cfg(feature = "internal-api")]
 pub use m2_stage_eleven::verify_m2_selector_attestation;
+#[cfg(feature = "internal-api")]
 pub use m2_stage_four_five::{
     DigestBoundM2Input, IdentityBoundM2Input, inspect_m2_stage_five, inspect_m2_stage_four,
 };
+#[cfg(feature = "internal-api")]
 pub use m2_stage_seven_nine::{
     EvidenceBoundM2Input, GrantBoundM2Input, PolicyContextBoundM2Input, inspect_m2_stage_eight,
     inspect_m2_stage_nine, inspect_m2_stage_seven,
 };
+#[cfg(feature = "internal-api")]
 pub use m2_stage_six::{SignatureVerifiedM2Input, inspect_m2_stage_six};
+#[cfg(feature = "internal-api")]
 pub use m2_stage_three::{ContextBoundM2Input, inspect_m2_stage_three};
+#[cfg(feature = "internal-api")]
 pub use m2_stage_two::{M2Entrypoint, StructurallyValidM2Input, inspect_m2_stage_two};
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -28,17 +40,44 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+/// Opaque trusted-anchor transition typestate consumed by the kernel.
+///
+/// Its constructor is private, and it has no activation, append, or
+/// authorization capability. User-facing callers receive the exact
+/// `anchor-transition-result/v1` wrapper from `variaxiom-kernel` instead.
+#[cfg(feature = "internal-api")]
+#[derive(Clone, Debug, PartialEq)]
+pub struct ValidatedAnchorTransition {
+    resulting_anchor: Value,
+}
+
+#[cfg(feature = "internal-api")]
+impl ValidatedAnchorTransition {
+    /// Return the validated anchor snapshot for the kernel result wrapper.
+    #[must_use]
+    pub fn resulting_anchor(&self) -> &Value {
+        &self.resulting_anchor
+    }
+
+    /// Anchor validation never authorizes promotion or lineage append.
+    #[must_use]
+    pub const fn authorizing(&self) -> bool {
+        false
+    }
+}
+
 /// Validate one explicit trusted-anchor transition without ambient state.
 ///
-/// This is used by the public kernel API; the conformance history carrier
-/// remains a test-only transport for exercising multiple ordered transitions.
-pub fn advance_trusted_anchor(
+/// This internal-feature API exists only across the protocol/kernel crate
+/// boundary. The conformance history carrier remains a test-only transport.
+#[cfg(feature = "internal-api")]
+pub fn validate_trusted_anchor_transition(
     previous_anchor: &Value,
     previous_identity_context: &Value,
     next_identity_context: &Value,
     next_authorization_context: &Value,
     trusted_now_unix_s: u64,
-) -> Result<Value, M2WireRejection> {
+) -> Result<ValidatedAnchorTransition, M2WireRejection> {
     let trusted_now = Value::from(trusted_now_unix_s);
     m2_stage_two::validate_anchor_transition_structure(
         previous_anchor,
@@ -59,13 +98,14 @@ pub fn advance_trusted_anchor(
         previous_identity_context,
         next_identity_context,
     )?;
-    m2_stage_six::verify_anchor_transition_keys(
+    let resulting_anchor = m2_stage_six::verify_anchor_transition_keys(
         previous_anchor,
         previous_identity_context,
         next_identity_context,
         next_authorization_context,
         &trusted_now,
-    )
+    )?;
+    Ok(ValidatedAnchorTransition { resulting_anchor })
 }
 
 /// Version of the canonical outer envelope.
@@ -306,9 +346,10 @@ pub fn parse_json_strict<T: DeserializeOwned>(source: &[u8]) -> Result<T, Canoni
 }
 
 /// Stable stage-one rejection returned for untrusted M2.1 wire bytes.
+#[cfg(feature = "internal-api")]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct M2WireRejection {
-    /// Normative validation stage. This type currently represents stage one only.
+    /// Normative validation stage from one through eleven.
     pub stage: u8,
     /// Stable M2.1 failure code.
     pub code: &'static str,
@@ -317,6 +358,7 @@ pub struct M2WireRejection {
 }
 
 /// Immutable canonical bytes accepted at the M2.1 stage-one boundary.
+#[cfg(feature = "internal-api")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct CanonicalM2Wire {
     bytes: Vec<u8>,
@@ -324,6 +366,7 @@ pub struct CanonicalM2Wire {
     value: Value,
 }
 
+#[cfg(feature = "internal-api")]
 impl CanonicalM2Wire {
     /// Return the exact canonical bytes accepted by the boundary.
     #[must_use]
@@ -344,6 +387,7 @@ impl CanonicalM2Wire {
     }
 }
 
+#[cfg(feature = "internal-api")]
 fn m2_wire_rejection(code: &'static str) -> M2WireRejection {
     M2WireRejection {
         stage: 1,
@@ -356,6 +400,7 @@ fn m2_wire_rejection(code: &'static str) -> M2WireRejection {
 ///
 /// Success authenticates nothing and grants no authority. Later stages must
 /// consume this owned snapshot rather than a caller-controlled mutable value.
+#[cfg(feature = "internal-api")]
 pub fn inspect_m2_wire(source: &[u8]) -> Result<CanonicalM2Wire, M2WireRejection> {
     if source.len() > MAX_M2_WIRE_BYTES {
         return Err(m2_wire_rejection("input.limit_exceeded"));

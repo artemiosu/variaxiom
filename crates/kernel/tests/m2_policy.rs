@@ -22,7 +22,6 @@ struct ManifestEntry {
 #[derive(Deserialize)]
 struct Case {
     case_id: String,
-    stage: u8,
     entrypoint: String,
     input_base64url: String,
     #[serde(default)]
@@ -59,6 +58,7 @@ fn input(case: &Case) -> Vec<u8> {
 
 fn entrypoint(case: &Case) -> M2Entrypoint {
     match case.entrypoint.as_str() {
+        "evaluate-new" => M2Entrypoint::EvaluateNew,
         "verify-attested-proposal" => M2Entrypoint::VerifyAttestedProposal,
         "replay-historical" => M2Entrypoint::ReplayHistorical,
         "advance-anchor-history" => M2Entrypoint::AdvanceAnchorHistory,
@@ -67,7 +67,9 @@ fn entrypoint(case: &Case) -> M2Entrypoint {
 }
 
 fn proposal<'a>(value: &'a serde_json::Value, case: &Case) -> &'a serde_json::Value {
-    if case.entrypoint == "advance-anchor-history" {
+    if case.entrypoint == "evaluate-new" {
+        value
+    } else if case.entrypoint == "advance-anchor-history" {
         &value["probe_attested_proposal"]
     } else {
         value
@@ -94,7 +96,7 @@ fn every_frozen_stage_ten_policy_decision_matches() {
         })
         .filter(|case| case.expected.reached_stage > 9)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 37);
+    assert_eq!(cases.len(), 51);
 
     let mut mismatched_supplied_decisions = 0;
     let mut policy_rejections = 0;
@@ -114,18 +116,19 @@ fn every_frozen_stage_ten_policy_decision_matches() {
         let computed =
             serde_json::to_value(result.decision().envelope()).expect("typed decision serializes");
         let value: serde_json::Value = parse_json_strict(&raw).expect("fixture parses strictly");
-        let supplied = &proposal(&value, &case)["payload"]["decision"];
-        if case.expected.code.as_deref() == Some("decision.content_mismatch") {
-            mismatched_supplied_decisions += 1;
-            assert_ne!(&computed, supplied, "{}", case.case_id);
-        } else {
-            assert_eq!(&computed, supplied, "{}", case.case_id);
+        if case.entrypoint != "evaluate-new" {
+            let supplied = &proposal(&value, &case)["payload"]["decision"];
+            if case.expected.code.as_deref() == Some("decision.content_mismatch") {
+                mismatched_supplied_decisions += 1;
+                assert_ne!(&computed, supplied, "{}", case.case_id);
+            } else {
+                assert_eq!(&computed, supplied, "{}", case.case_id);
+            }
         }
-        if case.stage == 10 {
+        if result.decision().status == DecisionStatus::Rejected {
             policy_rejections += 1;
-            assert_eq!(result.decision().status, DecisionStatus::Rejected);
         }
     }
     assert_eq!(mismatched_supplied_decisions, 2);
-    assert_eq!(policy_rejections, 2);
+    assert_eq!(policy_rejections, 3);
 }

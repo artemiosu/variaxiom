@@ -7,18 +7,26 @@ from typing import Any, cast
 
 from variaxiom.canonical import canonical_json, strict_json_loads
 from variaxiom.m2_verifier import (
+    AnchorTransitionResult,
     CanonicalM2Wire,
     ContextBoundM2Input,
     DigestBoundM2Input,
+    EvaluatedProposal,
     EvidenceBoundM2Input,
     GrantBoundM2Input,
     IdentityBoundM2Input,
     M2WireRejection,
     PolicyContextBoundM2Input,
     PolicyEvaluatedM2Input,
+    ReplayResult,
     SignatureVerifiedM2Input,
     StructurallyValidM2Input,
+    VerificationResult,
     VerifiedM2Proposal,
+    VerifiedProposal,
+    advance_anchor,
+    evaluate_new,
+    initialize_anchor,
     inspect_m2_stage_eight,
     inspect_m2_stage_eleven,
     inspect_m2_stage_five,
@@ -30,6 +38,8 @@ from variaxiom.m2_verifier import (
     inspect_m2_stage_three,
     inspect_m2_stage_two,
     inspect_m2_wire,
+    replay_historical,
+    verify_attested_proposal,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,7 +118,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_stage_case_passes_the_structural_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 2]
-        self.assertEqual(len(cases), 151)
+        self.assertEqual(len(cases), 166)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_two(
@@ -146,7 +156,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_all_frozen_stage_three_rejections_match(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 3]
-        self.assertEqual(len(cases), 23)
+        self.assertEqual(len(cases), 24)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_three(
@@ -163,7 +173,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_stage_case_passes_the_context_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 3]
-        self.assertEqual(len(cases), 128)
+        self.assertEqual(len(cases), 142)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_three(
@@ -194,7 +204,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_stage_case_passes_the_digest_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 4]
-        self.assertEqual(len(cases), 117)
+        self.assertEqual(len(cases), 131)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_four(
@@ -223,7 +233,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_stage_case_passes_the_identity_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 5]
-        self.assertEqual(len(cases), 94)
+        self.assertEqual(len(cases), 108)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_five(
@@ -277,7 +287,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_stage_case_passes_the_signature_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 6]
-        self.assertEqual(len(cases), 62)
+        self.assertEqual(len(cases), 76)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_six(
@@ -305,7 +315,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_case_passes_the_evidence_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 7]
-        self.assertEqual(len(cases), 61)
+        self.assertEqual(len(cases), 75)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_seven(
@@ -333,7 +343,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_case_passes_the_grant_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 8]
-        self.assertEqual(len(cases), 40)
+        self.assertEqual(len(cases), 54)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_eight(
@@ -361,7 +371,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_every_later_case_passes_the_policy_context_boundary(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 9]
-        self.assertEqual(len(cases), 37)
+        self.assertEqual(len(cases), 51)
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_nine(
@@ -374,7 +384,7 @@ class M2WireInspectionTests(unittest.TestCase):
 
     def test_stage_ten_computes_every_frozen_policy_decision(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] > 9]
-        self.assertEqual(len(cases), 37)
+        self.assertEqual(len(cases), 51)
         mismatched_supplied_decisions = 0
         policy_rejections = 0
         for case in cases:
@@ -392,33 +402,33 @@ class M2WireInspectionTests(unittest.TestCase):
                 )
                 decision = cast(dict[str, Any], evaluated.decode_decision())
                 wire_value = cast(dict[str, Any], strict_json_loads(decode_input(case)))
-                proposal = (
-                    wire_value["probe_attested_proposal"]
-                    if case["entrypoint"] == "advance-anchor-history"
-                    else wire_value
-                )
-                supplied = proposal["payload"]["decision"]
-                if case["expected"]["code"] == "decision.content_mismatch":
-                    mismatched_supplied_decisions += 1
-                    self.assertNotEqual(decision, supplied)
-                else:
-                    self.assertEqual(decision, supplied)
-                if case["stage"] == 10:
+                if case["entrypoint"] != "evaluate-new":
+                    proposal = (
+                        wire_value["probe_attested_proposal"]
+                        if case["entrypoint"] == "advance-anchor-history"
+                        else wire_value
+                    )
+                    supplied = proposal["payload"]["decision"]
+                    if case["expected"]["code"] == "decision.content_mismatch":
+                        mismatched_supplied_decisions += 1
+                        self.assertNotEqual(decision, supplied)
+                    else:
+                        self.assertEqual(decision, supplied)
+                if decision["payload"]["status"] == "rejected":
                     policy_rejections += 1
-                    self.assertEqual(decision["payload"]["status"], "rejected")
                 if case["case_id"] == "bounded-signed-proposal":
                     decision["payload"]["status"] = "mutated"
                     fresh = cast(dict[str, Any], evaluated.decode_decision())
                     self.assertEqual(fresh["payload"]["status"], "accepted")
         self.assertEqual(mismatched_supplied_decisions, 2)
-        self.assertEqual(policy_rejections, 2)
+        self.assertEqual(policy_rejections, 3)
 
     def test_stage_eleven_matches_every_frozen_terminal_result(self) -> None:
         cases = [case for case in self.cases() if case["expected"]["reached_stage"] == 11]
-        self.assertEqual(len(cases), 37)
+        self.assertEqual(len(cases), 49)
         verified = 0
         rejected = 0
-        unsafe_fixture_authorizing = 0
+        fixture_authorizing = 0
         for case in cases:
             with self.subTest(case=case["case_id"]):
                 result = inspect_m2_stage_eleven(
@@ -439,7 +449,7 @@ class M2WireInspectionTests(unittest.TestCase):
                 verified += 1
                 self.assertIsInstance(result, VerifiedM2Proposal)
                 proposal = cast(VerifiedM2Proposal, result)
-                unsafe_fixture_authorizing += int(expected["authorizing"])
+                fixture_authorizing += int(expected["authorizing"])
                 self.assertFalse(proposal.authorizing)
                 self.assertEqual(proposal.decode_resulting_anchor(), expected["expected_anchor"])
                 decision = cast(dict[str, Any], proposal.decode_decision())
@@ -452,9 +462,113 @@ class M2WireInspectionTests(unittest.TestCase):
                     fresh = cast(dict[str, Any], proposal.decode())
                     self.assertEqual(fresh["payload"]["decision"]["payload"]["status"], "accepted")
 
-        self.assertEqual(verified, 29)
-        self.assertEqual(rejected, 8)
-        self.assertEqual(unsafe_fixture_authorizing, 27)
+        self.assertEqual(verified, 30)
+        self.assertEqual(rejected, 19)
+        self.assertEqual(fixture_authorizing, 0)
+
+    def test_public_result_apis_match_the_frozen_contract(self) -> None:
+        cases = {case["case_id"]: case for case in self.cases()}
+
+        evaluated_case = cases["evaluate-new-accepted"]
+        evaluated = evaluate_new(decode_input(evaluated_case), evaluated_case["trusted_anchor"])
+        self.assertIsInstance(evaluated, EvaluatedProposal)
+        self.assertEqual(
+            cast(EvaluatedProposal, evaluated).as_dict(),
+            strict_json_loads((FIXTURES / "base-evaluated-proposal.json").read_bytes()),
+        )
+
+        verified_case = cases["bounded-signed-proposal"]
+        verified = verify_attested_proposal(
+            decode_input(verified_case), verified_case["trusted_anchor"]
+        )
+        self.assertIsInstance(verified, VerifiedProposal)
+        self.assertEqual(
+            cast(VerifiedProposal, verified).as_dict(),
+            strict_json_loads((FIXTURES / "base-verified-proposal.json").read_bytes()),
+        )
+
+        replay_case = cases["historical-replay-nonauthorizing"]
+        replay = replay_historical(decode_input(replay_case), replay_case["trusted_anchor"])
+        self.assertIsInstance(replay, ReplayResult)
+        self.assertEqual(
+            cast(ReplayResult, replay).as_dict(),
+            strict_json_loads((FIXTURES / "base-replay-result.json").read_bytes()),
+        )
+
+        initialize_case = cases["initialize-anchor-genesis"]
+        initialize_input = cast(dict[str, Any], strict_json_loads(decode_input(initialize_case)))
+        initialized = initialize_anchor(
+            cast(Any, initialize_input["initial_identity_context"]),
+            cast(Any, initialize_input["initial_authorization_context"]),
+            cast(int, initialize_input["trusted_now_unix_s"]),
+        )
+        self.assertIsInstance(initialized, AnchorTransitionResult)
+        self.assertEqual(
+            cast(AnchorTransitionResult, initialized).as_dict()["resulting_anchor"],
+            initialize_case["expected"]["expected_anchor"],
+        )
+
+        advance_case = cases["anchor-new-key-add"]
+        advance_input = cast(dict[str, Any], strict_json_loads(decode_input(advance_case)))
+        step = cast(list[dict[str, Any]], advance_input["steps"])[0]
+        advanced = advance_anchor(
+            cast(Any, advance_input["initial_anchor"]),
+            cast(Any, advance_input["initial_identity_context"]),
+            cast(Any, step["next_identity_context"]),
+            cast(Any, step["next_authorization_context"]),
+            cast(int, step["trusted_now_unix_s"]),
+        )
+        self.assertIsInstance(advanced, AnchorTransitionResult)
+        self.assertEqual(
+            cast(AnchorTransitionResult, advanced).as_dict()["resulting_anchor"],
+            advance_case["expected"]["expected_anchor"],
+        )
+
+        retained_case = cases["anchor-new-key-add-omit"]
+        retained_input = cast(dict[str, Any], strict_json_loads(decode_input(retained_case)))
+        retained_anchor = cast(Any, retained_input["initial_anchor"])
+        retained_identity = cast(Any, retained_input["initial_identity_context"])
+        for retained_step in cast(list[dict[str, Any]], retained_input["steps"]):
+            transition = advance_anchor(
+                retained_anchor,
+                retained_identity,
+                cast(Any, retained_step["next_identity_context"]),
+                cast(Any, retained_step["next_authorization_context"]),
+                cast(int, retained_step["trusted_now_unix_s"]),
+            )
+            self.assertIsInstance(transition, AnchorTransitionResult)
+            retained_anchor = cast(AnchorTransitionResult, transition).as_dict()["resulting_anchor"]
+            retained_identity = retained_step["next_identity_context"]
+        self.assertEqual(retained_anchor, retained_case["expected"]["expected_anchor"])
+
+        rebind_case = cases["anchor-new-key-rebind-rejected"]
+        rebind_input = cast(dict[str, Any], strict_json_loads(decode_input(rebind_case)))
+        rebind_anchor = cast(Any, rebind_input["initial_anchor"])
+        rebind_identity = cast(Any, rebind_input["initial_identity_context"])
+        rebind_result: AnchorTransitionResult | VerificationResult | None = None
+        for rebind_step in cast(list[dict[str, Any]], rebind_input["steps"]):
+            rebind_result = advance_anchor(
+                rebind_anchor,
+                rebind_identity,
+                cast(Any, rebind_step["next_identity_context"]),
+                cast(Any, rebind_step["next_authorization_context"]),
+                cast(int, rebind_step["trusted_now_unix_s"]),
+            )
+            if isinstance(rebind_result, VerificationResult):
+                break
+            rebind_anchor = rebind_result.as_dict()["resulting_anchor"]
+            rebind_identity = rebind_step["next_identity_context"]
+        self.assertEqual(
+            rebind_result,
+            VerificationResult(status="rejected", code="identity.key_ambiguous"),
+        )
+
+        rejected_case = cases["evaluate-new-anchor-mismatch"]
+        rejected = evaluate_new(decode_input(rejected_case), rejected_case["trusted_anchor"])
+        self.assertEqual(
+            rejected,
+            VerificationResult(status="rejected", code="identity.context_untrusted"),
+        )
 
 
 if __name__ == "__main__":

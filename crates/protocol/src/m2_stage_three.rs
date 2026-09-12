@@ -66,18 +66,24 @@ fn digest(value: &Value) -> Check<String> {
     canonical_digest(value).map_err(|_| Invalid("identity.context_untrusted"))
 }
 
-fn contexts(value: &Value) -> Check<(&Value, &Value)> {
+fn promotion_input(value: &Value) -> Check<&Value> {
     let root = object(value)?;
-    let proposal = object(&root["payload"])?;
-    let promotion = object(&proposal["promotion_input"])?;
+    if root.get("kind").and_then(Value::as_str) == Some("promotion-input") {
+        Ok(value)
+    } else {
+        let proposal = object(&root["payload"])?;
+        Ok(&proposal["promotion_input"])
+    }
+}
+
+fn contexts(value: &Value) -> Check<(&Value, &Value)> {
+    let promotion = object(promotion_input(value)?)?;
     let body = object(&promotion["payload"])?;
     Ok((&body["identity_context"], &body["authorization_context"]))
 }
 
 fn signatures(value: &Value) -> Check<Vec<&Value>> {
-    let root = object(value)?;
-    let proposal = object(&root["payload"])?;
-    let promotion = object(&proposal["promotion_input"])?;
+    let promotion = object(promotion_input(value)?)?;
     let body = object(&promotion["payload"])?;
     let mut result = vec![&object(&body["candidate"])?["signature"]];
     for evidence in body["evidence"]
@@ -266,7 +272,9 @@ fn stage_three_history(value: &Value) -> Check {
 
 fn validate(structural: &StructurallyValidM2Input) -> Check {
     match structural.entrypoint() {
-        M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => {
+        M2Entrypoint::EvaluateNew
+        | M2Entrypoint::VerifyAttestedProposal
+        | M2Entrypoint::ReplayHistorical => {
             let anchor = structural
                 .trusted_anchor()
                 .ok_or(Invalid("identity.context_untrusted"))?;
@@ -275,6 +283,66 @@ fn validate(structural: &StructurallyValidM2Input) -> Check {
         M2Entrypoint::InitializeAnchor => stage_three_initialize(structural.wire().value()),
         M2Entrypoint::AdvanceAnchorHistory => stage_three_history(structural.wire().value()),
     }
+}
+
+pub(crate) fn validate_anchor_transition_context(
+    previous_anchor: &Value,
+    previous_identity: &Value,
+    next_identity: &Value,
+    next_authorization: &Value,
+    trusted_now: &Value,
+) -> Result<(), M2WireRejection> {
+    let result = (|| {
+        let anchor = object(previous_anchor)?;
+        let previous_payload = object(&object(previous_identity)?["payload"])?;
+        let next_payload = object(&object(next_identity)?["payload"])?;
+        let authorization_payload = object(&object(next_authorization)?["payload"])?;
+        let anchor_keys = string_set(&anchor["revoked_key_ids"])?;
+        let anchor_grants = string_set(&anchor["revoked_grant_ids"])?;
+        let previous_keys = string_set(&previous_payload["revoked_key_ids"])?;
+        let previous_grants = string_set(&previous_payload["revoked_grant_ids"])?;
+        let registry = object(&anchor["key_ownership_registry"])?;
+        let owners_match = key_owners(previous_identity)?
+            .iter()
+            .all(|(key, principal)| {
+                registry.get(key).and_then(Value::as_str) == Some(principal.as_str())
+            });
+        if digest(previous_identity)? != text(&anchor["current_identity_context_digest"])?
+            || previous_payload["trust_domain_id"] != anchor["trust_domain_id"]
+            || previous_payload["snapshot_sequence"] != anchor["current_snapshot_sequence"]
+            || previous_payload["evaluation_time_unix_s"] != anchor["trusted_now_unix_s"]
+            || !previous_keys.is_subset(&anchor_keys)
+            || !previous_grants.is_subset(&anchor_grants)
+            || !owners_match
+        {
+            return Err(Invalid("identity.context_untrusted"));
+        }
+
+        let now = uint(trusted_now)?;
+        let prior_now = uint(&anchor["trusted_now_unix_s"])?;
+        if now < prior_now {
+            return Err(Invalid("identity.context_stale"));
+        }
+        let next_keys = string_set(&next_payload["revoked_key_ids"])?;
+        let next_grants = string_set(&next_payload["revoked_grant_ids"])?;
+        if next_payload["trust_domain_id"] != anchor["trust_domain_id"]
+            || authorization_payload["trust_domain_id"] != anchor["trust_domain_id"]
+            || uint(&next_payload["snapshot_sequence"])?
+                != uint(&anchor["current_snapshot_sequence"])? + 1
+            || text(&next_payload["previous_snapshot_digest"])? != digest(previous_identity)?
+            || uint(&next_payload["evaluation_time_unix_s"])? != now
+            || !anchor_keys.is_subset(&next_keys)
+            || !anchor_grants.is_subset(&next_grants)
+        {
+            return Err(Invalid("identity.context_untrusted"));
+        }
+        Ok(())
+    })();
+    result.map_err(|error: Invalid| M2WireRejection {
+        stage: 3,
+        code: error.0,
+        authorizing: false,
+    })
 }
 
 /// Apply M2.1 stages one through three without cryptography or authority.

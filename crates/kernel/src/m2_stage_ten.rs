@@ -98,6 +98,7 @@ fn json_object(value: &Value) -> Check<BTreeMap<String, Value>> {
 
 fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
     match entrypoint {
+        M2Entrypoint::EvaluateNew => Ok(value),
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
         M2Entrypoint::AdvanceAnchorHistory => {
             object(value)?.get("probe_attested_proposal").ok_or(())
@@ -107,7 +108,12 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
 }
 
 fn promotion_input(value: &Value) -> Check<&Value> {
-    Ok(&object(&object(value)?["payload"])?["promotion_input"])
+    let root = object(value)?;
+    if root.get("kind").and_then(Value::as_str) == Some("promotion-input") {
+        Ok(value)
+    } else {
+        Ok(&object(&root["payload"])?["promotion_input"])
+    }
 }
 
 fn promotion_body(value: &Value) -> Check<&Map<String, Value>> {

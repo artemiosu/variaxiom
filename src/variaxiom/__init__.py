@@ -8,18 +8,26 @@ untrusted-code isolation belongs outside the Python process.
 from .domain import Candidate, Evidence, PromotionDecision
 from .ledger import HashChainLedger, LedgerVerification
 from .m2_verifier import (
+    AnchorTransitionResult,
     CanonicalM2Wire,
     ContextBoundM2Input,
     DigestBoundM2Input,
+    EvaluatedProposal,
     EvidenceBoundM2Input,
     GrantBoundM2Input,
     IdentityBoundM2Input,
     M2WireRejection,
     PolicyContextBoundM2Input,
     PolicyEvaluatedM2Input,
+    ReplayResult,
     SignatureVerifiedM2Input,
     StructurallyValidM2Input,
+    VerificationResult,
     VerifiedM2Proposal,
+    VerifiedProposal,
+    advance_anchor,
+    evaluate_new,
+    initialize_anchor,
     inspect_m2_stage_eight,
     inspect_m2_stage_eleven,
     inspect_m2_stage_five,
@@ -31,14 +39,18 @@ from .m2_verifier import (
     inspect_m2_stage_three,
     inspect_m2_stage_two,
     inspect_m2_wire,
+    replay_historical,
+    verify_attested_proposal,
 )
 from .promotion import PromotionContext, PromotionGate
 
 __all__ = [
+    "AnchorTransitionResult",
     "Candidate",
     "CanonicalM2Wire",
     "ContextBoundM2Input",
     "DigestBoundM2Input",
+    "EvaluatedProposal",
     "Evidence",
     "EvidenceBoundM2Input",
     "GrantBoundM2Input",
@@ -51,9 +63,15 @@ __all__ = [
     "PromotionContext",
     "PromotionDecision",
     "PromotionGate",
+    "ReplayResult",
     "SignatureVerifiedM2Input",
     "StructurallyValidM2Input",
+    "VerificationResult",
     "VerifiedM2Proposal",
+    "VerifiedProposal",
+    "advance_anchor",
+    "evaluate_new",
+    "initialize_anchor",
     "inspect_m2_stage_eight",
     "inspect_m2_stage_eleven",
     "inspect_m2_stage_five",
@@ -65,6 +83,8 @@ __all__ = [
     "inspect_m2_stage_three",
     "inspect_m2_stage_two",
     "inspect_m2_wire",
+    "replay_historical",
+    "verify_attested_proposal",
 ]
 
 __version__ = "0.1.0a0"

@@ -9,6 +9,8 @@ use crate::{CanonicalM2Wire, M2WireRejection, canonical_json, inspect_m2_wire, p
 /// M2.1 operation whose untrusted input is being inspected.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum M2Entrypoint {
+    /// Evaluate an unsigned promotion input and return non-authorizing policy data.
+    EvaluateNew,
     /// Inspect a signed proposal plus a separately supplied anchor snapshot.
     VerifyAttestedProposal,
     /// Inspect a historical proposal without authorizing a new transition.
@@ -415,6 +417,48 @@ fn context_preflight(identity: &Value, authorization: &Value, kinds: bool) -> Ch
     Ok(())
 }
 
+fn promotion_input_paths(value: &Value) -> Vec<(&Value, &'static str)> {
+    let mut paths = vec![(value, "promotion-input")];
+    let Some(body) = value.get("payload") else {
+        return paths;
+    };
+    for (field, kind) in [
+        ("identity_context", "identity-context"),
+        ("authorization_context", "authorization-context"),
+    ] {
+        if let Some(item) = body.get(field) {
+            paths.push((item, kind));
+        }
+    }
+    for (field, kind) in [
+        ("candidate", "candidate"),
+        ("authority_grant", "authority-grant"),
+    ] {
+        if let Some(pair) = body.get(field) {
+            if let Some(item) = pair.get("envelope") {
+                paths.push((item, kind));
+            }
+            if let Some(item) = pair.get("signature") {
+                paths.push((item, "detached-signature"));
+            }
+        }
+    }
+    if let Some(item) = body.pointer("/constitution/envelope") {
+        paths.push((item, "constitution"));
+    }
+    if let Some(items) = body.get("evidence").and_then(Value::as_array) {
+        for pair in items {
+            if let Some(item) = pair.get("envelope") {
+                paths.push((item, "evidence"));
+            }
+            if let Some(item) = pair.get("signature") {
+                paths.push((item, "detached-signature"));
+            }
+        }
+    }
+    paths
+}
+
 fn attested_paths(value: &Value) -> Vec<(&Value, &'static str)> {
     let mut paths = vec![(value, "attested-proposal")];
     let Some(payload) = value.get("payload") else {
@@ -468,8 +512,12 @@ fn attested_paths(value: &Value) -> Vec<(&Value, &'static str)> {
     paths
 }
 
-fn attested_preflight(value: &Value) -> Check {
-    let paths = attested_paths(value);
+fn proposal_preflight(value: &Value, attested: bool) -> Check {
+    let paths = if attested {
+        attested_paths(value)
+    } else {
+        promotion_input_paths(value)
+    };
     for (item, _) in &paths {
         if item
             .get("envelope_version")
@@ -515,7 +563,12 @@ fn attested_preflight(value: &Value) -> Check {
             return Err(Invalid("input.version_unsupported"));
         }
     }
-    if let Some(body) = value.pointer("/payload/promotion_input/payload") {
+    let body = if attested {
+        value.pointer("/payload/promotion_input/payload")
+    } else {
+        value.pointer("/payload")
+    };
+    if let Some(body) = body {
         context_preflight(
             &body["identity_context"],
             &body["authorization_context"],
@@ -756,19 +809,8 @@ fn decision(value: &Value) -> Check {
     Ok(())
 }
 
-fn attested(value: &Value) -> Check {
-    let payload = &envelope(value, "attested-proposal")?["payload"];
-    let payload = exact(
-        payload,
-        &[
-            "proposal_version",
-            "promotion_input",
-            "decision",
-            "selector_signature",
-        ],
-        &[],
-    )?;
-    let input = &envelope(&payload["promotion_input"], "promotion-input")?["payload"];
+fn promotion_input(value: &Value) -> Check {
+    let input = &envelope(value, "promotion-input")?["payload"];
     let input = exact(
         input,
         &[
@@ -808,6 +850,22 @@ fn attested(value: &Value) -> Check {
     if let Some(grant) = input.get("authority_grant") {
         pair(grant, "authority-grant")?;
     }
+    Ok(())
+}
+
+fn attested(value: &Value) -> Check {
+    let payload = &envelope(value, "attested-proposal")?["payload"];
+    let payload = exact(
+        payload,
+        &[
+            "proposal_version",
+            "promotion_input",
+            "decision",
+            "selector_signature",
+        ],
+        &[],
+    )?;
+    promotion_input(&payload["promotion_input"])?;
     decision(&payload["decision"])?;
     signature(&payload["selector_signature"])?;
     Ok(())
@@ -852,8 +910,16 @@ fn anchor(value: &Value) -> Check<&Map<String, Value>> {
 
 fn validate(value: &Value, entrypoint: M2Entrypoint, trusted_anchor: Option<&Value>) -> Check {
     match entrypoint {
+        M2Entrypoint::EvaluateNew => {
+            proposal_preflight(value, false)?;
+            strings(value, false)?;
+            promotion_input(value)?;
+            let trusted_anchor = trusted_anchor.ok_or_else(schema)?;
+            strings(trusted_anchor, false)?;
+            anchor(trusted_anchor)?;
+        }
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => {
-            attested_preflight(value)?;
+            proposal_preflight(value, true)?;
             strings(value, false)?;
             attested(value)?;
             let trusted_anchor = trusted_anchor.ok_or_else(schema)?;
@@ -992,6 +1058,94 @@ fn validate(value: &Value, entrypoint: M2Entrypoint, trusted_anchor: Option<&Val
         }
     }
     Ok(())
+}
+
+pub(crate) fn validate_anchor_transition_structure(
+    previous_anchor: &Value,
+    previous_identity: &Value,
+    next_identity: &Value,
+    next_authorization: &Value,
+    trusted_now: &Value,
+) -> Result<(), M2WireRejection> {
+    let result = (|| {
+        for identity_value in [previous_identity, next_identity] {
+            context_preflight(identity_value, next_authorization, false)?;
+        }
+        for identity_value in [previous_identity, next_identity] {
+            context_preflight(identity_value, next_authorization, true)?;
+        }
+        for value in [
+            previous_anchor,
+            previous_identity,
+            next_identity,
+            next_authorization,
+            trusted_now,
+        ] {
+            strings(value, false)?;
+        }
+        let anchor = anchor(previous_anchor)?;
+        identity(previous_identity)?;
+        let identity_payload = identity(next_identity)?;
+        authorization(next_authorization)?;
+        uint(trusted_now)?;
+
+        let mut ownership = anchor["key_ownership_registry"]
+            .as_object()
+            .ok_or_else(schema)?
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        for principal in identity_payload["principals"]
+            .as_array()
+            .ok_or_else(schema)?
+        {
+            for key in object(principal)?["keys"].as_array().ok_or_else(schema)? {
+                ownership.insert(text(&object(key)?["key_id"])?.to_owned());
+            }
+        }
+        let mut revoked_keys = anchor["revoked_key_ids"]
+            .as_array()
+            .ok_or_else(schema)?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect::<BTreeSet<_>>();
+        revoked_keys.extend(
+            identity_payload["revoked_key_ids"]
+                .as_array()
+                .ok_or_else(schema)?
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned),
+        );
+        let mut revoked_grants = anchor["revoked_grant_ids"]
+            .as_array()
+            .ok_or_else(schema)?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect::<BTreeSet<_>>();
+        revoked_grants.extend(
+            identity_payload["revoked_grant_ids"]
+                .as_array()
+                .ok_or_else(schema)?
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned),
+        );
+        if [ownership.len(), revoked_keys.len(), revoked_grants.len()]
+            .into_iter()
+            .any(|size| size > 4096)
+        {
+            return Err(limit());
+        }
+        Ok(())
+    })();
+    result.map_err(|error: Invalid| M2WireRejection {
+        stage: 2,
+        code: error.0,
+        authorizing: false,
+    })
 }
 
 /// Apply M2.1 stages one and two without authentication or authority.

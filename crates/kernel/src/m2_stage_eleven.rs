@@ -23,6 +23,7 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2W
         M2Entrypoint::EvaluateNew | M2Entrypoint::InitializeAnchor => {
             Err(rejection("input.schema_invalid"))
         }
+        _ => Err(rejection("input.kind_mismatch")),
     }
 }
 

@@ -26,8 +26,8 @@
   "active_increment": {
     "id": "M2.1",
     "title": "Identity, authority grants, and detached signatures",
-    "status": "in_progress",
-    "verification": "accepted_252_case_nonauthorizing_contract_disabled_python_rust_runtime_complete_review_pending",
+    "status": "implemented",
+    "verification": "accepted_252_case_nonauthorizing_contract_disabled_python_rust_runtime_reviewed_clean_clone_ci_passed",
     "specification": "docs/specs/m2.1-identity-grants-signatures.md",
     "requirements": [
       "REQ-CORE-003",
@@ -137,6 +137,15 @@
       "result": "passed",
       "artifact": "docs/reports/m2.1-result-contract-council-2026-09-11.md",
       "url": "https://github.com/artemiosu/variaxiom/pull/17"
+    },
+    {
+      "id": "m2.1-disabled-verifier-implementation-council",
+      "revision": "ec38563d93bab1854592caebbad31a67d7e714a2",
+      "observed_on": "2026-09-11",
+      "check": "252 shared cases, 19 Wycheproof vectors, sealed public APIs, mixed-feature Cargo probes, clean public clone, GitHub Linux/macOS/Windows CI, and three isolated automated reviews",
+      "result": "passed",
+      "artifact": "docs/reports/m2.1-implementation-council-2026-09-11.md",
+      "url": "https://github.com/artemiosu/variaxiom/pull/12"
     }
   ],
   "open_decisions": [

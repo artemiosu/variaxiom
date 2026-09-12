@@ -24,6 +24,12 @@ unfrozen two-phase result API. Issue #16 corrects the contract with an accepted 
 always-non-authorizing freeze. Three isolated automated reviewers reported no P0/P1 on revision
 `7642611c014ff683a6aadc614f709ca959f8583b`; this remains defense in depth, not a human audit.
 
+The disabled Python/Rust verifier implementation subsequently passed all 252 cases, 19
+Wycheproof vectors, a fresh public-clone full verification, Linux/macOS/Windows CI, and a repeated
+three-role automated implementation review at
+`ec38563d93bab1854592caebbad31a67d7e714a2`. No reviewer reported a remaining P0/P1/P2. The
+implementation remains evidence-only and cannot sign, authorize, activate, or append lineage.
+
 ## Implemented
 
 - deterministic candidate/evidence/promotion domain model;

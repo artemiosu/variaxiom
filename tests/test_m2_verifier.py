@@ -4,9 +4,11 @@ import base64
 import unittest
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import patch
 
-from variaxiom.canonical import canonical_json, strict_json_loads
-from variaxiom.m2_verifier import (
+import variaxiom._m2_verifier as m2_verifier_module
+import variaxiom.m2_verifier as public_m2_api
+from variaxiom._m2_verifier import (
     AnchorTransitionResult,
     CanonicalM2Wire,
     ContextBoundM2Input,
@@ -41,6 +43,7 @@ from variaxiom.m2_verifier import (
     replay_historical,
     verify_attested_proposal,
 )
+from variaxiom.canonical import canonical_json, sha256_bytes, strict_json_loads
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "conformance" / "v2"
@@ -558,16 +561,81 @@ class M2WireInspectionTests(unittest.TestCase):
                 break
             rebind_anchor = rebind_result.as_dict()["resulting_anchor"]
             rebind_identity = rebind_step["next_identity_context"]
-        self.assertEqual(
-            rebind_result,
-            VerificationResult(status="rejected", code="identity.key_ambiguous"),
-        )
+        self.assertIsInstance(rebind_result, VerificationResult)
+        rebind_rejection = cast(VerificationResult, rebind_result)
+        self.assertEqual(rebind_rejection.status, "rejected")
+        self.assertEqual(rebind_rejection.code, "identity.key_ambiguous")
 
         rejected_case = cases["evaluate-new-anchor-mismatch"]
         rejected = evaluate_new(decode_input(rejected_case), rejected_case["trusted_anchor"])
+        self.assertIsInstance(rejected, VerificationResult)
+        rejected_result = cast(VerificationResult, rejected)
+        self.assertEqual(rejected_result.status, "rejected")
+        self.assertEqual(rejected_result.code, "identity.context_untrusted")
+
+    def test_public_result_constructors_are_not_caller_accessible(self) -> None:
+        attempts = (
+            (VerificationResult, ()),
+            (VerificationResult, ("verified", None)),
+            (EvaluatedProposal, (b"{}", b"{}")),
+            (VerifiedProposal, (b"{}",)),
+            (ReplayResult, ("a" * 64, "b" * 64, "c" * 64)),
+            (AnchorTransitionResult, (b"{}",)),
+        )
+        for result_type, args in attempts:
+            with self.subTest(result_type=result_type.__name__), self.assertRaises(TypeError):
+                result_type(*args)  # type: ignore[call-arg]
+
+    def test_public_module_exposes_only_normative_operations_and_results(self) -> None:
+        expected = {
+            "AnchorTransitionResult",
+            "EvaluatedProposal",
+            "ReplayResult",
+            "VerificationResult",
+            "VerifiedProposal",
+            "advance_anchor",
+            "evaluate_new",
+            "initialize_anchor",
+            "replay_historical",
+            "verify_attested_proposal",
+        }
+        self.assertEqual(set(public_m2_api.__all__), expected)
+        self.assertFalse(hasattr(public_m2_api, "M2Entrypoint"))
+        self.assertFalse(hasattr(public_m2_api, "inspect_m2_stage_eleven"))
+
+    def test_replay_result_binds_the_anchor_snapshot_actually_verified(self) -> None:
+        case = next(
+            case for case in self.cases() if case["case_id"] == "historical-replay-nonauthorizing"
+        )
+        anchor = cast(dict[str, Any], strict_json_loads(canonical_json(case["trusted_anchor"])))
+        verified_anchor_data = canonical_json(anchor)
+        real_verify_key = m2_verifier_module.VerifyKey
+        mutated = False
+
+        class MutatingVerifyKey:
+            def __init__(self, key: bytes) -> None:
+                self._delegate = real_verify_key(key)
+
+            def verify(self, message: bytes, signature: bytes) -> bytes:
+                nonlocal mutated
+                if not mutated:
+                    mutated = True
+                    anchor["trusted_now_unix_s"] = cast(int, anchor["trusted_now_unix_s"]) + 1
+                return self._delegate.verify(message, signature)
+
+        with patch.object(m2_verifier_module, "VerifyKey", MutatingVerifyKey):
+            replay = replay_historical(decode_input(case), anchor)
+
+        self.assertTrue(mutated)
+        self.assertIsInstance(replay, ReplayResult)
+        replay_result = cast(ReplayResult, replay)
         self.assertEqual(
-            rejected,
-            VerificationResult(status="rejected", code="identity.context_untrusted"),
+            replay_result.recorded_trusted_anchor_digest,
+            sha256_bytes(verified_anchor_data),
+        )
+        self.assertNotEqual(
+            replay_result.recorded_trusted_anchor_digest,
+            sha256_bytes(canonical_json(anchor)),
         )
 
 

@@ -6,7 +6,7 @@ use variaxiom_protocol::{
     verify_m2_selector_attestation,
 };
 
-use crate::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
+use crate::m2_stage_ten::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
 
 fn rejection(code: &'static str) -> M2WireRejection {
     M2WireRejection {
@@ -37,6 +37,7 @@ pub struct VerifiedM2Proposal {
 
 impl VerifiedM2Proposal {
     /// Return the inspected operation.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn entrypoint(&self) -> M2Entrypoint {
         self.policy_evaluated.entrypoint()
@@ -61,6 +62,7 @@ impl VerifiedM2Proposal {
     }
 
     /// Return the exact resulting anchor retained for a history probe.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn resulting_anchor(&self) -> Option<&Value> {
         self.policy_evaluated.resulting_anchor()
@@ -70,6 +72,7 @@ impl VerifiedM2Proposal {
     ///
     /// No value returned by this disabled verifier can activate a candidate
     /// or append durable lineage.
+    #[cfg(feature = "internal-api")]
     #[must_use]
     pub const fn authorizing(&self) -> bool {
         false

@@ -8,13 +8,25 @@ rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+internal-api = []
+
 [dependencies]
 serde_json = "1"
-variaxiom-protocol = { path = "../protocol" }
+variaxiom-protocol = { path = "../protocol", features = ["internal-api"] }
 
 [dev-dependencies]
 base64 = "0.22"
 serde = { version = "1", features = ["derive"] }
+
+[[test]]
+name = "m2_policy"
+required-features = ["internal-api"]
+
+[[test]]
+name = "m2_stage_eleven"
+required-features = ["internal-api"]
 
 [lints]
 workspace = true

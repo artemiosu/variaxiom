@@ -7,6 +7,11 @@ license.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
+publish = false
+
+[features]
+default = []
+internal-api = []
 
 [dependencies]
 base64 = "0.22"
@@ -18,6 +23,10 @@ sha2 = "0.11"
 
 [dev-dependencies]
 serde_json = { version = "1", features = ["preserve_order"] }
+
+[[test]]
+name = "m2_wire"
+required-features = ["internal-api"]
 
 [lints]
 workspace = true

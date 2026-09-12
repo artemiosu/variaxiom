@@ -2,11 +2,12 @@
 
 use serde_json::{Value, json};
 use variaxiom_protocol::{
-    M2Entrypoint, M2WireRejection, advance_trusted_anchor, canonical_digest, canonical_json,
-    inspect_m2_stage_six,
+    M2Entrypoint, M2WireRejection, canonical_digest, canonical_json, inspect_m2_stage_six,
+    validate_trusted_anchor_transition,
 };
 
-use crate::{inspect_m2_stage_eleven, inspect_m2_stage_ten};
+use crate::m2_stage_eleven::inspect_m2_stage_eleven;
+use crate::m2_stage_ten::inspect_m2_stage_ten;
 
 /// Stable rejected verification result shared by every public M2.1 entry point.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -213,8 +214,12 @@ pub fn replay_historical(
     Ok(ReplayResult {
         attested_proposal_digest: canonical_digest(proposal)
             .map_err(|_| VerificationResult::schema_invalid())?,
-        recorded_trusted_anchor_digest: canonical_digest(recorded_trusted_anchor)
-            .map_err(|_| VerificationResult::schema_invalid())?,
+        recorded_trusted_anchor_digest: canonical_digest(
+            verified
+                .trusted_anchor()
+                .ok_or_else(VerificationResult::schema_invalid)?,
+        )
+        .map_err(|_| VerificationResult::schema_invalid())?,
         reproduced_decision_digest: canonical_digest(&decision)
             .map_err(|_| VerificationResult::schema_invalid())?,
     })
@@ -256,7 +261,7 @@ pub fn advance_anchor(
     next_authorization_context: &Value,
     trusted_now_unix_s: u64,
 ) -> Result<AnchorTransitionResult, VerificationResult> {
-    let resulting_anchor = advance_trusted_anchor(
+    let transition = validate_trusted_anchor_transition(
         previous_anchor,
         previous_identity_context,
         next_identity_context,
@@ -264,5 +269,8 @@ pub fn advance_anchor(
         trusted_now_unix_s,
     )
     .map_err(VerificationResult::from_rejection)?;
-    Ok(AnchorTransitionResult { resulting_anchor })
+    debug_assert!(!transition.authorizing());
+    Ok(AnchorTransitionResult {
+        resulting_anchor: transition.resulting_anchor().clone(),
+    })
 }

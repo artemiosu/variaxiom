@@ -38,8 +38,9 @@ variaxiom demo --reset
 Rust kernel scaffold:
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace
+cargo fmt --all -- --check
+cargo test --workspace --all-targets --all-features --locked
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 ```
 
 The project intentionally keeps the bootstrap Python path standard-library-only. Proposed dependencies need an ADR or a clear explanation of why the standard library is insufficient.

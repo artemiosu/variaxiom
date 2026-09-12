@@ -7,6 +7,7 @@ use serde_json::{Map, Value};
 use crate::{CanonicalM2Wire, M2WireRejection, canonical_json, inspect_m2_wire, parse_json_strict};
 
 /// M2.1 operation whose untrusted input is being inspected.
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum M2Entrypoint {
     /// Evaluate an unsigned promotion input and return non-authorizing policy data.

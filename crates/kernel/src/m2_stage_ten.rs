@@ -108,6 +108,7 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
             object(value)?.get("probe_attested_proposal").ok_or(())
         }
         M2Entrypoint::InitializeAnchor => Err(()),
+        _ => Err(()),
     }
 }
 

@@ -585,6 +585,8 @@ class M2WireInspectionTests(unittest.TestCase):
         for result_type, args in attempts:
             with self.subTest(result_type=result_type.__name__), self.assertRaises(TypeError):
                 result_type(*args)  # type: ignore[call-arg]
+            with self.subTest(result_type=result_type.__name__), self.assertRaises(TypeError):
+                type(f"Forged{result_type.__name__}", (result_type,), {})
 
     def test_public_module_exposes_only_normative_operations_and_results(self) -> None:
         expected = {

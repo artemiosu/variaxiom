@@ -13,7 +13,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from importlib import import_module
-from typing import Any, Final, Literal, NoReturn, Protocol, cast
+from typing import Any, Final, Literal, NoReturn, Protocol, cast, final
 
 from .canonical import JSONValue, canonical_json, sha256_bytes, strict_json_loads
 
@@ -375,6 +375,7 @@ _STABLE_VERIFICATION_CODES: Final = frozenset(
 )
 
 
+@final
 @dataclass(frozen=True, slots=True, init=False)
 class VerificationResult:
     """Exact public M2.1 verification result; never an authority capability."""
@@ -384,6 +385,9 @@ class VerificationResult:
 
     def __init__(self) -> None:
         raise TypeError("VerificationResult values are returned only by M2.1 verifier APIs")
+
+    def __init_subclass__(cls, **kwargs: object) -> NoReturn:
+        raise TypeError("VerificationResult is sealed and cannot be subclassed")
 
     def as_dict(self) -> dict[str, JSONValue]:
         return {
@@ -425,6 +429,7 @@ def _canonical_result_data(data: bytes) -> bytes:
     return snapshot
 
 
+@final
 @dataclass(frozen=True, slots=True, init=False)
 class EvaluatedProposal:
     """Pure policy evaluation over an exact promotion input."""
@@ -434,6 +439,9 @@ class EvaluatedProposal:
 
     def __init__(self) -> None:
         raise TypeError("EvaluatedProposal values are returned only by evaluate_new")
+
+    def __init_subclass__(cls, **kwargs: object) -> NoReturn:
+        raise TypeError("EvaluatedProposal is sealed and cannot be subclassed")
 
     @property
     def authorizing(self) -> bool:
@@ -456,6 +464,7 @@ def _evaluated_proposal(promotion_input_data: bytes, decision_data: bytes) -> Ev
     return result
 
 
+@final
 @dataclass(frozen=True, slots=True, init=False)
 class VerifiedProposal:
     """Verified signed proposal data with no activation or append capability."""
@@ -464,6 +473,9 @@ class VerifiedProposal:
 
     def __init__(self) -> None:
         raise TypeError("VerifiedProposal values are returned only by verify_attested_proposal")
+
+    def __init_subclass__(cls, **kwargs: object) -> NoReturn:
+        raise TypeError("VerifiedProposal is sealed and cannot be subclassed")
 
     @property
     def authorizing(self) -> bool:
@@ -486,6 +498,7 @@ def _public_verified_proposal(attested_proposal_data: bytes) -> VerifiedProposal
     return result
 
 
+@final
 @dataclass(frozen=True, slots=True, init=False)
 class ReplayResult:
     """Historical reproduction bound to the exact separately supplied anchor."""
@@ -496,6 +509,9 @@ class ReplayResult:
 
     def __init__(self) -> None:
         raise TypeError("ReplayResult values are returned only by replay_historical")
+
+    def __init_subclass__(cls, **kwargs: object) -> NoReturn:
+        raise TypeError("ReplayResult is sealed and cannot be subclassed")
 
     @property
     def authorizing(self) -> bool:
@@ -531,6 +547,7 @@ def _replay_result(
     return result
 
 
+@final
 @dataclass(frozen=True, slots=True, init=False)
 class AnchorTransitionResult:
     """Non-authorizing result of explicit anchor initialization or advancement."""
@@ -539,6 +556,9 @@ class AnchorTransitionResult:
 
     def __init__(self) -> None:
         raise TypeError("AnchorTransitionResult values are returned only by anchor APIs")
+
+    def __init_subclass__(cls, **kwargs: object) -> NoReturn:
+        raise TypeError("AnchorTransitionResult is sealed and cannot be subclassed")
 
     @property
     def authorizing(self) -> bool:

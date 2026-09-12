@@ -26,7 +26,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Return the inspected operation.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn entrypoint(&self) -> M2Entrypoint {
         self.policy_context.entrypoint()
@@ -45,7 +45,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Return the exact resulting anchor retained for a history probe.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn resulting_anchor(&self) -> Option<&Value> {
         self.policy_context.resulting_anchor()
@@ -58,7 +58,7 @@ impl PolicyEvaluatedM2Input {
     }
 
     /// Policy evaluation alone never authorizes an effect.
-    #[cfg(feature = "internal-api")]
+    #[cfg(feature = "conformance")]
     #[must_use]
     pub const fn authorizing(&self) -> bool {
         false
@@ -103,6 +103,7 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
     match entrypoint {
         M2Entrypoint::EvaluateNew => Ok(value),
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => {
             object(value)?.get("probe_attested_proposal").ok_or(())
         }
@@ -234,18 +235,10 @@ pub fn inspect_m2_stage_ten(
     trusted_anchor: Option<&Value>,
 ) -> Result<PolicyEvaluatedM2Input, M2WireRejection> {
     let policy_context = inspect_m2_stage_nine(source, entrypoint, trusted_anchor)?;
-    let proposal = proposal_value(policy_context.wire().value(), entrypoint).map_err(|()| {
-        M2WireRejection {
-            stage: 2,
-            code: "input.kind_mismatch",
-            authorizing: false,
-        }
-    })?;
-    let decision = evaluate_policy(proposal).map_err(|()| M2WireRejection {
-        stage: 2,
-        code: "input.schema_invalid",
-        authorizing: false,
-    })?;
+    let proposal = proposal_value(policy_context.wire().value(), entrypoint)
+        .map_err(|()| M2WireRejection::new(2, "input.kind_mismatch"))?;
+    let decision =
+        evaluate_policy(proposal).map_err(|()| M2WireRejection::new(2, "input.schema_invalid"))?;
     debug_assert!(matches!(
         decision.status,
         DecisionStatus::Accepted | DecisionStatus::Rejected

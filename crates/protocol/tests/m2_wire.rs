@@ -97,17 +97,18 @@ fn frozen_stage_one_rejections_match() {
         assert_eq!(case.case_id, entry.case_id);
         let rejection = inspect_m2_wire(&input(&case)).expect_err("case must fail stage one");
         assert_eq!(
-            rejection.stage, case.expected.reached_stage,
+            rejection.stage(),
+            case.expected.reached_stage,
             "{}",
             case.case_id
         );
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -167,17 +168,18 @@ fn frozen_stage_two_rejections_match() {
             Ok(_) => panic!("{} unexpectedly passed stage two", case.case_id),
         };
         assert_eq!(
-            rejection.stage, case.expected.reached_stage,
+            rejection.stage(),
+            case.expected.reached_stage,
             "{}",
             case.case_id
         );
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -207,7 +209,12 @@ fn every_later_stage_case_passes_the_structural_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
         assert_eq!(result.entrypoint(), entrypoint(&case));
@@ -229,7 +236,7 @@ fn malformed_nested_shape_fails_closed_and_anchor_is_owned() {
         case.trusted_anchor.as_ref(),
     )
     .expect_err("malformed nested payload must fail closed");
-    assert_eq!(rejection.code, "input.schema_invalid");
+    assert_eq!(rejection.code(), "input.schema_invalid");
 
     let mut caller_anchor = case.trusted_anchor.clone().expect("case has anchor");
     let accepted = inspect_m2_stage_two(
@@ -275,17 +282,18 @@ fn frozen_stage_three_rejections_match() {
         )
         .expect_err("case must fail stage three");
         assert_eq!(
-            rejection.stage, case.expected.reached_stage,
+            rejection.stage(),
+            case.expected.reached_stage,
             "{}",
             case.case_id
         );
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -315,7 +323,12 @@ fn every_later_stage_case_passes_the_context_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
         assert_eq!(result.entrypoint(), entrypoint(&case));
@@ -350,14 +363,14 @@ fn frozen_stage_four_rejections_match() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage four");
-        assert_eq!(rejection.stage, 4, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 4, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -389,7 +402,12 @@ fn every_later_stage_case_passes_the_digest_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }
@@ -423,14 +441,14 @@ fn frozen_stage_five_rejections_match() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage five");
-        assert_eq!(rejection.stage, 5, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 5, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -462,7 +480,12 @@ fn every_later_stage_case_passes_the_identity_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }
@@ -496,14 +519,14 @@ fn frozen_stage_six_rejections_match() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage six");
-        assert_eq!(rejection.stage, 6, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 6, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -535,7 +558,12 @@ fn successful_anchor_operations_return_the_exact_frozen_anchor() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
         assert_eq!(
@@ -575,7 +603,12 @@ fn every_later_stage_case_passes_the_signature_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }
@@ -609,14 +642,14 @@ fn frozen_stage_seven_rejection_matches() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage seven");
-        assert_eq!(rejection.stage, 7, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 7, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -648,7 +681,12 @@ fn every_later_case_passes_the_evidence_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }
@@ -682,14 +720,14 @@ fn frozen_stage_eight_rejections_match() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage eight");
-        assert_eq!(rejection.stage, 8, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 8, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -721,7 +759,12 @@ fn every_later_case_passes_the_grant_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }
@@ -755,14 +798,14 @@ fn frozen_stage_nine_rejections_match() {
             case.trusted_anchor.as_ref(),
         )
         .expect_err("case must fail stage nine");
-        assert_eq!(rejection.stage, 9, "{}", case.case_id);
+        assert_eq!(rejection.stage(), 9, "{}", case.case_id);
         assert_eq!(
-            Some(rejection.code),
+            Some(rejection.code()),
             case.expected.code.as_deref(),
             "{}",
             case.case_id
         );
-        assert!(!rejection.authorizing);
+        assert!(!rejection.authorizing());
     }
 }
 
@@ -794,7 +837,12 @@ fn every_later_case_passes_the_policy_context_boundary() {
             case.trusted_anchor.as_ref(),
         )
         .unwrap_or_else(|error| {
-            panic!("{}: {} at stage {}", case.case_id, error.code, error.stage)
+            panic!(
+                "{}: {} at stage {}",
+                case.case_id,
+                error.code(),
+                error.stage()
+            )
         });
         assert!(!result.authorizing());
     }

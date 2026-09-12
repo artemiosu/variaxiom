@@ -441,6 +441,7 @@ fn stage_six(identity_bound: &IdentityBoundM2Input) -> Check<Option<Value>> {
             stage_six_contexts(&[&request["initial_identity_context"]])?;
             Ok(Some(initial_anchor(request)?))
         }
+        #[cfg(feature = "conformance")]
         M2Entrypoint::AdvanceAnchorHistory => {
             let history = object(value)?;
             let steps = history["steps"]

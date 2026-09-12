@@ -55,26 +55,24 @@ now implements all eleven internal frozen stages in both Python and Rust: canoni
 structural validation, trusted-context binding, target/key digest recomputation, and anchored
 identity/role/revocation checks followed by the strict Ed25519 profile, exact evidence and grant
 binding, constitution/artifact binding, deterministic M1.1 policy, exact decision comparison, and
-promotion-selector verification. Both implementations match the status, stable code, decision,
-and returned anchor of all 37 terminal fixtures. Every implementation result deliberately remains
-non-authorizing, including the 27 live evaluations; it does not reproduce the unsafe `true` values
-in the frozen fixture field. Returned anchor data is immutable and cannot mutate trusted state.
-The complete implementation remains disabled and cannot append or activate durable lineage.
+promotion-selector verification. Both implementations match all 252 accepted cases at their
+assigned boundary, including 51 policy decisions and 49 stage-eleven results. The distinct public
+`evaluate_new`, `verify_attested_proposal`, `replay_historical`, `initialize_anchor`, and
+`advance_anchor` operations return the accepted result shapes; replay binds the exact separately
+supplied anchor digest. Every result fixes `authorizing` to `false`, and returned anchor data is
+immutable. The implementation remains disabled and cannot sign, append, or activate durable
+lineage.
 
-The first automated implementation review found no P0 issue, but it did find blocking P1 API and
-contract defects. The caller-supplied-decision bypass in a public Rust helper has been removed.
-The remaining blockers belong to the accepted contract rather than this implementation branch:
-`authorizing` can be true for a rejected policy decision, and the normative two-phase
-`evaluate_new` / `verify_attested_proposal` / `replay_historical` result APIs are not frozen in the
-schemas and fixtures. Until a separate contract-correction change is accepted, the draft is not
-ready to merge and no M2.1 result may be treated as an authority capability.
+The issue #16 contract correction removed the earlier positive-authority fixture defect and is
+now consumed by the rebased implementation. Local full-corpus and language-specific checks pass;
+the implementation branch still requires a clean-clone reproduction, GitHub matrix, and repeated
+three-role automated review before it may merge. No M2.1 result is an authority capability.
 
 ## Next
 
-1. Implement the accepted distinct two-phase APIs and direct selector adversarial coverage in
-   rebased draft PR #12.
-2. Repeat the full corpus, clean-clone, CI, and three-role automated review; merge only with no
-   open P0/P1 findings.
+1. Repeat the full corpus, clean-clone, CI, and three-role automated review of rebased draft PR
+   #12; merge only with no open P0/P1 findings.
+2. Publish the exact implementation evidence and close issue #11 after merge.
 3. M2.2 — transactional SQLite lineage and projections.
 4. M2.3 — tamper/replay/fault-injection suite and rollback drill.
 

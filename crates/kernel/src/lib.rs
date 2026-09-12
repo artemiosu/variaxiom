@@ -4,9 +4,14 @@
 //! code. It only applies small deterministic rules to facts produced by other
 //! trust domains.
 
+mod m2_public;
 mod m2_stage_eleven;
 mod m2_stage_ten;
 
+pub use m2_public::{
+    AnchorTransitionResult, EvaluatedProposal, ReplayResult, VerificationResult, VerifiedProposal,
+    advance_anchor, evaluate_new, initialize_anchor, replay_historical, verify_attested_proposal,
+};
 pub use m2_stage_eleven::{VerifiedM2Proposal, inspect_m2_stage_eleven};
 pub use m2_stage_ten::{PolicyEvaluatedM2Input, inspect_m2_stage_ten};
 

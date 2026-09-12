@@ -105,8 +105,13 @@ fn proposal_payload(value: &Value) -> Check<&Map<String, Value>> {
 }
 
 fn promotion_body(value: &Value) -> Check<&Map<String, Value>> {
-    let proposal = proposal_payload(value)?;
-    object(&object(&proposal["promotion_input"])?["payload"])
+    let root = object(value)?;
+    if root.get("kind").and_then(Value::as_str) == Some("promotion-input") {
+        object(&root["payload"])
+    } else {
+        let proposal = proposal_payload(value)?;
+        object(&object(&proposal["promotion_input"])?["payload"])
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -282,9 +287,9 @@ fn stage_four_attested(value: &Value) -> Check {
 fn stage_four(context: &ContextBoundM2Input) -> Check {
     let value = context.wire().value();
     match context.entrypoint() {
-        M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => {
-            stage_four_attested(value)
-        }
+        M2Entrypoint::EvaluateNew
+        | M2Entrypoint::VerifyAttestedProposal
+        | M2Entrypoint::ReplayHistorical => stage_four_attested(value),
         M2Entrypoint::InitializeAnchor => {
             stage_four_bindings(&object(value)?["initial_identity_context"])
         }
@@ -553,7 +558,9 @@ fn advance_anchor(
 fn stage_five(digest_bound: &DigestBoundM2Input) -> Check {
     let value = digest_bound.wire().value();
     match digest_bound.entrypoint() {
-        M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => {
+        M2Entrypoint::EvaluateNew
+        | M2Entrypoint::VerifyAttestedProposal
+        | M2Entrypoint::ReplayHistorical => {
             let anchor = digest_bound
                 .trusted_anchor()
                 .ok_or_else(|| invalid(5, "identity.context_untrusted"))?;
@@ -603,6 +610,74 @@ fn stage_five(digest_bound: &DigestBoundM2Input) -> Check {
             Ok(())
         }
     }
+}
+
+pub(crate) fn validate_anchor_transition_identity(
+    previous_anchor: &Value,
+    previous_identity: &Value,
+    next_identity: &Value,
+) -> Result<(), M2WireRejection> {
+    stage_four_bindings(previous_identity).map_err(|error| M2WireRejection {
+        stage: error.stage,
+        code: error.code,
+        authorizing: false,
+    })?;
+    stage_four_bindings(next_identity).map_err(|error| M2WireRejection {
+        stage: error.stage,
+        code: error.code,
+        authorizing: false,
+    })?;
+    stage_five_context(previous_identity).map_err(|error| M2WireRejection {
+        stage: error.stage,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let next_keys = stage_five_context(next_identity).map_err(|error| M2WireRejection {
+        stage: error.stage,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let anchor = object(previous_anchor).map_err(|error| M2WireRejection {
+        stage: 5,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let registry = object(&anchor["key_ownership_registry"]).map_err(|error| M2WireRejection {
+        stage: 5,
+        code: error.code,
+        authorizing: false,
+    })?;
+    let revoked = anchor["revoked_key_ids"]
+        .as_array()
+        .ok_or(M2WireRejection {
+            stage: 5,
+            code: "identity.context_untrusted",
+            authorizing: false,
+        })?;
+    for (key, (principal, _)) in next_keys {
+        if registry
+            .get(&key)
+            .and_then(Value::as_str)
+            .is_some_and(|owner| owner != principal)
+        {
+            return Err(M2WireRejection {
+                stage: 5,
+                code: "identity.key_ambiguous",
+                authorizing: false,
+            });
+        }
+        if revoked
+            .iter()
+            .any(|item| item.as_str() == Some(key.as_str()))
+        {
+            return Err(M2WireRejection {
+                stage: 5,
+                code: "signature.key_revoked",
+                authorizing: false,
+            });
+        }
+    }
+    Ok(())
 }
 
 /// Apply M2.1 stages one through four without cryptography or authority.

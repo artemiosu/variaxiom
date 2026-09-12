@@ -23,7 +23,9 @@ fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Result<&Value, M2W
             .as_object()
             .and_then(|history| history.get("probe_attested_proposal"))
             .ok_or_else(|| rejection("input.schema_invalid")),
-        M2Entrypoint::InitializeAnchor => Err(rejection("input.schema_invalid")),
+        M2Entrypoint::EvaluateNew | M2Entrypoint::InitializeAnchor => {
+            Err(rejection("input.schema_invalid"))
+        }
     }
 }
 

@@ -149,6 +149,7 @@ fn integer(value: &Value, stage: u8, code: &'static str) -> Check<i64> {
 
 fn proposal_value(value: &Value, entrypoint: M2Entrypoint) -> Check<&Value> {
     match entrypoint {
+        M2Entrypoint::EvaluateNew => Ok(value),
         M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => Ok(value),
         M2Entrypoint::AdvanceAnchorHistory => object(value, 2, "input.kind_mismatch")?
             .get("probe_attested_proposal")
@@ -165,12 +166,17 @@ fn promotion_body<'a>(
     stage: u8,
     code: &'static str,
 ) -> Check<&'a Map<String, Value>> {
-    let proposal = object(&object(value, stage, code)?["payload"], stage, code)?;
-    object(
-        &object(&proposal["promotion_input"], stage, code)?["payload"],
-        stage,
-        code,
-    )
+    let root = object(value, stage, code)?;
+    if root.get("kind").and_then(Value::as_str) == Some("promotion-input") {
+        object(&root["payload"], stage, code)
+    } else {
+        let proposal = object(&root["payload"], stage, code)?;
+        object(
+            &object(&proposal["promotion_input"], stage, code)?["payload"],
+            stage,
+            code,
+        )
+    }
 }
 
 fn stage_seven(value: &Value) -> Check {

@@ -64,6 +64,7 @@ fn input(case: &Case) -> Vec<u8> {
 
 fn entrypoint(case: &Case) -> M2Entrypoint {
     match case.entrypoint.as_str() {
+        "evaluate-new" => M2Entrypoint::EvaluateNew,
         "verify-attested-proposal" => M2Entrypoint::VerifyAttestedProposal,
         "replay-historical" => M2Entrypoint::ReplayHistorical,
         "initialize-anchor" => M2Entrypoint::InitializeAnchor,
@@ -193,7 +194,7 @@ fn every_later_stage_case_passes_the_structural_boundary() {
         .iter()
         .filter(|entry| entry.stage > 2)
         .collect::<Vec<_>>();
-    assert_eq!(later.len(), 151);
+    assert_eq!(later.len(), 166);
     for entry in later {
         let case = load_case(
             &repository
@@ -259,7 +260,7 @@ fn frozen_stage_three_rejections_match() {
         .iter()
         .filter(|entry| entry.stage == 3)
         .collect::<Vec<_>>();
-    assert_eq!(stage_three.len(), 23);
+    assert_eq!(stage_three.len(), 24);
 
     for entry in stage_three {
         let case = load_case(
@@ -301,7 +302,7 @@ fn every_later_stage_case_passes_the_context_boundary() {
         .iter()
         .filter(|entry| entry.stage > 3)
         .collect::<Vec<_>>();
-    assert_eq!(later.len(), 128);
+    assert_eq!(later.len(), 142);
     for entry in later {
         let case = load_case(
             &repository
@@ -380,7 +381,7 @@ fn every_later_stage_case_passes_the_digest_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 4)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 117);
+    assert_eq!(cases.len(), 131);
     for case in cases {
         let result = inspect_m2_stage_four(
             &input(&case),
@@ -453,7 +454,7 @@ fn every_later_stage_case_passes_the_identity_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 5)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 94);
+    assert_eq!(cases.len(), 108);
     for case in cases {
         let result = inspect_m2_stage_five(
             &input(&case),
@@ -566,7 +567,7 @@ fn every_later_stage_case_passes_the_signature_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 6)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 62);
+    assert_eq!(cases.len(), 76);
     for case in cases {
         let result = inspect_m2_stage_six(
             &input(&case),
@@ -639,7 +640,7 @@ fn every_later_case_passes_the_evidence_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 7)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 61);
+    assert_eq!(cases.len(), 75);
     for case in cases {
         let result = inspect_m2_stage_seven(
             &input(&case),
@@ -712,7 +713,7 @@ fn every_later_case_passes_the_grant_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 8)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 40);
+    assert_eq!(cases.len(), 54);
     for case in cases {
         let result = inspect_m2_stage_eight(
             &input(&case),
@@ -785,7 +786,7 @@ fn every_later_case_passes_the_policy_context_boundary() {
         })
         .filter(|case| case.expected.reached_stage > 9)
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 37);
+    assert_eq!(cases.len(), 51);
     for case in cases {
         let result = inspect_m2_stage_nine(
             &input(&case),

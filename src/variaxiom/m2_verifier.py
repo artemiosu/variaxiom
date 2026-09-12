@@ -62,6 +62,7 @@ class CanonicalM2Wire:
 M2WireInspection = CanonicalM2Wire | M2WireRejection
 
 M2Entrypoint = Literal[
+    "evaluate-new",
     "verify-attested-proposal",
     "replay-historical",
     "initialize-anchor",
@@ -328,6 +329,126 @@ def _verified_proposal(value: PolicyEvaluatedM2Input) -> VerifiedM2Proposal:
     proposal = object.__new__(VerifiedM2Proposal)
     object.__setattr__(proposal, "policy_evaluated", value)
     return proposal
+
+
+@dataclass(frozen=True, slots=True)
+class VerificationResult:
+    """Exact public M2.1 verification result; never an authority capability."""
+
+    status: Literal["verified", "rejected"]
+    code: str | None
+    verification_version: str = "verification-result/v1"
+
+    def __post_init__(self) -> None:
+        if (self.status == "verified") != (self.code is None):
+            raise ValueError("verified results require no code; rejected results require one")
+
+    def as_dict(self) -> dict[str, JSONValue]:
+        return {
+            "verification_version": self.verification_version,
+            "status": self.status,
+            "code": self.code,
+        }
+
+
+def _verified_result() -> VerificationResult:
+    return VerificationResult(status="verified", code=None)
+
+
+def _rejected_result(rejection: M2WireRejection) -> VerificationResult:
+    return VerificationResult(status="rejected", code=rejection.code)
+
+
+@dataclass(frozen=True, slots=True)
+class EvaluatedProposal:
+    """Pure policy evaluation over an exact promotion input."""
+
+    promotion_input_data: bytes
+    decision_data: bytes
+    result_version: str = "evaluated-proposal/v1"
+
+    @property
+    def authorizing(self) -> bool:
+        return False
+
+    def as_dict(self) -> dict[str, JSONValue]:
+        return {
+            "result_version": self.result_version,
+            "verification": _verified_result().as_dict(),
+            "authorizing": False,
+            "promotion_input": strict_json_loads(self.promotion_input_data),
+            "decision": strict_json_loads(self.decision_data),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedProposal:
+    """Verified signed proposal data with no activation or append capability."""
+
+    attested_proposal_data: bytes
+    result_version: str = "verified-proposal/v1"
+
+    @property
+    def authorizing(self) -> bool:
+        return False
+
+    def as_dict(self) -> dict[str, JSONValue]:
+        return {
+            "result_version": self.result_version,
+            "verification": _verified_result().as_dict(),
+            "authorizing": False,
+            "attested_proposal": strict_json_loads(self.attested_proposal_data),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ReplayResult:
+    """Historical reproduction bound to the exact separately supplied anchor."""
+
+    attested_proposal_digest: str
+    recorded_trusted_anchor_digest: str
+    reproduced_decision_digest: str
+    result_version: str = "replay-result/v1"
+
+    @property
+    def authorizing(self) -> bool:
+        return False
+
+    def as_dict(self) -> dict[str, JSONValue]:
+        return {
+            "result_version": self.result_version,
+            "verification": _verified_result().as_dict(),
+            "authorizing": False,
+            "attested_proposal_digest": self.attested_proposal_digest,
+            "recorded_trusted_anchor_digest": self.recorded_trusted_anchor_digest,
+            "reproduced_decision_digest": self.reproduced_decision_digest,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class AnchorTransitionResult:
+    """Non-authorizing result of explicit anchor initialization or advancement."""
+
+    resulting_anchor_data: bytes
+    result_version: str = "anchor-transition-result/v1"
+
+    @property
+    def authorizing(self) -> bool:
+        return False
+
+    def as_dict(self) -> dict[str, JSONValue]:
+        return {
+            "result_version": self.result_version,
+            "verification": _verified_result().as_dict(),
+            "authorizing": False,
+            "resulting_anchor": strict_json_loads(self.resulting_anchor_data),
+        }
+
+
+EvaluatedProposalResult = EvaluatedProposal | VerificationResult
+VerifiedProposalResult = VerifiedProposal | VerificationResult
+HistoricalReplayResult = ReplayResult | VerificationResult
+AnchorOperationResult = AnchorTransitionResult | VerificationResult
 
 
 _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
@@ -743,14 +864,8 @@ def _validate_decision(value: Any) -> None:
         _reject()
 
 
-def _validate_attested(value: Any) -> None:
-    _, payload = _exact_envelope(value, "attested-proposal")
-    payload = _object(
-        payload, {"proposal_version", "promotion_input", "decision", "selector_signature"}
-    )
-    if payload["proposal_version"] != "attested-proposal/v1":
-        _reject()
-    _, body = _exact_envelope(payload["promotion_input"], "promotion-input")
+def _validate_promotion_input(value: Any) -> None:
+    _, body = _exact_envelope(value, "promotion-input")
     body = _object(
         body,
         {
@@ -795,6 +910,16 @@ def _validate_attested(value: Any) -> None:
         grant = _object(body["authority_grant"], {"envelope", "signature"})
         _validate_grant(grant["envelope"])
         _validate_signature(grant["signature"])
+
+
+def _validate_attested(value: Any) -> None:
+    _, payload = _exact_envelope(value, "attested-proposal")
+    payload = _object(
+        payload, {"proposal_version", "promotion_input", "decision", "selector_signature"}
+    )
+    if payload["proposal_version"] != "attested-proposal/v1":
+        _reject()
+    _validate_promotion_input(payload["promotion_input"])
     _validate_decision(payload["decision"])
     _validate_signature(payload["selector_signature"])
 
@@ -877,13 +1002,17 @@ def _preflight_context(identity: Any, authorization: Any, *, versions_only: bool
             _reject("input.kind_mismatch")
 
 
-def _preflight_attested(value: Any) -> None:
+def _preflight_proposal(value: Any, *, attested: bool) -> None:
     root = _maybe_object(value)
     if root is None:
         return
-    paths: list[tuple[Any, str]] = [(root, "attested-proposal")]
-    payload = _maybe_object(root.get("payload"))
-    promotion = _maybe_object(payload.get("promotion_input")) if payload else None
+    paths: list[tuple[Any, str]] = []
+    payload = _maybe_object(root.get("payload")) if attested else None
+    if attested:
+        paths.append((root, "attested-proposal"))
+        promotion = _maybe_object(payload.get("promotion_input")) if payload else None
+    else:
+        promotion = root
     body = _maybe_object(promotion.get("payload")) if promotion else None
     if promotion is not None:
         paths.append((promotion, "promotion-input"))
@@ -913,7 +1042,7 @@ def _preflight_attested(value: Any) -> None:
                             (pair.get("signature"), "detached-signature"),
                         )
                     )
-    if payload is not None:
+    if attested and payload is not None:
         paths.extend(
             (
                 (payload.get("decision"), "promotion-decision"),
@@ -972,16 +1101,20 @@ def _enforce_string_limits(value: Any, *, excluded: bool = False) -> None:
 
 def _stage_two(value: JSONValue, entrypoint: M2Entrypoint, anchor: JSONValue | None) -> None:
     if entrypoint not in {
+        "evaluate-new",
         "verify-attested-proposal",
         "replay-historical",
         "initialize-anchor",
         "advance-anchor-history",
     }:
         _reject()
-    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
-        _preflight_attested(value)
+    if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
+        _preflight_proposal(value, attested=entrypoint != "evaluate-new")
         _enforce_string_limits(value)
-        _validate_attested(value)
+        if entrypoint == "evaluate-new":
+            _validate_promotion_input(value)
+        else:
+            _validate_attested(value)
         if anchor is None:
             _reject()
         _enforce_string_limits(anchor)
@@ -1100,18 +1233,22 @@ def _canonical_digest(value: JSONValue) -> str:
     return sha256_bytes(canonical_json(value))
 
 
-def _attested_contexts(value: JSONValue) -> tuple[dict[str, Any], dict[str, Any]]:
+def _promotion_input_value(value: JSONValue) -> dict[str, Any]:
     root = cast(dict[str, Any], value)
-    body = cast(dict[str, Any], root["payload"])["promotion_input"]["payload"]
+    if root.get("kind") == "promotion-input":
+        return root
+    return cast(dict[str, Any], root["payload"])["promotion_input"]
+
+
+def _attested_contexts(value: JSONValue) -> tuple[dict[str, Any], dict[str, Any]]:
+    body = cast(dict[str, Any], _promotion_input_value(value)["payload"])
     return cast(dict[str, Any], body["identity_context"]), cast(
         dict[str, Any], body["authorization_context"]
     )
 
 
 def _attested_signatures(value: JSONValue) -> list[dict[str, Any]]:
-    root = cast(dict[str, Any], value)
-    payload = cast(dict[str, Any], root["payload"])
-    body = cast(dict[str, Any], payload["promotion_input"])["payload"]
+    body = cast(dict[str, Any], _promotion_input_value(value)["payload"])
     signatures = [cast(dict[str, Any], body["candidate"])["signature"]]
     signatures.extend(item["signature"] for item in cast(list[dict[str, Any]], body["evidence"]))
     grant = body.get("authority_grant")
@@ -1270,7 +1407,7 @@ def inspect_m2_stage_three(
         return structural
     try:
         value = structural.decode()
-        if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+        if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
             anchor = structural.decode_trusted_anchor()
             if not isinstance(anchor, dict):
                 return M2WireRejection(stage=2, code="input.schema_invalid")
@@ -1296,8 +1433,7 @@ _ROLE_FOR_KIND: Final = {
 
 def _signature_pairs(value: JSONValue, *, include_selector: bool = False) -> list[_SignaturePair]:
     root = cast(dict[str, Any], value)
-    proposal = cast(dict[str, Any], root["payload"])
-    body = cast(dict[str, Any], proposal["promotion_input"])["payload"]
+    body = cast(dict[str, Any], _promotion_input_value(value)["payload"])
     candidate = cast(dict[str, Any], body["candidate"])
     pairs: list[_SignaturePair] = [
         (candidate, "candidate", candidate["envelope"]["payload"]["proposer"])
@@ -1317,6 +1453,7 @@ def _signature_pairs(value: JSONValue, *, include_selector: bool = False) -> lis
             )
         )
     if include_selector:
+        proposal = cast(dict[str, Any], root["payload"])
         selector = cast(dict[str, Any], proposal["selector_signature"])
         pairs.append(
             (
@@ -1404,7 +1541,7 @@ def _stage_four_attested(value: JSONValue) -> None:
 
 
 def _stage_four(value: JSONValue, entrypoint: M2Entrypoint) -> None:
-    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+    if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
         _stage_four_attested(value)
         return
     request = cast(dict[str, Any], value)
@@ -1453,9 +1590,7 @@ def _stage_five_attested(
         signature = cast(dict[str, Any], pair["signature"])["payload"]
         if signature["key_id"] in revoked_keys:
             _reject_later(5, "signature.key_revoked")
-    body = cast(dict[str, Any], cast(dict[str, Any], value)["payload"])["promotion_input"][
-        "payload"
-    ]
+    body = cast(dict[str, Any], _promotion_input_value(value)["payload"])
     grant = body.get("authority_grant")
     if grant is not None:
         grant_pair = cast(dict[str, Any], grant)
@@ -1514,7 +1649,7 @@ def _stage_five_context(identity: dict[str, Any]) -> dict[str, tuple[str, dict[s
 
 
 def _stage_five(value: JSONValue, entrypoint: M2Entrypoint, anchor: JSONValue | None) -> None:
-    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+    if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
         _stage_five_attested(value, cast(dict[str, Any], anchor))
         return
     request = cast(dict[str, Any], value)
@@ -1689,7 +1824,7 @@ def _initial_anchor_snapshot(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def _stage_six(value: JSONValue, entrypoint: M2Entrypoint) -> dict[str, Any] | None:
-    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+    if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
         _stage_six_attested(value)
         return None
     request = cast(dict[str, Any], value)
@@ -1745,14 +1880,11 @@ def inspect_m2_stage_six(
 
 
 def _promotion_body(value: JSONValue) -> dict[str, Any]:
-    root = cast(dict[str, Any], value)
-    proposal = cast(dict[str, Any], root["payload"])
-    promotion_input = cast(dict[str, Any], proposal["promotion_input"])
-    return cast(dict[str, Any], promotion_input["payload"])
+    return cast(dict[str, Any], _promotion_input_value(value)["payload"])
 
 
 def _proposal_value(value: JSONValue, entrypoint: M2Entrypoint) -> JSONValue:
-    if entrypoint in {"verify-attested-proposal", "replay-historical"}:
+    if entrypoint in {"evaluate-new", "verify-attested-proposal", "replay-historical"}:
         return value
     if entrypoint == "advance-anchor-history":
         probe = cast(dict[str, Any], value).get("probe_attested_proposal")
@@ -1908,9 +2040,7 @@ def _policy_decision(value: JSONValue) -> dict[str, JSONValue]:
     from .domain import Candidate, Evidence, EvidenceStatus, PromotionDecision
     from .promotion import PromotionContext, PromotionGate
 
-    root = cast(dict[str, Any], value)
-    proposal = cast(dict[str, Any], root["payload"])
-    promotion_input = cast(dict[str, Any], proposal["promotion_input"])
+    promotion_input = _promotion_input_value(value)
     body = cast(dict[str, Any], promotion_input["payload"])
     candidate_payload = cast(
         dict[str, Any], cast(dict[str, Any], body["candidate"])["envelope"]["payload"]
@@ -2077,6 +2207,199 @@ def inspect_m2_stage_eleven(
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         return M2WireRejection(stage=2, code="input.schema_invalid")
     return _verified_proposal(evaluated)
+
+
+def evaluate_new(
+    source: bytes | bytearray | memoryview,
+    live_trusted_anchor: JSONValue,
+) -> EvaluatedProposalResult:
+    """Evaluate a raw promotion input without selector signing or authority."""
+
+    evaluated = inspect_m2_stage_ten(source, "evaluate-new", trusted_anchor=live_trusted_anchor)
+    if isinstance(evaluated, M2WireRejection):
+        return _rejected_result(evaluated)
+    return EvaluatedProposal(
+        promotion_input_data=canonical_json(evaluated.decode()),
+        decision_data=evaluated.decision_data,
+    )
+
+
+def verify_attested_proposal(
+    source: bytes | bytearray | memoryview,
+    live_trusted_anchor: JSONValue,
+) -> VerifiedProposalResult:
+    """Verify an attested proposal as non-authorizing evidence."""
+
+    verified = inspect_m2_stage_eleven(
+        source,
+        "verify-attested-proposal",
+        trusted_anchor=live_trusted_anchor,
+    )
+    if isinstance(verified, M2WireRejection):
+        return _rejected_result(verified)
+    return VerifiedProposal(attested_proposal_data=canonical_json(verified.decode()))
+
+
+def replay_historical(
+    source: bytes | bytearray | memoryview,
+    recorded_trusted_anchor: JSONValue,
+) -> HistoricalReplayResult:
+    """Reproduce a historical decision and bind the exact recorded anchor."""
+
+    verified = inspect_m2_stage_eleven(
+        source,
+        "replay-historical",
+        trusted_anchor=recorded_trusted_anchor,
+    )
+    if isinstance(verified, M2WireRejection):
+        return _rejected_result(verified)
+    proposal = canonical_json(verified.decode())
+    anchor = canonical_json(recorded_trusted_anchor)
+    decision = canonical_json(verified.decode_decision())
+    return ReplayResult(
+        attested_proposal_digest=sha256_bytes(proposal),
+        recorded_trusted_anchor_digest=sha256_bytes(anchor),
+        reproduced_decision_digest=sha256_bytes(decision),
+    )
+
+
+def initialize_anchor(
+    genesis_identity_context: JSONValue,
+    genesis_authorization_context: JSONValue,
+    trusted_now_unix_s: int,
+) -> AnchorOperationResult:
+    """Validate explicit genesis contexts and return a non-authorizing anchor result."""
+
+    try:
+        source = canonical_json(
+            {
+                "initial_identity_context": genesis_identity_context,
+                "initial_authorization_context": genesis_authorization_context,
+                "trusted_now_unix_s": trusted_now_unix_s,
+            }
+        )
+    except (TypeError, ValueError):
+        return VerificationResult(status="rejected", code="input.schema_invalid")
+    verified = inspect_m2_stage_six(source, "initialize-anchor")
+    if isinstance(verified, M2WireRejection):
+        return _rejected_result(verified)
+    anchor = verified.decode_resulting_anchor()
+    if anchor is None:
+        return VerificationResult(status="rejected", code="input.schema_invalid")
+    return AnchorTransitionResult(resulting_anchor_data=canonical_json(anchor))
+
+
+def advance_anchor(
+    previous_anchor: JSONValue,
+    previous_identity_context: JSONValue,
+    next_identity_context: JSONValue,
+    next_authorization_context: JSONValue,
+    trusted_now_unix_s: int,
+) -> AnchorOperationResult:
+    """Validate one explicit trusted-anchor transition without ambient state."""
+
+    try:
+        anchor = cast(dict[str, Any], strict_json_loads(canonical_json(previous_anchor)))
+        previous_identity = cast(
+            dict[str, Any], strict_json_loads(canonical_json(previous_identity_context))
+        )
+        next_identity = cast(
+            dict[str, Any], strict_json_loads(canonical_json(next_identity_context))
+        )
+        next_authorization = cast(
+            dict[str, Any], strict_json_loads(canonical_json(next_authorization_context))
+        )
+
+        for identity, authorization in (
+            (previous_identity, next_authorization),
+            (next_identity, next_authorization),
+        ):
+            _preflight_context(identity, authorization, versions_only=True)
+        for identity, authorization in (
+            (previous_identity, next_authorization),
+            (next_identity, next_authorization),
+        ):
+            _preflight_context(identity, authorization)
+        for value in (anchor, previous_identity, next_identity, next_authorization):
+            _enforce_string_limits(value)
+        current = _validate_anchor(anchor)
+        previous = _validate_identity_context(previous_identity)
+        following = _validate_identity_context(next_identity)
+        authorization = _validate_authorization_context(next_authorization)
+        now = _safe_uint(trusted_now_unix_s)
+
+        projected_owners = set(cast(dict[str, Any], current["key_ownership_registry"]))
+        projected_owners.update(_identity_key_owners(next_identity))
+        projected_keys = set(cast(list[str], current["revoked_key_ids"])) | set(
+            cast(list[str], following["revoked_key_ids"])
+        )
+        projected_grants = set(cast(list[str], current["revoked_grant_ids"])) | set(
+            cast(list[str], following["revoked_grant_ids"])
+        )
+        if any(
+            len(collection) > 4096
+            for collection in (projected_owners, projected_keys, projected_grants)
+        ):
+            _reject("input.limit_exceeded")
+
+        previous_payload = cast(dict[str, Any], previous_identity["payload"])
+        next_payload = cast(dict[str, Any], next_identity["payload"])
+        authorization_payload = cast(dict[str, Any], next_authorization["payload"])
+        anchor_keys = set(cast(list[str], current["revoked_key_ids"]))
+        anchor_grants = set(cast(list[str], current["revoked_grant_ids"]))
+        previous_keys = set(cast(list[str], previous["revoked_key_ids"]))
+        previous_grants = set(cast(list[str], previous["revoked_grant_ids"]))
+        owners = cast(dict[str, str], current["key_ownership_registry"])
+        if (
+            _canonical_digest(cast(JSONValue, previous_identity))
+            != current["current_identity_context_digest"]
+            or previous_payload["trust_domain_id"] != current["trust_domain_id"]
+            or previous_payload["snapshot_sequence"] != current["current_snapshot_sequence"]
+            or previous_payload["evaluation_time_unix_s"] != current["trusted_now_unix_s"]
+            or not previous_keys.issubset(anchor_keys)
+            or not previous_grants.issubset(anchor_grants)
+            or any(
+                owners.get(key_id) != principal_id
+                for key_id, principal_id in _identity_key_owners(previous_identity).items()
+            )
+        ):
+            _reject_stage_three("identity.context_untrusted")
+        if now < cast(int, current["trusted_now_unix_s"]):
+            _reject_stage_three("identity.context_stale")
+        if (
+            next_payload["trust_domain_id"] != current["trust_domain_id"]
+            or authorization_payload["trust_domain_id"] != current["trust_domain_id"]
+            or next_payload["snapshot_sequence"]
+            != cast(int, current["current_snapshot_sequence"]) + 1
+            or next_payload["previous_snapshot_digest"]
+            != _canonical_digest(cast(JSONValue, previous_identity))
+            or next_payload["evaluation_time_unix_s"] != now
+            or not anchor_keys.issubset(set(cast(list[str], following["revoked_key_ids"])))
+            or not anchor_grants.issubset(set(cast(list[str], following["revoked_grant_ids"])))
+        ):
+            _reject_stage_three("identity.context_untrusted")
+
+        _stage_four_all_bindings(previous_identity)
+        _stage_four_all_bindings(next_identity)
+        _stage_five_context(previous_identity)
+        next_keys = _stage_five_context(next_identity)
+        for key_id, (principal_id, _) in next_keys.items():
+            prior_owner = owners.get(key_id)
+            if prior_owner is not None and prior_owner != principal_id:
+                _reject_later(5, "identity.key_ambiguous")
+            if key_id in anchor_keys:
+                _reject_later(5, "signature.key_revoked")
+        _stage_six_contexts([previous_identity, next_identity])
+        resulting = _advance_anchor_snapshot(current, next_identity, next_authorization, now)
+    except _StageTwoError as error:
+        return VerificationResult(status="rejected", code=error.code)
+    except _StageThreeError as error:
+        return VerificationResult(status="rejected", code=error.code)
+    except _LaterStageError as error:
+        return VerificationResult(status="rejected", code=error.code)
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        return VerificationResult(status="rejected", code="input.schema_invalid")
+    return AnchorTransitionResult(resulting_anchor_data=canonical_json(resulting))
 
 
 def inspect_m2_wire(source: bytes | bytearray | memoryview) -> M2WireInspection:

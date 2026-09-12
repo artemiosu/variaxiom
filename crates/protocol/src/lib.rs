@@ -28,6 +28,46 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+/// Validate one explicit trusted-anchor transition without ambient state.
+///
+/// This is used by the public kernel API; the conformance history carrier
+/// remains a test-only transport for exercising multiple ordered transitions.
+pub fn advance_trusted_anchor(
+    previous_anchor: &Value,
+    previous_identity_context: &Value,
+    next_identity_context: &Value,
+    next_authorization_context: &Value,
+    trusted_now_unix_s: u64,
+) -> Result<Value, M2WireRejection> {
+    let trusted_now = Value::from(trusted_now_unix_s);
+    m2_stage_two::validate_anchor_transition_structure(
+        previous_anchor,
+        previous_identity_context,
+        next_identity_context,
+        next_authorization_context,
+        &trusted_now,
+    )?;
+    m2_stage_three::validate_anchor_transition_context(
+        previous_anchor,
+        previous_identity_context,
+        next_identity_context,
+        next_authorization_context,
+        &trusted_now,
+    )?;
+    m2_stage_four_five::validate_anchor_transition_identity(
+        previous_anchor,
+        previous_identity_context,
+        next_identity_context,
+    )?;
+    m2_stage_six::verify_anchor_transition_keys(
+        previous_anchor,
+        previous_identity_context,
+        next_identity_context,
+        next_authorization_context,
+        &trusted_now,
+    )
+}
+
 /// Version of the canonical outer envelope.
 pub const ENVELOPE_VERSION: &str = "variaxiom-envelope/v1";
 /// Version of the promotion-input payload.

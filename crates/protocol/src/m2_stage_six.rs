@@ -77,8 +77,13 @@ fn proposal_payload(value: &Value) -> Check<&Map<String, Value>> {
 }
 
 fn promotion_body(value: &Value) -> Check<&Map<String, Value>> {
-    let proposal = proposal_payload(value)?;
-    object(&object(&proposal["promotion_input"])?["payload"])
+    let root = object(value)?;
+    if root.get("kind").and_then(Value::as_str) == Some("promotion-input") {
+        object(&root["payload"])
+    } else {
+        let proposal = proposal_payload(value)?;
+        object(&object(&proposal["promotion_input"])?["payload"])
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -425,7 +430,9 @@ fn advance_anchor(
 fn stage_six(identity_bound: &IdentityBoundM2Input) -> Check<Option<Value>> {
     let value = identity_bound.wire().value();
     match identity_bound.entrypoint() {
-        M2Entrypoint::VerifyAttestedProposal | M2Entrypoint::ReplayHistorical => {
+        M2Entrypoint::EvaluateNew
+        | M2Entrypoint::VerifyAttestedProposal
+        | M2Entrypoint::ReplayHistorical => {
             stage_six_attested(value)?;
             Ok(None)
         }
@@ -460,6 +467,32 @@ fn stage_six(identity_bound: &IdentityBoundM2Input) -> Check<Option<Value>> {
             Ok(Some(Value::Object(anchor)))
         }
     }
+}
+
+pub(crate) fn verify_anchor_transition_keys(
+    previous_anchor: &Value,
+    previous_identity: &Value,
+    next_identity: &Value,
+    next_authorization: &Value,
+    trusted_now: &Value,
+) -> Result<Value, M2WireRejection> {
+    stage_six_contexts(&[previous_identity, next_identity]).map_err(|error| M2WireRejection {
+        stage: 6,
+        code: error.0,
+        authorizing: false,
+    })?;
+    let anchor = object(previous_anchor).map_err(|error| M2WireRejection {
+        stage: 6,
+        code: error.0,
+        authorizing: false,
+    })?;
+    let resulting = advance_anchor(anchor, next_identity, next_authorization, trusted_now)
+        .map_err(|error| M2WireRejection {
+            stage: 6,
+            code: error.0,
+            authorizing: false,
+        })?;
+    Ok(Value::Object(resulting))
 }
 
 /// Apply M2.1 stages one through six without signing or authority.

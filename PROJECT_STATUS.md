@@ -3,7 +3,7 @@
 **Version:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 **Maturity:** pre-alpha research implementation
 **Primary public proof:** The Authority Test
-**Last status review:** 2026-09-11
+**Last status review:** 2026-09-12
 
 The concise source of truth for active development is
 [`docs/project/current.md`](docs/project/current.md); machine-readable status is in
@@ -29,6 +29,12 @@ Wycheproof vectors, a fresh public-clone full verification, Linux/macOS/Windows 
 three-role automated implementation review at
 `ec38563d93bab1854592caebbad31a67d7e714a2`. No reviewer reported a remaining P0/P1/P2. The
 implementation remains evidence-only and cannot sign, authorize, activate, or append lineage.
+
+The M2.2 transactional SQLite lineage specification and ADR were accepted at exact revision
+`6f267e049f0e944a264ed988af2dd623d0dbab22` after three isolated automated reviews unanimously
+reported P0=0, P1=0, P2=0. This is not a human security audit or production authorization. It
+permits only the next exact v3 schema, SQL, oracle, and shared fault-fixture freeze; no M2.2 writer,
+migration, schema, or durable append path exists yet.
 
 ## Implemented
 
@@ -66,6 +72,7 @@ implementation remains evidence-only and cannot sign, authorize, activate, or ap
 - distributed execution;
 - model training or weight-level self-improvement;
 - production deployment or autonomous operation.
+- M2.2 v3 schemas, SQL migration, shared fault fixtures, or transactional writer.
 
 ## Explicit non-goals for the first releases
 

@@ -78,6 +78,7 @@ planned claim into a normative requirement, and generated context never resolves
 - [`../reports/m2.1-schema-fixture-council-2026-09-07.md`](../reports/m2.1-schema-fixture-council-2026-09-07.md)
 - [`../reports/m2.1-result-contract-council-2026-09-11.md`](../reports/m2.1-result-contract-council-2026-09-11.md)
 - [`../reports/m2.1-implementation-council-2026-09-11.md`](../reports/m2.1-implementation-council-2026-09-11.md)
+- [`../reports/m2.2-specification-council-2026-09-12.md`](../reports/m2.2-specification-council-2026-09-12.md)
 - [`../project/github-setup.md`](../project/github-setup.md)
 
 ## Product and community

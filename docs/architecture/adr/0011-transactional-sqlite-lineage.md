@@ -1,6 +1,7 @@
 # ADR 0011: Local SQLite transactions with exact-head compare-and-swap
 
-- **Status:** proposed
+- **Status:** accepted by the M2.2 automated specification council at exact revision
+  `6f267e049f0e944a264ed988af2dd623d0dbab22`; not a human security audit
 - **Date:** 2026-09-12
 - **Decision owner:** bootstrap maintainer under the founder review exception for proposal only
 - **Specification:** [`../../specs/m2.2-transactional-sqlite-lineage.md`](../../specs/m2.2-transactional-sqlite-lineage.md)

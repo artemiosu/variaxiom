@@ -27,7 +27,7 @@
     "id": "M2.2",
     "title": "Transactional SQLite lineage and deterministic projections",
     "status": "in_progress",
-    "verification": "specification_proposed_issue_18_no_schema_fixture_or_writer_implementation",
+    "verification": "specification_accepted_at_6f267e0_p0_p1_p2_zero_schemas_sql_fault_fixtures_next_writer_disabled",
     "specification": "docs/specs/m2.2-transactional-sqlite-lineage.md",
     "requirements": [
       "REQ-CORE-001",
@@ -152,6 +152,15 @@
       "result": "passed",
       "artifact": "docs/reports/m2.1-implementation-council-2026-09-11.md",
       "url": "https://github.com/artemiosu/variaxiom/pull/12"
+    },
+    {
+      "id": "m2.2-transactional-lineage-specification-council",
+      "revision": "6f267e049f0e944a264ed988af2dd623d0dbab22",
+      "observed_on": "2026-09-12",
+      "check": "three isolated immutable-archive automated reviews covering authority and recovery, SQLite and API integrity, cross-runtime conformance and schema implementability; unanimous P0/P1/P2 zero",
+      "result": "passed",
+      "artifact": "docs/reports/m2.2-specification-council-2026-09-12.md",
+      "url": "https://github.com/artemiosu/variaxiom/pull/19"
     }
   ],
   "open_decisions": [
@@ -159,7 +168,7 @@
     {"id": "DEC-002", "status": "deferred", "target": "future-envelope", "question": "Adopt full RFC 8785/JCS in a new envelope version"},
     {"id": "DEC-003", "status": "planned", "target": "governance", "question": "Appoint a second trusted maintainer"},
     {"id": "DEC-004", "status": "deferred", "target": "M4", "question": "Select the first external harness adapter"},
-    {"id": "DEC-005", "status": "in_progress", "target": "M2.2", "question": "Adopt an exact SQLite 3.53.4 source baseline with WAL/FULL transactions and exact event-head and lineage-head compare-and-swap"}
+    {"id": "DEC-005", "status": "accepted", "target": "M2.2", "question": "Adopt an exact SQLite 3.53.4 source baseline with WAL/FULL transactions and exact event-head and lineage-head compare-and-swap"}
   ],
   "risks": [
     {"id": "R4", "status": "active", "document": "docs/project/risk-register.md"},
@@ -175,6 +184,7 @@
     {"id": "independent-security-council", "status": "resolved", "scope": "three-role automated review tracked by GitHub issue 5; unanimous PASS at 081e670 with no remaining P0/P1"},
     {"id": "reproduction-report-publication", "status": "resolved", "scope": "published M1.1 evidence in closed issue 3"},
     {"id": "m2.1-result-contract-correction", "status": "resolved", "scope": "issue 16 correction accepted at reviewed revision 7642611 with all M2.1 outputs fixed non-authorizing"},
+    {"id": "m2.2-specification-council", "status": "resolved", "scope": "issue 18 and PR 19; unanimous automated PASS at 6f267e0 with P0/P1/P2 zero; authorizes only schemas/SQL/shared fixtures"},
     {"id": "github-ssh-recheck", "status": "open", "scope": "verify SSH authentication before changing the HTTPS remote"},
     {"id": "social-preview-upload", "status": "resolved", "scope": "GitHub repository social preview"}
   ],
@@ -191,7 +201,7 @@
     "protocol": ["docs/specs/m1.1-cross-language-conformance.md", "docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/data-model.md", "schemas", "fixtures/conformance"],
     "kernel": ["docs/architecture/overview.md", "docs/architecture/threat-model.md", "constitution/constitution.toml", "crates/kernel", "crates/protocol"],
     "identity_signatures": ["docs/specs/m2.1-identity-grants-signatures.md", "docs/architecture/adr/0010-ed25519-detached-signatures.md", "docs/architecture/capability-security.md", "docs/project/risk-register.md"],
-    "transactional_lineage": ["docs/specs/m2.2-transactional-sqlite-lineage.md", "docs/architecture/adr/0011-transactional-sqlite-lineage.md", "docs/architecture/data-model.md", "docs/architecture/threat-model.md", "docs/project/risk-register.md", "crates/kernel"],
+    "transactional_lineage": ["docs/specs/m2.2-transactional-sqlite-lineage.md", "docs/architecture/adr/0011-transactional-sqlite-lineage.md", "docs/architecture/data-model.md", "docs/architecture/threat-model.md", "docs/project/risk-register.md", "docs/reports/m2.2-specification-council-2026-09-12.md", "crates/kernel"],
     "operations": ["REPRODUCIBILITY.md", "SECURITY.md", "docs/project/github-setup.md", ".github/workflows"]
   },
   "required_checks": {

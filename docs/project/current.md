@@ -3,7 +3,7 @@
 - **Reviewed:** 2026-09-12
 - **Release:** 0.1.0-alpha seed (unreleased; no Git tag yet)
 - **Current product increment:** M2.2 — transactional SQLite lineage and deterministic projections
-- **Active specification:** [`../specs/m2.2-transactional-sqlite-lineage.md`](../specs/m2.2-transactional-sqlite-lineage.md) (proposed; review tracked by issue #18; not yet accepted)
+- **Active specification:** [`../specs/m2.2-transactional-sqlite-lineage.md`](../specs/m2.2-transactional-sqlite-lineage.md) (accepted at exact reviewed revision `6f267e049f0e944a264ed988af2dd623d0dbab22`)
 
 ## Current verified baseline
 
@@ -29,13 +29,15 @@ non-authorizing, and unable to sign, append, activate, or deploy. Exact implemen
 `ec38563d93bab1854592caebbad31a67d7e714a2` and the merged evidence commit are preserved in the
 implementation council report.
 
-M2.2 specification work is active in [issue #18](https://github.com/artemiosu/variaxiom/issues/18).
-The proposed contract introduces a separately operator-controlled Rust writer, a local SQLite
+M2.2 specification [PR #19](https://github.com/artemiosu/variaxiom/pull/19) passed three isolated
+automated reviews at exact revision `6f267e049f0e944a264ed988af2dd623d0dbab22`, each reporting
+P0=0, P1=0, P2=0. The accepted contract introduces a separately operator-controlled Rust writer, a local SQLite
 3.53.4-pinned store, canonical hash-linked events, global and per-lineage exact-head CAS, permanent
 idempotency receipts, atomic rollback reservations and outbox enqueue, and deterministic shadow
 projection comparison. It contains no schema, fixture, migration, or runtime implementation. The
-specification is not normative until the automated three-role review has no open P0/P1/P2; that review
-does not replace a human security audit.
+council report is [`../reports/m2.2-specification-council-2026-09-12.md`](../reports/m2.2-specification-council-2026-09-12.md).
+The review is automated, does not replace a human security audit, and authorizes only the next
+schema/SQL/shared-fixture freeze while the writer remains disabled.
 
 M1.1 is published and independently reproduced from the public repository. The clean-clone report
 records the exact environment, commands, 23 Python tests, 17 Rust tests, eight shared fixtures,
@@ -90,11 +92,9 @@ capability.
 
 ## Next
 
-1. Review and accept the M2.2 specification only after three isolated automated roles report no
-   open P0/P1/P2.
-2. Freeze exact v3 schemas, SQL migration bytes, and shared transaction/fault fixtures in a
+1. Freeze exact v3 schemas, SQL migration bytes, and shared transaction/fault fixtures in a
    separate PR; keep the writer disabled.
-3. Implement the small Rust writer and Python oracle, then perform M2.3 fault injection and a
+2. Implement the small Rust writer and Python oracle, then perform M2.3 fault injection and a
    rollback drill before enabling any durable lineage path.
 
 ## Open decisions
